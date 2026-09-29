@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../shared/module_placeholder_page.dart';
+import '../motor/motor_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -38,11 +39,13 @@ class HomePage extends StatelessWidget {
                   child: InkWell(
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => ModulePlaceholderPage(
-                          title: module.title,
-                          subtitle: module.subtitle,
-                          icon: module.icon,
-                        ),
+                        builder: (_) => index == 0
+                            ? const MotorPage()
+                            : ModulePlaceholderPage(
+                                title: module.title,
+                                subtitle: module.subtitle,
+                                icon: module.icon,
+                              ),
                       ),
                     ),
                     child: Padding(
