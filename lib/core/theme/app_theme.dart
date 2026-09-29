@@ -17,6 +17,11 @@ abstract final class AppTheme {
       brightness: Brightness.dark,
       colorScheme: scheme,
       scaffoldBackgroundColor: _background,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: _surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+      ),
       cardTheme: const CardThemeData(
         elevation: 0,
         color: _surface,
