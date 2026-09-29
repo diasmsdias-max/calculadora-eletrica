@@ -42,6 +42,11 @@ jobs:
       - name: Unit tests
         run: flutter test
 
+      - name: Setup Gradle 8.14.3
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
       - name: Prepare compatible Gradle wrapper
         working-directory: android
         run: gradle wrapper --gradle-version 8.14.3 --distribution-type bin
