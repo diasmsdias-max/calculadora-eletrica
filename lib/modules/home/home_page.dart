@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../shared/module_placeholder_page.dart';
 import '../motor/motor_page.dart';
+import '../transformer/transformer_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
