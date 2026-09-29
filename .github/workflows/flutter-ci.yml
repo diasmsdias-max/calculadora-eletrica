@@ -42,6 +42,10 @@ jobs:
       - name: Unit tests
         run: flutter test
 
+      - name: Prepare compatible Gradle wrapper
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.14.3 --distribution-type bin
+
       - name: Build debug APK
         run: flutter build apk --debug
 
