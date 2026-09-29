@@ -41,13 +41,16 @@ class HomePage extends StatelessWidget {
                   child: InkWell(
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => index == 0
-                            ? const MotorPage()
-                            : ModulePlaceholderPage(
-                                title: module.title,
-                                subtitle: module.subtitle,
-                                icon: module.icon,
-                              ),
+                        builder: (_) => switch (index) {
+                          0 => const MotorPage(),
+                          1 => const TransformerPage(),
+                          2 => const MotorTransformerPage(),
+                          _ => ModulePlaceholderPage(
+                              title: module.title,
+                              subtitle: module.subtitle,
+                              icon: module.icon,
+                            ),
+                        },
                       ),
                     ),
                     child: Padding(
