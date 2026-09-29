@@ -10,6 +10,7 @@ class MotorPage extends StatefulWidget {
 
 class _MotorPageState extends State<MotorPage> {
   final power = TextEditingController(text: '15');
+  final current = TextEditingController(text: '40');
   final voltage = TextEditingController(text: '220');
   final pf = TextEditingController(text: '0,85');
   final efficiency = TextEditingController(text: '0,90');
@@ -18,6 +19,7 @@ class _MotorPageState extends State<MotorPage> {
   final days = TextEditingController(text: '30');
   final startingMultiplier = TextEditingController(text: '6,0');
 
+  MotorInputMode inputMode = MotorInputMode.power;
   MotorPowerUnit unit = MotorPowerUnit.cv;
   AcSystem system = AcSystem.threePhase;
   MotorStartingMethod startingMethod = MotorStartingMethod.direct;
@@ -36,13 +38,32 @@ class _MotorPageState extends State<MotorPage> {
 
   void _calculate() {
     try {
-      final value = MotorCalculator.calculate(
-        ratedPower: _n(power.text), unit: unit, system: system,
-        voltageV: _n(voltage.text), powerFactor: _n(pf.text),
-        efficiency: _n(efficiency.text), serviceFactor: _n(serviceFactor.text),
-        hoursPerDay: _n(hours.text), daysPerMonth: int.parse(days.text),
-        startingMethod: startingMethod, startingMultiplier: _n(startingMultiplier.text),
+      final common = (
+        system: system,
+        voltageV: _n(voltage.text),
+        powerFactor: _n(pf.text),
+        efficiency: _n(efficiency.text),
+        serviceFactor: _n(serviceFactor.text),
+        hoursPerDay: _n(hours.text),
+        daysPerMonth: int.parse(days.text),
+        startingMethod: startingMethod,
+        startingMultiplier: _n(startingMultiplier.text),
       );
+      final value = inputMode == MotorInputMode.power
+          ? MotorCalculator.calculate(
+              ratedPower: _n(power.text), unit: unit, system: common.system,
+              voltageV: common.voltageV, powerFactor: common.powerFactor,
+              efficiency: common.efficiency, serviceFactor: common.serviceFactor,
+              hoursPerDay: common.hoursPerDay, daysPerMonth: common.daysPerMonth,
+              startingMethod: common.startingMethod, startingMultiplier: common.startingMultiplier,
+            )
+          : MotorCalculator.calculateFromCurrent(
+              currentA: _n(current.text), system: common.system,
+              voltageV: common.voltageV, powerFactor: common.powerFactor,
+              efficiency: common.efficiency, serviceFactor: common.serviceFactor,
+              hoursPerDay: common.hoursPerDay, daysPerMonth: common.daysPerMonth,
+              startingMethod: common.startingMethod, startingMultiplier: common.startingMultiplier,
+            );
       setState(() { result = value; error = null; });
     } catch (_) {
       setState(() { result = null; error = 'Confira os valores informados.'; });
@@ -51,7 +72,7 @@ class _MotorPageState extends State<MotorPage> {
 
   @override
   void dispose() {
-    for (final c in [power, voltage, pf, efficiency, serviceFactor, hours, days, startingMultiplier]) {
+    for (final c in [power, current, voltage, pf, efficiency, serviceFactor, hours, days, startingMultiplier]) {
       c.dispose();
     }
     super.dispose();
@@ -60,26 +81,39 @@ class _MotorPageState extends State<MotorPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Motor Elétrico')),
-    body: ListView(padding: const EdgeInsets.all(16), children: [
+    body: SafeArea(top: false, child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
       Text('Dados do motor', style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 16),
-      Row(children: [
-        Expanded(child: _field(power, 'Potência nominal')),
-        const SizedBox(width: 12),
-        Expanded(child: DropdownButtonFormField<MotorPowerUnit>(
-          initialValue: unit, decoration: const InputDecoration(labelText: 'Unidade'),
-          items: const [
-            DropdownMenuItem(value: MotorPowerUnit.cv, child: Text('CV')),
-            DropdownMenuItem(value: MotorPowerUnit.hp, child: Text('HP')),
-            DropdownMenuItem(value: MotorPowerUnit.kw, child: Text('kW')),
-          ], onChanged: (v) => setState(() => unit = v!),
-        )),
-      ]),
+      SegmentedButton<MotorInputMode>(
+        segments: const [
+          ButtonSegment(value: MotorInputMode.power, label: Text('Por potência'), icon: Icon(Icons.bolt)),
+          ButtonSegment(value: MotorInputMode.current, label: Text('Por corrente'), icon: Icon(Icons.electric_meter)),
+        ],
+        selected: {inputMode},
+        onSelectionChanged: (v) => setState(() { inputMode = v.first; result = null; }),
+      ),
+      const SizedBox(height: 12),
+      if (inputMode == MotorInputMode.power)
+        Row(children: [
+          Expanded(child: _field(power, 'Potência nominal')),
+          const SizedBox(width: 12),
+          Expanded(child: DropdownButtonFormField<MotorPowerUnit>(
+            initialValue: unit, decoration: const InputDecoration(labelText: 'Unidade'),
+            items: const [
+              DropdownMenuItem(value: MotorPowerUnit.cv, child: Text('CV')),
+              DropdownMenuItem(value: MotorPowerUnit.hp, child: Text('HP')),
+              DropdownMenuItem(value: MotorPowerUnit.kw, child: Text('kW')),
+            ], onChanged: (v) => setState(() => unit = v!),
+          )),
+        ])
+      else
+        _field(current, 'Corrente nominal (A)'),
       const SizedBox(height: 12),
       DropdownButtonFormField<AcSystem>(
         initialValue: system, decoration: const InputDecoration(labelText: 'Sistema'),
         items: const [
           DropdownMenuItem(value: AcSystem.singlePhase, child: Text('Monofásico')),
+          DropdownMenuItem(value: AcSystem.twoPhase, child: Text('Bifásico')),
           DropdownMenuItem(value: AcSystem.threePhase, child: Text('Trifásico')),
         ], onChanged: (v) => setState(() => system = v!),
       ),
@@ -120,14 +154,14 @@ class _MotorPageState extends State<MotorPage> {
         _result('Potência com fator de serviço', result!.servicePowerKw, 'kW'),
         _result('Potência elétrica absorvida', result!.absorbedPowerKw, 'kW'),
         _result('Potência aparente', result!.apparentPowerKva, 'kVA'),
-        _result('Corrente nominal calculada', result!.nominalCurrentA, 'A'),
+        _result(inputMode == MotorInputMode.power ? 'Corrente nominal calculada' : 'Corrente nominal informada', result!.nominalCurrentA, 'A'),
         _result('Corrente de partida estimada', result!.estimatedStartingCurrentA, 'A'),
         _result('Consumo diário estimado', result!.dailyEnergyKwh, 'kWh'),
         _result('Consumo mensal estimado', result!.monthlyEnergyKwh, 'kWh'),
         const SizedBox(height: 12),
-        const Text('A corrente de partida é uma estimativa baseada no multiplicador informado. Use Ip/In de placa ou dados do fabricante quando disponíveis.'),
+        const Text('Consumo estimado considerando operação à carga nominal. A corrente de partida é uma estimativa baseada no multiplicador informado. Use Ip/In de placa ou dados do fabricante quando disponíveis.'),
       ],
-    ]),
+    ])),
   );
 
   Widget _field(TextEditingController controller, String label, {bool decimal = true}) =>
