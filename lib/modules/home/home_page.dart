@@ -3,6 +3,7 @@ import '../shared/module_placeholder_page.dart';
 import '../motor/motor_page.dart';
 import '../transformer/transformer_page.dart';
 import '../motor_transformer/motor_transformer_page.dart';
+import '../load_survey/load_survey_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -45,6 +46,7 @@ class HomePage extends StatelessWidget {
                           0 => const MotorPage(),
                           1 => const TransformerPage(),
                           2 => const MotorTransformerPage(),
+                          3 => const LoadSurveyPage(),
                           _ => ModulePlaceholderPage(
                               title: module.title,
                               subtitle: module.subtitle,
