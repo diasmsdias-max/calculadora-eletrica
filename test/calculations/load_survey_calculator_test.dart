@@ -1,4 +1,5 @@
 import 'package:calculadora_eletrica/core/calculations/load_survey_calculator.dart';
+import 'package:calculadora_eletrica/core/calculations/power_calculator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -28,6 +29,25 @@ void main() {
       expect(result.apparentKva, closeTo(7.05, 0.001));
       expect(result.dailyKwh, closeTo(25, 0.001));
       expect(result.monthlyKwh, closeTo(750, 0.001));
+    });
+
+    test('calcula corrente trifásica da demanda aparente', () {
+      final result = LoadSurveyCalculator.calculate(
+        [
+          const LoadItem(
+            description: 'Carga',
+            unitPowerKw: 8.8,
+            quantity: 1,
+            powerFactor: 0.8,
+            simultaneity: 1,
+            hoursPerDay: 8,
+          ),
+        ],
+        system: AcSystem.threePhase,
+        voltageV: 220,
+      );
+      expect(result.apparentKva, closeTo(11, 0.001));
+      expect(result.demandCurrentA, closeTo(28.87, 0.02));
     });
 
     test('lista vazia retorna zero', () {
