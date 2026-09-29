@@ -2,6 +2,7 @@ import 'electrical_units.dart';
 import 'power_calculator.dart';
 
 enum MotorPowerUnit { cv, hp, kw }
+enum MotorInputMode { power, current }
 enum MotorStartingMethod { direct, starDelta, softStarter, vfd, custom }
 
 extension MotorStartingMethodLabel on MotorStartingMethod {
@@ -44,6 +45,40 @@ abstract final class MotorCalculator {
     MotorStartingMethod.vfd => 1.5,
     MotorStartingMethod.custom => 1.0,
   };
+
+  static MotorResult calculateFromCurrent({
+    required double currentA,
+    required AcSystem system,
+    required double voltageV,
+    required double powerFactor,
+    required double efficiency,
+    double serviceFactor = 1,
+    double hoursPerDay = 0,
+    int daysPerMonth = 30,
+    MotorStartingMethod startingMethod = MotorStartingMethod.direct,
+    double? startingMultiplier,
+  }) {
+    final shaftKw = PowerCalculator.activePowerKwFromCurrent(
+      system: system,
+      currentA: currentA,
+      voltageV: voltageV,
+      powerFactor: powerFactor,
+      efficiency: efficiency,
+    );
+    return calculate(
+      ratedPower: shaftKw,
+      unit: MotorPowerUnit.kw,
+      system: system,
+      voltageV: voltageV,
+      powerFactor: powerFactor,
+      efficiency: efficiency,
+      serviceFactor: serviceFactor,
+      hoursPerDay: hoursPerDay,
+      daysPerMonth: daysPerMonth,
+      startingMethod: startingMethod,
+      startingMultiplier: startingMultiplier,
+    );
+  }
 
   static MotorResult calculate({
     required double ratedPower,
