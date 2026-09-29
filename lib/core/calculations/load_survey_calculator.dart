@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'load_calculator.dart';
+import 'power_calculator.dart';
 
 class LoadItem {
   final String description;
@@ -24,6 +26,7 @@ class LoadSurveyResult {
   final double apparentKva;
   final double dailyKwh;
   final double monthlyKwh;
+  final double? demandCurrentA;
 
   const LoadSurveyResult({
     required this.installedKw,
@@ -31,11 +34,17 @@ class LoadSurveyResult {
     required this.apparentKva,
     required this.dailyKwh,
     required this.monthlyKwh,
+    this.demandCurrentA,
   });
 }
 
 abstract final class LoadSurveyCalculator {
-  static LoadSurveyResult calculate(List<LoadItem> items, {int daysPerMonth = 30}) {
+  static LoadSurveyResult calculate(
+    List<LoadItem> items, {
+    int daysPerMonth = 30,
+    AcSystem? system,
+    double? voltageV,
+  }) {
     if (items.isEmpty) {
       return const LoadSurveyResult(
         installedKw: 0,
@@ -43,6 +52,7 @@ abstract final class LoadSurveyCalculator {
         apparentKva: 0,
         dailyKwh: 0,
         monthlyKwh: 0,
+        demandCurrentA: 0,
       );
     }
 
@@ -68,12 +78,22 @@ abstract final class LoadSurveyCalculator {
       monthly += result.monthlyKwh;
     }
 
+    double? current;
+    if (system != null && voltageV != null) {
+      if (!voltageV.isFinite || voltageV <= 0) {
+        throw ArgumentError('Tensão inválida.');
+      }
+      final factor = system == AcSystem.threePhase ? math.sqrt(3) : 1.0;
+      current = apparent * 1000 / (factor * voltageV);
+    }
+
     return LoadSurveyResult(
       installedKw: installed,
       demandKw: demand,
       apparentKva: apparent,
       dailyKwh: daily,
       monthlyKwh: monthly,
+      demandCurrentA: current,
     );
   }
 }
