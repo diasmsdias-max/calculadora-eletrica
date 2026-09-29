@@ -62,5 +62,29 @@ void main() {
       expect(result.dailyEnergyKwh, closeTo(80, 0.001));
       expect(result.monthlyEnergyKwh, closeTo(2400, 0.001));
     });
+    test('motor bifásico usa tensão fase-fase sem fator raiz de três', () {
+      final result = MotorCalculator.calculate(
+        ratedPower: 5,
+        unit: MotorPowerUnit.kw,
+        system: AcSystem.twoPhase,
+        voltageV: 220,
+        powerFactor: 0.8,
+        efficiency: 0.9,
+      );
+      expect(result.nominalCurrentA, closeTo(31.5657, 0.01));
+    });
+
+    test('calcula potência mecânica a partir da corrente informada', () {
+      final result = MotorCalculator.calculateFromCurrent(
+        currentA: 40,
+        system: AcSystem.threePhase,
+        voltageV: 220,
+        powerFactor: 0.85,
+        efficiency: 0.9,
+      );
+      expect(result.nominalCurrentA, closeTo(40, 0.001));
+      expect(result.shaftPowerKw, closeTo(11.662, 0.01));
+      expect(result.absorbedPowerKw, closeTo(12.958, 0.01));
+    });
   });
 }
