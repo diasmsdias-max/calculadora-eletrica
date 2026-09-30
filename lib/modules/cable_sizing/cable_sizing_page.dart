@@ -37,6 +37,11 @@ class _CableSizingPageState extends State<CableSizingPage> {
 
   double _n(String v) => double.parse(v.trim().replaceAll(',', '.'));
 
+  void _invalidateResult() {
+    result = null;
+    error = null;
+  }
+
   void _applyQuickAmpacity() {
     if (ampacityMode == _AmpacityMode.custom) return;
     final selectedSection = double.tryParse(section.text.trim().replaceAll(',', '.'));
@@ -151,6 +156,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
             ],
             onChanged: (v) => setState(() {
               system = v!;
+              _invalidateResult();
               _applyQuickAmpacity();
             }),
           ),
@@ -168,7 +174,10 @@ class _CableSizingPageState extends State<CableSizingPage> {
               controller: section,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(labelText: 'Seção (mm²)'),
-              onChanged: (_) => setState(_applyQuickAmpacity),
+              onChanged: (_) => setState(() {
+                _invalidateResult();
+                _applyQuickAmpacity();
+              }),
             )),
           ]),
           const SizedBox(height: 12),
@@ -181,6 +190,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
             ],
             onChanged: (v) => setState(() {
               material = v!;
+              _invalidateResult();
               if (ampacityMode != _AmpacityMode.custom) {
                 ampacityMode = material == ConductorMaterial.copper
                     ? _AmpacityMode.copperQuick
@@ -205,11 +215,13 @@ class _CableSizingPageState extends State<CableSizingPage> {
             onSelectionChanged: (selection) => setState(() {
               useEstimatedReactance = selection.first;
               if (useEstimatedReactance) reactance.text = '0,10';
+              _invalidateResult();
             }),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: reactance,
+            onChanged: (_) => setState(_invalidateResult),
             readOnly: useEstimatedReactance,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
@@ -244,6 +256,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
             selected: {ampacityMode},
             onSelectionChanged: (selection) => setState(() {
               ampacityMode = selection.first;
+              _invalidateResult();
               if (ampacityMode == _AmpacityMode.custom) {
                 quickAmpacityError = null;
               }
@@ -258,6 +271,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
           const SizedBox(height: 8),
           TextField(
             controller: referenceAmpacity,
+            onChanged: (_) => setState(_invalidateResult),
             readOnly: ampacityMode != _AmpacityMode.custom,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Ampacidade de referência (A)'),
@@ -321,6 +335,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
 
   Widget _field(TextEditingController c, String label) => TextField(
     controller: c,
+    onChanged: (_) => setState(_invalidateResult),
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
     decoration: InputDecoration(labelText: label),
   );
