@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/motor_calculator.dart';
 import '../../core/calculations/motor_transformer_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
@@ -184,6 +185,6 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
   );
 
   Widget _result(String label, double value, String unit) => Card(
-    child: ListTile(title: Text(label), trailing: Text('${value.toStringAsFixed(2)} $unit', style: Theme.of(context).textTheme.titleMedium)),
+    child: ListTile(title: Text(label), trailing: Text('${TechnicalFormat.number(value)} $unit', style: Theme.of(context).textTheme.titleMedium)),
   );
 }
