@@ -17,20 +17,28 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
   AcSystem system = AcSystem.threePhase;
   final voltage = TextEditingController(text: '220');
 
-  double get voltageValue =>
-      double.tryParse(voltage.text.trim().replaceAll(',', '.')) ?? 0;
+  double? get parsedVoltage =>
+      double.tryParse(voltage.text.trim().replaceAll(',', '.'));
+
+  double get voltageValue => parsedVoltage ?? 0;
 
   LoadSurveyResult get result => LoadSurveyCalculator.calculate(
         items,
         daysPerMonth: daysPerMonth,
         system: system,
-        voltageV: voltageValue,
+        voltageV: parsedVoltage != null && parsedVoltage! > 0 ? parsedVoltage : null,
       );
 
   Future<void> _saveToProject() async {
     if (items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Adicione pelo menos uma carga antes de salvar.')),
+      );
+      return;
+    }
+    if (parsedVoltage == null || parsedVoltage! <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe uma tensão válida antes de salvar.')),
       );
       return;
     }
