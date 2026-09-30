@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/motor_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
 import '../../core/database/local_project.dart';
@@ -68,14 +69,14 @@ class _MotorPageState extends State<MotorPage> {
     final now = DateTime.now();
     final inputValue = inputMode == MotorInputMode.power ? _n(power.text) : _n(current.text);
     final inputLabel = inputMode == MotorInputMode.power
-        ? '${inputValue.toStringAsFixed(2)} ${unit.name.toUpperCase()}'
-        : '${inputValue.toStringAsFixed(2)} A';
+        ? '${TechnicalFormat.number(inputValue)} ${unit.name.toUpperCase()}'
+        : '${TechnicalFormat.number(inputValue)} A';
     final record = ProjectRecord(
       id: now.microsecondsSinceEpoch.toString(),
       projectId: selected.id,
       type: ProjectRecordType.motor,
       title: 'Motor — $inputLabel',
-      summary: '${r.nominalCurrentA.toStringAsFixed(2)} A • ${r.apparentPowerKva.toStringAsFixed(2)} kVA',
+      summary: '${TechnicalFormat.number(r.nominalCurrentA)} A | ${TechnicalFormat.number(r.apparentPowerKva)} kVA',
       createdAt: now,
       data: {
         'inputMode': inputMode.name,
@@ -246,6 +247,6 @@ class _MotorPageState extends State<MotorPage> {
     TextField(controller: controller, keyboardType: TextInputType.numberWithOptions(decimal: decimal), decoration: InputDecoration(labelText: label));
 
   Widget _result(String label, double value, String u) => Card(
-    child: ListTile(title: Text(label), trailing: Text('${value.toStringAsFixed(2)} $u', style: Theme.of(context).textTheme.titleMedium)),
+    child: ListTile(title: Text(label), trailing: Text('${TechnicalFormat.number(value)} $u', style: Theme.of(context).textTheme.titleMedium)),
   );
 }
