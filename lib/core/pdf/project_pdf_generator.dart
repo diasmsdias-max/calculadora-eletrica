@@ -131,6 +131,9 @@ class ProjectPdfGenerator {
           ['Sistema', _system(d['system'])],
           ['Tensão secundária', _unit(d['voltageV'], 'V')],
           ['Carga equivalente', _unit(d['loadKva'], 'kVA')],
+          ['Potência ativa disponível', d['loadUnit'] == 'kw'
+              ? _unit(d['availableActivePowerKw'], 'kW')
+              : 'não determinada sem fator de potência da carga'],
           ['Carregamento', _unit(d['loadPercent'], '%')],
           ['Capacidade restante', _unit(d['remainingKva'], 'kVA')],
           ['Regime permanente', d['meetsLoad'] == true ? 'ATENDE' : 'NÃO ATENDE'],
