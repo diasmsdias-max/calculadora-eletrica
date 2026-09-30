@@ -26,6 +26,15 @@ class _TransformerPageState extends State<TransformerPage> {
 
   double _n(String value) => double.parse(value.trim().replaceAll(',', '.'));
 
+  void _invalidateResult() {
+    if (result != null || error != null) {
+      setState(() {
+        result = null;
+        error = null;
+      });
+    }
+  }
+
   Future<void> _saveToProject() async {
     final r = result;
     if (r == null) return;
@@ -98,7 +107,11 @@ class _TransformerPageState extends State<TransformerPage> {
               DropdownMenuItem(value: AcSystem.twoPhase, child: Text('Bifásico')),
               DropdownMenuItem(value: AcSystem.threePhase, child: Text('Trifásico')),
             ],
-            onChanged: (v) => setState(() => system = v!),
+            onChanged: (v) => setState(() {
+              system = v!;
+              result = null;
+              error = null;
+            }),
           ),
           const SizedBox(height: 12),
           _field(voltage, 'Tensão secundária (V)'),
@@ -111,7 +124,11 @@ class _TransformerPageState extends State<TransformerPage> {
               ButtonSegment(value: TransformerLoadUnit.kva, label: Text('kVA')),
             ],
             selected: {loadUnit},
-            onSelectionChanged: (v) => setState(() { loadUnit = v.first; result = null; }),
+            onSelectionChanged: (v) => setState(() {
+              loadUnit = v.first;
+              result = null;
+              error = null;
+            }),
           ),
           const SizedBox(height: 12),
           _field(load, loadUnit == TransformerLoadUnit.kw ? 'Carga ativa (kW)' : 'Carga aparente (kVA)'),
@@ -153,6 +170,7 @@ class _TransformerPageState extends State<TransformerPage> {
 
   Widget _field(TextEditingController controller, String label) => TextField(
     controller: controller,
+    onChanged: (_) => _invalidateResult(),
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
     decoration: InputDecoration(labelText: label),
   );
