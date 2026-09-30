@@ -18,10 +18,11 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
   final section = TextEditingController(text: '4');
   final powerFactor = TextEditingController(text: '0,92');
   final maxDrop = TextEditingController(text: '4');
-  final reactance = TextEditingController(text: '0');
+  final reactance = TextEditingController(text: '0,10');
 
   AcSystem system = AcSystem.twoPhase;
   ConductorMaterial material = ConductorMaterial.copper;
+  bool useEstimatedReactance = true;
   VoltageDropResult? result;
   String? error;
 
@@ -45,6 +46,7 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
         'powerFactor': _n(powerFactor.text),
         'maxDropPercent': _n(maxDrop.text),
         'reactanceOhmPerKm': _n(reactance.text),
+        'reactanceSource': useEstimatedReactance ? 'practical_estimate' : 'custom',
         'dropV': r.dropV,
         'dropPercent': r.dropPercent,
         'withinLimit': r.withinLimit,
@@ -130,9 +132,30 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
             Expanded(child: _field(maxDrop, 'Limite (%)')),
           ]),
           const SizedBox(height: 12),
-          _field(reactance, 'Reatância X (Ω/km) — opcional'),
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('Estimativa rápida')),
+              ButtonSegment(value: false, label: Text('Personalizado')),
+            ],
+            selected: {useEstimatedReactance},
+            onSelectionChanged: (selection) => setState(() {
+              useEstimatedReactance = selection.first;
+              if (useEstimatedReactance) reactance.text = '0,10';
+            }),
+          ),
+          const SizedBox(height: 8),
+          _field(
+            reactance,
+            useEstimatedReactance
+                ? 'Reatância X (Ω/km) — estimativa'
+                : 'Reatância X (Ω/km) — personalizado',
+          ),
           const SizedBox(height: 6),
-          const Text('Use 0 quando a reatância não estiver disponível.'),
+          Text(
+            useEstimatedReactance
+                ? 'Estimativa prática: X = 0,10 Ω/km. Referência preliminar para cálculo rápido em campo.'
+                : 'Informe a reatância conforme os dados do cabo ou da instalação.',
+          ),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: _calculate,
