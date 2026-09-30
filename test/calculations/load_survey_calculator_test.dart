@@ -58,5 +58,36 @@ void main() {
       expect(result.dailyKwh, 0);
       expect(result.monthlyKwh, 0);
     });
+    test('rejeita sistema sem tensão correspondente', () {
+      expect(
+        () => LoadSurveyCalculator.calculate([], system: AcSystem.threePhase),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejeita tensão sem sistema correspondente', () {
+      expect(
+        () => LoadSurveyCalculator.calculate([], voltageV: 220),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejeita tensão inválida mesmo com lista vazia', () {
+      expect(
+        () => LoadSurveyCalculator.calculate(
+          [],
+          system: AcSystem.threePhase,
+          voltageV: 0,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejeita quantidade de dias fora do intervalo', () {
+      expect(
+        () => LoadSurveyCalculator.calculate([], daysPerMonth: 32),
+        throwsArgumentError,
+      );
+    });
   });
 }
