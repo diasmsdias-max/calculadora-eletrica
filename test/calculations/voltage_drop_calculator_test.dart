@@ -35,6 +35,31 @@ void main() {
       expect(r.commercialSectionMm2, 10);
     });
 
+    test('reatância opcional aumenta a queda com fator de potência menor que 1', () {
+      final resistiveOnly = VoltageDropCalculator.calculate(
+        system: AcSystem.threePhase,
+        voltageV: 380,
+        currentA: 80,
+        lengthM: 100,
+        sectionMm2: 25,
+        material: ConductorMaterial.copper,
+        powerFactor: 0.8,
+        maxDropPercent: 4,
+      );
+      final withReactance = VoltageDropCalculator.calculate(
+        system: AcSystem.threePhase,
+        voltageV: 380,
+        currentA: 80,
+        lengthM: 100,
+        sectionMm2: 25,
+        material: ConductorMaterial.copper,
+        powerFactor: 0.8,
+        maxDropPercent: 4,
+        reactanceOhmPerKm: 0.08,
+      );
+      expect(withReactance.dropV, greaterThan(resistiveOnly.dropV));
+    });
+
     test('alumínio apresenta maior queda que cobre na mesma seção', () {
       final copper = VoltageDropCalculator.calculate(
         system: AcSystem.twoPhase,
