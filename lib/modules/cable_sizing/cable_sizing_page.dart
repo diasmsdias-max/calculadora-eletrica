@@ -23,7 +23,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
   final maxDrop = TextEditingController(text: '4');
   final temperatureFactor = TextEditingController(text: '1,00');
   final groupingFactor = TextEditingController(text: '1,00');
-  final referenceAmpacity = TextEditingController(text: '50');
+  final referenceAmpacity = TextEditingController(text: '41');
   final reactance = TextEditingController(text: '0,10');
 
   static final _quickCuB1TwoLoaded = <double, double>{
@@ -38,7 +38,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
 
   AcSystem system = AcSystem.twoPhase;
   ConductorMaterial material = ConductorMaterial.copper;
-  _AmpacityMode ampacityMode = _AmpacityMode.custom;
+  _AmpacityMode ampacityMode = _AmpacityMode.copperQuick;
   bool useEstimatedReactance = true;
   ConductorCheckResult? result;
   String? error;
@@ -175,7 +175,15 @@ class _CableSizingPageState extends State<CableSizingPage> {
               DropdownMenuItem(value: ConductorMaterial.copper, child: Text('Cobre')),
               DropdownMenuItem(value: ConductorMaterial.aluminum, child: Text('Alumínio')),
             ],
-            onChanged: (v) => setState(() => material = v!),
+            onChanged: (v) => setState(() {
+              material = v!;
+              if (ampacityMode != _AmpacityMode.custom) {
+                ampacityMode = material == ConductorMaterial.copper
+                    ? _AmpacityMode.copperQuick
+                    : _AmpacityMode.aluminumQuick;
+                _applyQuickAmpacity();
+              }
+            }),
           ),
           const SizedBox(height: 12),
           Row(children: [
@@ -237,7 +245,12 @@ class _CableSizingPageState extends State<CableSizingPage> {
             }),
           ),
           const SizedBox(height: 8),
-          _field(referenceAmpacity, 'Ampacidade de referência (A)'),
+          TextField(
+            controller: referenceAmpacity,
+            readOnly: ampacityMode != _AmpacityMode.custom,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Ampacidade de referência (A)'),
+          ),
           const SizedBox(height: 6),
           Text(ampacityMode == _AmpacityMode.custom
               ? 'Valor informado pelo profissional.'
