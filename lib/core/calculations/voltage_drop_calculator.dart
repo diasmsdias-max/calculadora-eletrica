@@ -8,7 +8,7 @@ class VoltageDropResult {
   final double dropPercent;
   final bool withinLimit;
   final double minimumSectionMm2;
-  final double commercialSectionMm2;
+  final double? commercialSectionMm2;
 
   const VoltageDropResult({
     required this.dropV,
@@ -73,12 +73,9 @@ abstract final class VoltageDropCalculator {
         : circuitFactor * rho * lengthM * currentA * powerFactor /
             resistiveBudgetV;
 
-    final commercial = minimum.isFinite
-        ? _commercialSections.firstWhere(
-            (s) => s >= minimum,
-            orElse: () => _commercialSections.last,
-          )
-        : _commercialSections.last;
+    final commercial = minimum.isFinite && minimum <= _commercialSections.last
+        ? _commercialSections.firstWhere((s) => s >= minimum)
+        : null;
 
     return VoltageDropResult(
       dropV: dropV,
