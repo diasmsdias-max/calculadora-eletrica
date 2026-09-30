@@ -68,6 +68,8 @@ void main() {
         'demandKw': 5.8,
         'apparentKva': 7.05,
         'demandCurrentA': 18.5,
+        'daysPerMonth': 30,
+        'dailyKwh': 25.0,
         'monthlyKwh': 750.0,
         'loads': [
           {
