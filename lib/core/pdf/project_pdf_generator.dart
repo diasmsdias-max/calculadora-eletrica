@@ -187,6 +187,8 @@ class ProjectPdfGenerator {
           ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} | ${_material(d['material'])}'],
           ['Comprimento', _unit(d['lengthM'], 'm')],
           ['Ampacidade informada', '${_unit(d['referenceAmpacityA'], 'A')} | ${_ampacitySource(d['ampacitySource'])}'],
+          if (d['ampacityReference'] != null)
+            ['Referência de ampacidade', _ampacityReference(d['ampacityReference'])],
           ['Reatância X', '${_unit(d['reactanceOhmPerKm'], 'Ω/km')} | ${_reactanceSource(d['reactanceSource'])}'],
           ['Iz mínima de referência', _unit(d['requiredReferenceAmpacityA'], 'A')],
           ['Iz corrigida', _unit(d['correctedAmpacityA'], 'A')],
@@ -265,6 +267,13 @@ class ProjectPdfGenerator {
     'custom' => 'personalizado',
     _ => 'não registrado',
   };
+
+  static String _ampacityReference(dynamic value) {
+    final text = value?.toString();
+    if (text == null || text.isEmpty) return 'não registrada';
+    if (text == 'custom') return 'valor personalizado informado pelo usuário';
+    return _pdfSafeText(text);
+  }
 
   static String _reactanceSource(dynamic value) => switch (value?.toString()) {
     'practical_estimate' => 'estimativa rápida',
