@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/conductor_check_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
 import '../../core/calculations/voltage_drop_calculator.dart';
@@ -36,7 +37,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
     await ProjectRecordSaver.save(
       context,
       type: ProjectRecordType.cableSizing,
-      title: 'Condutor — ${_n(section.text).toStringAsFixed(2)} mm²',
+      title: 'Condutor — ${TechnicalFormat.number(_n(section.text))} mm²',
       summary: '${_n(current.text).toStringAsFixed(2)} A • queda ${r.voltageDrop.dropPercent.toStringAsFixed(2)}% • ${r.meetsBothCriteria ? 'ATENDE' : 'NÃO ATENDE'}',
       data: {
         'system': system.name,
@@ -223,7 +224,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
   Widget _result(String label, double value, String unit) => Card(
     child: ListTile(
       title: Text(label),
-      trailing: Text('${value.toStringAsFixed(2)} $unit',
+      trailing: Text('${TechnicalFormat.number(value)} $unit',
         style: Theme.of(context).textTheme.titleMedium),
     ),
   );
