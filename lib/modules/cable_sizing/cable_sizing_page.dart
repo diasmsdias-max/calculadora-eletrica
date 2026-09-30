@@ -33,6 +33,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
   bool useEstimatedReactance = true;
   ConductorCheckResult? result;
   String? error;
+  String? quickAmpacityError;
 
   double _n(String v) => double.parse(v.trim().replaceAll(',', '.'));
 
@@ -49,6 +50,10 @@ class _CableSizingPageState extends State<CableSizingPage> {
           );
     if (value != null) {
       referenceAmpacity.text = TechnicalFormat.number(value, decimals: value % 1 == 0 ? 0 : 1);
+      quickAmpacityError = null;
+    } else {
+      referenceAmpacity.clear();
+      quickAmpacityError = 'Seção sem referência rápida para o material selecionado. Use uma seção disponível ou o modo Personalizado.';
     }
   }
 
@@ -231,6 +236,9 @@ class _CableSizingPageState extends State<CableSizingPage> {
             selected: {ampacityMode},
             onSelectionChanged: (selection) => setState(() {
               ampacityMode = selection.first;
+              if (ampacityMode == _AmpacityMode.custom) {
+                quickAmpacityError = null;
+              }
               if (ampacityMode == _AmpacityMode.copperQuick) {
                 material = ConductorMaterial.copper;
               } else if (ampacityMode == _AmpacityMode.aluminumQuick) {
@@ -246,6 +254,13 @@ class _CableSizingPageState extends State<CableSizingPage> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Ampacidade de referência (A)'),
           ),
+          if (quickAmpacityError != null && ampacityMode != _AmpacityMode.custom) ...[
+            const SizedBox(height: 6),
+            Text(
+              quickAmpacityError!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
           const SizedBox(height: 6),
           Text(ampacityMode == _AmpacityMode.custom
               ? 'Valor informado pelo profissional.'
