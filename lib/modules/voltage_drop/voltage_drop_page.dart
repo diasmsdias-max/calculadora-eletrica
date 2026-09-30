@@ -15,6 +15,7 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
   final section = TextEditingController(text: '4');
   final powerFactor = TextEditingController(text: '0,92');
   final maxDrop = TextEditingController(text: '4');
+  final reactance = TextEditingController(text: '0');
 
   AcSystem system = AcSystem.twoPhase;
   ConductorMaterial material = ConductorMaterial.copper;
@@ -34,6 +35,7 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
         material: material,
         powerFactor: _n(powerFactor.text),
         maxDropPercent: _n(maxDrop.text),
+        reactanceOhmPerKm: _n(reactance.text),
       );
       setState(() { result = r; error = null; });
     } catch (_) {
@@ -43,7 +45,7 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
 
   @override
   void dispose() {
-    for (final c in [voltage, current, length, section, powerFactor, maxDrop]) {
+    for (final c in [voltage, current, length, section, powerFactor, maxDrop, reactance]) {
       c.dispose();
     }
     super.dispose();
@@ -97,6 +99,10 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
             const SizedBox(width: 12),
             Expanded(child: _field(maxDrop, 'Limite (%)')),
           ]),
+          const SizedBox(height: 12),
+          _field(reactance, 'Reatância X (Ω/km) — opcional'),
+          const SizedBox(height: 6),
+          const Text('Use 0 quando a reatância não estiver disponível.'),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: _calculate,
