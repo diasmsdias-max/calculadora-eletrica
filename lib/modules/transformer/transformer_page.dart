@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/calculations/power_calculator.dart';
 import '../../core/calculations/transformer_calculator.dart';
+import '../../core/database/project_record.dart';
+import '../../core/projects/project_record_saver.dart';
 
 enum TransformerLoadUnit { kw, kva }
 
@@ -22,6 +24,32 @@ class _TransformerPageState extends State<TransformerPage> {
   String? error;
 
   double _n(String value) => double.parse(value.trim().replaceAll(',', '.'));
+
+  Future<void> _saveToProject() async {
+    final r = result;
+    if (r == null) return;
+    final loadValue = _n(load.text);
+    await ProjectRecordSaver.save(
+      context,
+      type: ProjectRecordType.transformer,
+      title: 'Transformador — ${_n(ratedKva.text).toStringAsFixed(2)} kVA',
+      summary: '${r.loadPercent.toStringAsFixed(1)}% carregado • ${r.meetsLoad ? 'ATENDE' : 'NÃO ATENDE'}',
+      data: {
+        'ratedKva': _n(ratedKva.text),
+        'system': system.name,
+        'voltageV': _n(voltage.text),
+        'loadUnit': loadUnit.name,
+        'loadValue': loadValue,
+        'powerFactor': _n(powerFactor.text),
+        'availableCurrentA': r.availableCurrentA,
+        'availableActivePowerKw': r.availableActivePowerKw,
+        'loadKva': r.loadKva,
+        'loadPercent': r.loadPercent,
+        'remainingKva': r.remainingKva,
+        'meetsLoad': r.meetsLoad,
+      },
+    );
+  }
 
   void _calculate() {
     try {
@@ -103,6 +131,12 @@ class _TransformerPageState extends State<TransformerPage> {
             _result('Carga equivalente', result!.loadKva, 'kVA'),
             _result('Carregamento do transformador', result!.loadPercent, '%'),
             _result('Capacidade restante', result!.remainingKva, 'kVA'),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _saveToProject,
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('SALVAR NO PROJETO'),
+            ),
             const SizedBox(height: 12),
             const Text('A indicação ATENDE considera apenas a capacidade nominal em regime permanente. Partidas de motores e quedas de tensão devem ser analisadas separadamente.'),
           ],
