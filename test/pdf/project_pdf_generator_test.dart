@@ -58,6 +58,8 @@ void main() {
         'motorTransformerPercent': 48.0,
         'meetsSteadyState': true,
         'motorStartingCurrentA': 227.0,
+        'startingMethod': 'direct',
+        'startingMultiplier': 6.0,
         'startingKvaEstimate': 86.5,
         'startingTransformerPercent': 288.0,
       }),
