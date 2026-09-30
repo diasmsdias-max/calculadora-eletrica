@@ -54,7 +54,14 @@ class ProjectPdfGenerator {
     child: pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Text('Calculadora Elétrica', style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text('BOECKER', style: const pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+            pw.Text('VIS ELECTRICA', style: const pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8, color: PdfColors.amber800)),
+            pw.Text('Ferramentas Elétricas Profissionais', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700)),
+          ],
+        ),
         pw.Text(project.name, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
       ],
     ),
@@ -175,8 +182,8 @@ class ProjectPdfGenerator {
         ];
       case ProjectRecordType.cableSizing:
         return _lines([
-          ['Circuito', '${_unit(d['voltageV'], 'V')} • ${_unit(d['designCurrentA'], 'A')}'],
-          ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} • ${_material(d['material'])}'],
+          ['Circuito', '${_unit(d['voltageV'], 'V')} | ${_unit(d['designCurrentA'], 'A')}'],
+          ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} | ${_material(d['material'])}'],
           ['Comprimento', _unit(d['lengthM'], 'm')],
           ['Iz mínima de referência', _unit(d['requiredReferenceAmpacityA'], 'A')],
           ['Iz corrigida', _unit(d['correctedAmpacityA'], 'A')],
@@ -188,8 +195,8 @@ class ProjectPdfGenerator {
         ]);
       case ProjectRecordType.voltageDrop:
         return _lines([
-          ['Circuito', '${_unit(d['voltageV'], 'V')} • ${_unit(d['currentA'], 'A')}'],
-          ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} • ${_material(d['material'])}'],
+          ['Circuito', '${_unit(d['voltageV'], 'V')} | ${_unit(d['currentA'], 'A')}'],
+          ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} | ${_material(d['material'])}'],
           ['Comprimento', _unit(d['lengthM'], 'm')],
           ['Queda', '${_unit(d['dropV'], 'V')} (${_unit(d['dropPercent'], '%')})'],
           ['Limite informado', _unit(d['maxDropPercent'], '%')],
@@ -226,7 +233,7 @@ class ProjectPdfGenerator {
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
   static String _num(dynamic value) {
-    if (value == null) return '—';
+    if (value == null) return '-';
     if (value is num) {
       if (!value.toDouble().isFinite) return 'não determinado';
       return value.toDouble().toStringAsFixed(2).replaceAll('.', ',');
@@ -234,30 +241,30 @@ class ProjectPdfGenerator {
     return value.toString();
   }
 
-  static String _unit(dynamic value, String unit) => value == null ? '—' : '${_num(value)} $unit';
+  static String _unit(dynamic value, String unit) => value == null ? '-' : '${_num(value)} $unit';
 
   static String _numPercentFraction(dynamic value) {
     if (value is num) return (value.toDouble() * 100).toStringAsFixed(0);
-    return '—';
+    return '-';
   }
 
   static String _system(dynamic value) => switch (value?.toString()) {
     'singlePhase' => 'Monofásico',
     'twoPhase' => 'Bifásico',
     'threePhase' => 'Trifásico',
-    _ => value?.toString() ?? '—',
+    _ => value?.toString() ?? '-',
   };
 
   static String _material(dynamic value) => switch (value?.toString()) {
     'copper' => 'Cobre',
     'aluminum' => 'Alumínio',
-    _ => value?.toString() ?? '—',
+    _ => value?.toString() ?? '-',
   };
 
   static String _typeLabel(ProjectRecordType type) => switch (type) {
     ProjectRecordType.motor => 'MOTOR ELÉTRICO',
     ProjectRecordType.transformer => 'TRANSFORMADOR',
-    ProjectRecordType.motorTransformer => 'MOTOR × TRANSFORMADOR',
+    ProjectRecordType.motorTransformer => 'MOTOR x TRANSFORMADOR',
     ProjectRecordType.loadSurvey => 'LEVANTAMENTO DE CARGAS',
     ProjectRecordType.cableSizing => 'DIMENSIONAMENTO DE CABOS',
     ProjectRecordType.voltageDrop => 'QUEDA DE TENSÃO',
