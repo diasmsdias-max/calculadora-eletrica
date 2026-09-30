@@ -2,7 +2,10 @@ enum QuickAmpacityMaterial { copper, aluminum }
 
 abstract final class QuickAmpacityReference {
   static const referenceDescription =
-      'NBR 5410 Tabela 36 - PVC 70 C - metodo B1';
+      'PVC 70 C - metodo B1';
+
+  static int loadedConductorsForSystemName(String systemName) =>
+      systemName == 'threePhase' ? 3 : 2;
   static final _copperB1TwoLoaded = <double, double>{
     1.5: 17.5, 2.5: 24, 4: 32, 6: 41, 10: 57, 16: 76,
     25: 101, 35: 125, 50: 151, 70: 192, 95: 232, 120: 269,
