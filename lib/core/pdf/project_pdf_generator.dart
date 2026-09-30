@@ -203,6 +203,12 @@ class ProjectPdfGenerator {
           ['Capacidade de corrente', d['ampacityMeets'] == true ? 'ATENDE' : 'NÃO ATENDE'],
           ['Queda de tensão', '${_unit(d['dropV'], 'V')} (${_unit(d['dropPercent'], '%')})'],
           ['Critério de queda', d['voltageDropMeets'] == true ? 'ATENDE' : 'NÃO ATENDE'],
+          ['Seção mínima pelo critério de queda', _unit(d['minimumSectionByDropMm2'], 'mm²')],
+          ['Próxima seção comercial pela queda', d.containsKey('commercialSectionByDropMm2')
+              ? (d['commercialSectionByDropMm2'] == null
+                  ? 'acima da faixa de referência do app (até 300 mm²)'
+                  : _unit(d['commercialSectionByDropMm2'], 'mm²'))
+              : 'não registrada'],
           ['Resultado parcial', d['meetsBothCriteria'] == true ? 'ATENDE AOS DOIS CRITÉRIOS' : 'NÃO ATENDE AOS DOIS CRITÉRIOS'],
           ['Observação', 'Resultado parcial: capacidade de corrente corrigida e queda de tensão. Verificar também proteção, curto-circuito, seção mínima e demais requisitos aplicáveis.'],
         ]);
