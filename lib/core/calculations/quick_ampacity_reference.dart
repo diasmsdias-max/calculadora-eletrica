@@ -15,6 +15,11 @@ abstract final class QuickAmpacityReference {
     150: 275, 185: 314, 240: 370, 300: 426,
   };
 
+  static final _aluminumB1ThreeLoaded = <double, double>{
+    16: 53, 25: 70, 35: 86, 50: 104, 70: 133, 95: 161,
+    120: 186, 150: 214, 185: 245, 240: 288, 300: 331,
+  };
+
   static final _aluminumB1TwoLoaded = <double, double>{
     16: 60, 25: 79, 35: 97, 50: 118, 70: 150, 95: 181,
     120: 210, 150: 241, 185: 275, 240: 324, 300: 372,
@@ -31,8 +36,8 @@ abstract final class QuickAmpacityReference {
     if (material == QuickAmpacityMaterial.copper) {
       return (loadedConductors == 3 ? _copperB1ThreeLoaded : _copperB1TwoLoaded)[sectionMm2];
     }
-    // Aluminum quick reference remains limited to the verified 2-loaded column.
-    if (loadedConductors == 3) return null;
-    return _aluminumB1TwoLoaded[sectionMm2];
+    return (loadedConductors == 3
+        ? _aluminumB1ThreeLoaded
+        : _aluminumB1TwoLoaded)[sectionMm2];
   }
 }
