@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:calculadora_eletrica/core/database/local_project.dart';
 import 'package:calculadora_eletrica/core/database/project_record.dart';
 import 'package:calculadora_eletrica/core/database/project_record_repository.dart';
@@ -104,6 +106,35 @@ void main() {
     await repository.deleteByProject('a');
     expect(await repository.getByProject('a'), isEmpty);
     expect((await repository.getByProject('b')).single.id, 'b1');
+  });
+
+  test('record repository keeps valid entries when one stored entry is malformed', () async {
+    final valid = ProjectRecord(
+      id: 'valid',
+      projectId: 'p1',
+      type: ProjectRecordType.motor,
+      title: 'Motor válido',
+      summary: '',
+      data: {'currentA': 10.0},
+      createdAt: DateTime.utc(2026, 9, 30),
+    );
+    SharedPreferences.setMockInitialValues({
+      'project_records_v1': jsonEncode([
+        valid.toJson(),
+        {
+          'id': 'broken',
+          'projectId': 'p1',
+          'type': 'removedFutureType',
+          'title': 'Registro incompatível',
+          'createdAt': 'invalid-date',
+        },
+      ]),
+    });
+
+    final records =
+        await PreferencesProjectRecordRepository().getByProject('p1');
+
+    expect(records.map((r) => r.id), ['valid']);
   });
 
   test('ProjectRecord survives JSON round trip with structured data', () {
