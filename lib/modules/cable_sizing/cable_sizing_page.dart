@@ -26,12 +26,12 @@ class _CableSizingPageState extends State<CableSizingPage> {
   final referenceAmpacity = TextEditingController(text: '50');
   final reactance = TextEditingController(text: '0,10');
 
-  static const _quickCuB1TwoLoaded = <double, double>{
+  static final _quickCuB1TwoLoaded = <double, double>{
     1.5: 17.5, 2.5: 24, 4: 32, 6: 41, 10: 57, 16: 76,
     25: 101, 35: 125, 50: 151, 70: 192, 95: 232, 120: 269,
     150: 309, 185: 353, 240: 415, 300: 477,
   };
-  static const _quickAlB1TwoLoaded = <double, double>{
+  static final _quickAlB1TwoLoaded = <double, double>{
     16: 60, 25: 79, 35: 97, 50: 118, 70: 150, 95: 181,
     120: 210, 150: 241, 185: 275, 240: 324, 300: 372,
   };
