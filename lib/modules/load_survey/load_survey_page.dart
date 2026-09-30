@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/calculations/load_survey_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
+import '../../core/database/project_record.dart';
+import '../../core/projects/project_record_saver.dart';
 
 class LoadSurveyPage extends StatefulWidget {
   const LoadSurveyPage({super.key});
@@ -23,6 +25,41 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
         system: system,
         voltageV: voltageValue,
       );
+
+  Future<void> _saveToProject() async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Adicione pelo menos uma carga antes de salvar.')),
+      );
+      return;
+    }
+    final totals = result;
+    await ProjectRecordSaver.save(
+      context,
+      type: ProjectRecordType.loadSurvey,
+      title: 'Levantamento de Cargas — ${items.length} ${items.length == 1 ? 'item' : 'itens'}',
+      summary: '${totals.installedKw.toStringAsFixed(2)} kW instalados • demanda ${totals.demandKw.toStringAsFixed(2)} kW',
+      data: {
+        'system': system.name,
+        'voltageV': voltageValue,
+        'daysPerMonth': daysPerMonth,
+        'loads': items.map((i) => {
+          'description': i.description,
+          'unitPowerKw': i.unitPowerKw,
+          'quantity': i.quantity,
+          'powerFactor': i.powerFactor,
+          'simultaneity': i.simultaneity,
+          'hoursPerDay': i.hoursPerDay,
+        }).toList(),
+        'installedKw': totals.installedKw,
+        'demandKw': totals.demandKw,
+        'apparentKva': totals.apparentKva,
+        'demandCurrentA': totals.demandCurrentA,
+        'dailyKwh': totals.dailyKwh,
+        'monthlyKwh': totals.monthlyKwh,
+      },
+    );
+  }
 
   Future<void> _openEditor({int? index}) async {
     final item = index == null ? null : items[index];
@@ -137,6 +174,12 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
               _result('Corrente estimada da demanda', totals.demandCurrentA!, 'A'),
             _result('Consumo diário', totals.dailyKwh, 'kWh'),
             _result('Consumo mensal', totals.monthlyKwh, 'kWh'),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: items.isEmpty ? null : _saveToProject,
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('SALVAR NO PROJETO'),
+            ),
             const SizedBox(height: 12),
             const Text(
               'A demanda usa o fator de simultaneidade informado em cada carga. '
