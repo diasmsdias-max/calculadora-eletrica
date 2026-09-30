@@ -118,11 +118,12 @@ class ProjectPdfGenerator {
         return _lines([
           ['Sistema', _system(d['system'])],
           ['Tensão', _unit(d['voltageV'], 'V')],
+          ['Potência com fator de serviço', _unit(d['servicePowerKw'], 'kW')],
           ['Potência aparente', _unit(d['apparentPowerKva'], 'kVA')],
           ['Corrente nominal', _unit(d['nominalCurrentA'], 'A')],
           ['Corrente de partida estimada', _unit(d['estimatedStartingCurrentA'], 'A')],
           ['Consumo mensal estimado', _unit(d['monthlyEnergyKwh'], 'kWh')],
-          ['Observação', 'Corrente de partida e consumo são estimativas conforme os dados informados.'],
+          ['Observação', 'O fator de serviço é informativo e não é aplicado automaticamente à corrente nominal, potência aparente ou consumo. Corrente de partida e consumo são estimativas conforme os dados informados.'],
         ]);
       case ProjectRecordType.transformer:
         return _lines([
