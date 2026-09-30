@@ -41,7 +41,7 @@ class _TransformerPageState extends State<TransformerPage> {
         'voltageV': _n(voltage.text),
         'loadUnit': loadUnit.name,
         'loadValue': loadValue,
-        'powerFactor': _n(powerFactor.text),
+        'powerFactor': loadUnit == TransformerLoadUnit.kw ? _n(powerFactor.text) : null,
         'availableCurrentA': r.availableCurrentA,
         'availableActivePowerKw': r.availableActivePowerKw,
         'loadKva': r.loadKva,
@@ -59,7 +59,7 @@ class _TransformerPageState extends State<TransformerPage> {
         ratedKva: _n(ratedKva.text),
         system: system,
         voltageV: _n(voltage.text),
-        loadPowerFactor: _n(powerFactor.text),
+        loadPowerFactor: loadUnit == TransformerLoadUnit.kw ? _n(powerFactor.text) : 1,
         loadKw: loadUnit == TransformerLoadUnit.kw ? loadValue : 0,
         loadKva: loadUnit == TransformerLoadUnit.kva ? loadValue : null,
       );
@@ -116,7 +116,12 @@ class _TransformerPageState extends State<TransformerPage> {
           const SizedBox(height: 12),
           _field(load, loadUnit == TransformerLoadUnit.kw ? 'Carga ativa (kW)' : 'Carga aparente (kVA)'),
           const SizedBox(height: 12),
-          _field(powerFactor, 'Fator de potência da carga'),
+          if (loadUnit == TransformerLoadUnit.kw)
+            _field(powerFactor, 'Fator de potência da carga')
+          else
+            const Text(
+              'Carga informada em kVA: o fator de potência não altera o carregamento aparente do transformador.',
+            ),
           const SizedBox(height: 20),
           FilledButton.icon(onPressed: _calculate, icon: const Icon(Icons.calculate), label: const Text('CALCULAR')),
           if (error != null)
