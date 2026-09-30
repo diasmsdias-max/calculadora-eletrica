@@ -36,6 +36,7 @@ abstract final class VoltageDropCalculator {
     required ConductorMaterial material,
     required double powerFactor,
     required double maxDropPercent,
+    double reactanceOhmPerKm = 0,
   }) {
     if (!voltageV.isFinite || voltageV <= 0 ||
         !currentA.isFinite || currentA < 0 ||
@@ -49,20 +50,35 @@ abstract final class VoltageDropCalculator {
     if (!maxDropPercent.isFinite || maxDropPercent <= 0) {
       throw ArgumentError('Limite de queda inválido.');
     }
+    if (!reactanceOhmPerKm.isFinite || reactanceOhmPerKm < 0) {
+      throw ArgumentError('Reatância inválida.');
+    }
 
     final rho = _resistivity(material);
     final circuitFactor = system == AcSystem.threePhase ? math.sqrt(3) : 2.0;
-    final dropV = circuitFactor * rho * lengthM * currentA * powerFactor / sectionMm2;
+    final resistanceOhm = rho * lengthM / sectionMm2;
+    final reactanceOhm = reactanceOhmPerKm * lengthM / 1000;
+    final sinPhi = math.sqrt(math.max(0, 1 - powerFactor * powerFactor));
+    final dropV = circuitFactor * currentA *
+        (resistanceOhm * powerFactor + reactanceOhm * sinPhi);
     final dropPercent = dropV / voltageV * 100;
     final maxDropV = voltageV * maxDropPercent / 100;
-    final minimum = maxDropV == 0
-        ? 0.0
-        : circuitFactor * rho * lengthM * currentA * powerFactor / maxDropV;
 
-    final commercial = _commercialSections.firstWhere(
-      (s) => s >= minimum,
-      orElse: () => _commercialSections.last,
-    );
+    // Minimum section is isolated from the resistive term while preserving
+    // the optional reactive voltage-drop component.
+    final reactiveDropV = circuitFactor * currentA * reactanceOhm * sinPhi;
+    final resistiveBudgetV = maxDropV - reactiveDropV;
+    final minimum = resistiveBudgetV <= 0
+        ? double.infinity
+        : circuitFactor * rho * lengthM * currentA * powerFactor /
+            resistiveBudgetV;
+
+    final commercial = minimum.isFinite
+        ? _commercialSections.firstWhere(
+            (s) => s >= minimum,
+            orElse: () => _commercialSections.last,
+          )
+        : _commercialSections.last;
 
     return VoltageDropResult(
       dropV: dropV,
