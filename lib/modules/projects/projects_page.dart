@@ -54,7 +54,10 @@ class _ProjectsPageState extends State<ProjectsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Excluir projeto?'),
-        content: Text('O projeto “${project.name}” será removido deste dispositivo.'),
+        content: Text(
+          'O projeto “${project.name}” e todos os cálculos salvos nele serão '
+          'removidos deste dispositivo. Esta ação não pode ser desfeita.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('EXCLUIR')),
