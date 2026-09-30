@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/power_calculator.dart';
 import '../../core/calculations/transformer_calculator.dart';
 import '../../core/database/project_record.dart';
@@ -32,8 +33,8 @@ class _TransformerPageState extends State<TransformerPage> {
     await ProjectRecordSaver.save(
       context,
       type: ProjectRecordType.transformer,
-      title: 'Transformador — ${_n(ratedKva.text).toStringAsFixed(2)} kVA',
-      summary: '${r.loadPercent.toStringAsFixed(1)}% carregado • ${r.meetsLoad ? 'ATENDE' : 'NÃO ATENDE'}',
+      title: 'Transformador — ${TechnicalFormat.number(_n(ratedKva.text))} kVA',
+      summary: '${TechnicalFormat.number(r.loadPercent, decimals: 1)}% carregado | ${r.meetsLoad ? 'ATENDE' : 'NÃO ATENDE'}',
       data: {
         'ratedKva': _n(ratedKva.text),
         'system': system.name,
@@ -161,7 +162,7 @@ class _TransformerPageState extends State<TransformerPage> {
   Widget _result(String label, double value, String unit) => Card(
     child: ListTile(
       title: Text(label),
-      trailing: Text('${value.toStringAsFixed(2)} $unit', style: Theme.of(context).textTheme.titleMedium),
+      trailing: Text('${TechnicalFormat.number(value)} $unit', style: Theme.of(context).textTheme.titleMedium),
     ),
   );
 }
