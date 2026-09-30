@@ -41,6 +41,16 @@ void main() {
     expect(await ModulePreferences.loadVisibleModules(), {'motor'});
   });
 
+  test('preserves legacy visibility before module version tracking exists', () async {
+    SharedPreferences.setMockInitialValues({
+      'visible_home_modules': <String>['motor'],
+    });
+
+    final visible = await ModulePreferences.loadVisibleModules();
+
+    expect(visible, {'motor'});
+  });
+
   test('shows newly added modules without restoring modules hidden by the user', () async {
     SharedPreferences.setMockInitialValues({
       'visible_home_modules': <String>['motor'],
