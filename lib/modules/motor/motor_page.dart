@@ -33,11 +33,22 @@ class _MotorPageState extends State<MotorPage> {
 
   double _n(String value) => double.parse(value.trim().replaceAll(',', '.'));
 
+  void _invalidateResult() {
+    if (result != null || error != null) {
+      setState(() {
+        result = null;
+        error = null;
+      });
+    }
+  }
+
   void _methodChanged(MotorStartingMethod value) {
     setState(() {
       startingMethod = value;
       startingMultiplier.text =
           MotorCalculator.suggestedStartingMultiplier(value).toStringAsFixed(1).replaceAll('.', ',');
+      result = null;
+      error = null;
     });
   }
 
@@ -163,7 +174,11 @@ class _MotorPageState extends State<MotorPage> {
           ButtonSegment(value: MotorInputMode.current, label: Text('Por corrente'), icon: Icon(Icons.electric_meter)),
         ],
         selected: {inputMode},
-        onSelectionChanged: (v) => setState(() { inputMode = v.first; result = null; }),
+        onSelectionChanged: (v) => setState(() {
+          inputMode = v.first;
+          result = null;
+          error = null;
+        }),
       ),
       const SizedBox(height: 12),
       if (inputMode == MotorInputMode.power)
@@ -176,7 +191,11 @@ class _MotorPageState extends State<MotorPage> {
               DropdownMenuItem(value: MotorPowerUnit.cv, child: Text('CV')),
               DropdownMenuItem(value: MotorPowerUnit.hp, child: Text('HP')),
               DropdownMenuItem(value: MotorPowerUnit.kw, child: Text('kW')),
-            ], onChanged: (v) => setState(() => unit = v!),
+            ], onChanged: (v) => setState(() {
+              unit = v!;
+              result = null;
+              error = null;
+            }),
           )),
         ])
       else
@@ -188,7 +207,11 @@ class _MotorPageState extends State<MotorPage> {
           DropdownMenuItem(value: AcSystem.singlePhase, child: Text('Monofásico')),
           DropdownMenuItem(value: AcSystem.twoPhase, child: Text('Bifásico')),
           DropdownMenuItem(value: AcSystem.threePhase, child: Text('Trifásico')),
-        ], onChanged: (v) => setState(() => system = v!),
+        ], onChanged: (v) => setState(() {
+          system = v!;
+          result = null;
+          error = null;
+        }),
       ),
       const SizedBox(height: 12),
       _field(voltage, 'Tensão (V)'),
@@ -244,7 +267,12 @@ class _MotorPageState extends State<MotorPage> {
   );
 
   Widget _field(TextEditingController controller, String label, {bool decimal = true}) =>
-    TextField(controller: controller, keyboardType: TextInputType.numberWithOptions(decimal: decimal), decoration: InputDecoration(labelText: label));
+    TextField(
+      controller: controller,
+      onChanged: (_) => _invalidateResult(),
+      keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+      decoration: InputDecoration(labelText: label),
+    );
 
   Widget _result(String label, double value, String u) => Card(
     child: ListTile(title: Text(label), trailing: Text('${TechnicalFormat.number(value)} $u', style: Theme.of(context).textTheme.titleMedium)),
