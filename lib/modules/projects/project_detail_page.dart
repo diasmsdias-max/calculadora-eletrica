@@ -100,6 +100,88 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     }
   }
 
+  Future<void> _viewRecord(ProjectRecord record) async {
+    final entries = record.data.entries
+        .where((entry) => entry.value is! List && entry.value is! Map)
+        .toList();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          maxChildSize: 0.92,
+          builder: (context, controller) => ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            children: [
+              Text(record.title, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(_typeLabel(record.type)),
+              if (record.summary.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(record.summary),
+              ],
+              const Divider(height: 28),
+              if (entries.isEmpty)
+                const Text('Este registro não possui dados adicionais para exibir.')
+              else
+                ...entries.map((entry) => ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(_dataLabel(entry.key)),
+                  subtitle: Text(_dataValue(entry.value)),
+                )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _dataLabel(String key) {
+    const labels = <String, String>{
+      'voltageV': 'Tensão',
+      'ratedKva': 'Potência do transformador',
+      'transformerKva': 'Potência do transformador',
+      'motorRatedPower': 'Potência nominal do motor',
+      'nominalCurrentA': 'Corrente nominal',
+      'motorNominalCurrentA': 'Corrente nominal do motor',
+      'motorStartingCurrentA': 'Corrente de partida estimada',
+      'estimatedStartingCurrentA': 'Corrente de partida estimada',
+      'apparentPowerKva': 'Potência aparente',
+      'motorApparentPowerKva': 'Potência aparente do motor',
+      'loadPercent': 'Carregamento',
+      'remainingKva': 'Capacidade restante',
+      'installedKw': 'Potência instalada',
+      'demandKw': 'Demanda estimada',
+      'dailyKwh': 'Consumo diário estimado',
+      'monthlyKwh': 'Consumo mensal estimado',
+      'designCurrentA': 'Corrente de projeto',
+      'currentA': 'Corrente',
+      'sectionMm2': 'Seção do condutor',
+      'lengthM': 'Comprimento',
+      'dropV': 'Queda de tensão',
+      'dropPercent': 'Queda percentual',
+      'minimumSectionMm2': 'Seção mínima pela queda',
+      'minimumSectionByDropMm2': 'Seção mínima pela queda',
+      'commercialSectionMm2': 'Próxima seção comercial',
+      'commercialSectionByDropMm2': 'Próxima seção comercial',
+    };
+    return labels[key] ?? key;
+  }
+
+  String _dataValue(dynamic value) {
+    if (value == null) return 'Não determinado';
+    if (value is bool) return value ? 'Sim' : 'Não';
+    if (value is double) {
+      if (!value.isFinite) return 'Não determinado';
+      return value.toStringAsFixed(2).replaceAll('.', ',');
+    }
+    return value.toString();
+  }
+
   String _typeLabel(ProjectRecordType type) => switch (type) {
     ProjectRecordType.motor => 'Motor',
     ProjectRecordType.transformer => 'Transformador',
@@ -167,6 +249,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                   title: Text(r.title),
                   subtitle: Text('${_typeLabel(r.type)}\n${r.summary}'),
                   isThreeLine: r.summary.isNotEmpty,
+                  onTap: () => _viewRecord(r),
                   trailing: IconButton(
                     tooltip: 'Excluir registro',
                     onPressed: () => _deleteRecord(r),
