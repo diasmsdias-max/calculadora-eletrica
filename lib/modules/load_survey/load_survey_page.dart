@@ -93,15 +93,10 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
     final totals = result;
     return Scaffold(
       appBar: AppBar(title: const Text('Levantamento de Cargas')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openEditor(),
-        icon: const Icon(Icons.add),
-        label: const Text('Adicionar carga'),
-      ),
       body: SafeArea(
         top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
           children: [
             Text('Cargas', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
@@ -134,6 +129,12 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
                   ),
                 );
               }),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => _openEditor(),
+              icon: const Icon(Icons.add),
+              label: const Text('ADICIONAR CARGA'),
+            ),
             const SizedBox(height: 20),
             Text('Instalação', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
