@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/database/local_project.dart';
 import '../../core/database/project_repository.dart';
+import '../../core/database/project_record_repository.dart';
 
 class ProjectsPage extends StatefulWidget {
   const ProjectsPage({super.key});
@@ -10,6 +11,7 @@ class ProjectsPage extends StatefulWidget {
 
 class _ProjectsPageState extends State<ProjectsPage> {
   final ProjectRepository repository = PreferencesProjectRepository();
+  final ProjectRecordRepository recordRepository = PreferencesProjectRecordRepository();
   List<LocalProject> projects = [];
   bool loading = true;
 
@@ -48,6 +50,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
     if (ok == true) {
       await repository.delete(project.id);
+      await recordRepository.deleteByProject(project.id);
       await _load();
     }
   }
