@@ -47,7 +47,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
                 ? QuickAmpacityMaterial.copper
                 : QuickAmpacityMaterial.aluminum,
             sectionMm2: selectedSection,
-            loadedConductors: system == AcSystem.threePhase ? 3 : 2,
+            loadedConductors: QuickAmpacityReference.loadedConductorsForSystemName(system.name),
           );
     if (value != null) {
       referenceAmpacity.text = TechnicalFormat.number(value, decimals: value % 1 == 0 ? 0 : 1);
@@ -83,7 +83,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
         'ampacitySource': ampacityMode.name,
         'ampacityReference': ampacityMode == _AmpacityMode.custom
             ? 'custom'
-            : 'NBR 5410 Tabela 36 - PVC 70 C - metodo B1 - \${system == AcSystem.threePhase ? 3 : 2} condutores carregados',
+            : 'NBR 5410 Tabela 36 - PVC 70 C - metodo B1 - \${QuickAmpacityReference.loadedConductorsForSystemName(system.name)} condutores carregados',
         'combinedCorrectionFactor': r.ampacity.combinedCorrectionFactor,
         'requiredReferenceAmpacityA': r.ampacity.requiredAmpacityA,
         'correctedAmpacityA': r.correctedAmpacityA,
