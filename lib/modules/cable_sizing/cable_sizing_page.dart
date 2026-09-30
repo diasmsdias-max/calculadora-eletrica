@@ -47,6 +47,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
                 ? QuickAmpacityMaterial.copper
                 : QuickAmpacityMaterial.aluminum,
             sectionMm2: selectedSection,
+            loadedConductors: system == AcSystem.threePhase ? 3 : 2,
           );
     if (value != null) {
       referenceAmpacity.text = TechnicalFormat.number(value, decimals: value % 1 == 0 ? 0 : 1);
@@ -82,7 +83,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
         'ampacitySource': ampacityMode.name,
         'ampacityReference': ampacityMode == _AmpacityMode.custom
             ? 'custom'
-            : 'NBR 5410 Tabela 36 - PVC 70 C - metodo B1 - 2 condutores carregados',
+            : 'NBR 5410 Tabela 36 - PVC 70 C - metodo B1 - \${system == AcSystem.threePhase ? 3 : 2} condutores carregados',
         'combinedCorrectionFactor': r.ampacity.combinedCorrectionFactor,
         'requiredReferenceAmpacityA': r.ampacity.requiredAmpacityA,
         'correctedAmpacityA': r.correctedAmpacityA,
@@ -148,7 +149,10 @@ class _CableSizingPageState extends State<CableSizingPage> {
               DropdownMenuItem(value: AcSystem.twoPhase, child: Text('Bifásico')),
               DropdownMenuItem(value: AcSystem.threePhase, child: Text('Trifásico')),
             ],
-            onChanged: (v) => setState(() => system = v!),
+            onChanged: (v) => setState(() {
+              system = v!;
+              _applyQuickAmpacity();
+            }),
           ),
           const SizedBox(height: 12),
           Row(children: [
@@ -264,7 +268,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
           const SizedBox(height: 6),
           Text(ampacityMode == _AmpacityMode.custom
               ? 'Valor informado pelo profissional.'
-              : 'Referência rápida: PVC 70 °C, método B1, 2 condutores carregados. Ajuste os fatores de correção conforme a instalação.'),
+              : 'Referência rápida: PVC 70 °C, método B1, \${system == AcSystem.threePhase ? 3 : 2} condutores carregados. Ajuste os fatores de correção conforme a instalação.'),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: _calculate,
