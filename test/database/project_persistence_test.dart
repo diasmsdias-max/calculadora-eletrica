@@ -165,6 +165,19 @@ void main() {
     expect(records.map((r) => r.id), ['valid']);
   });
 
+  test('project repositories recover from completely invalid stored JSON', () async {
+    SharedPreferences.setMockInitialValues({
+      'local_projects_v1': '{invalid-json',
+      'project_records_v1': '[also-invalid',
+    });
+
+    expect(await PreferencesProjectRepository().getAll(), isEmpty);
+    expect(
+      await PreferencesProjectRecordRepository().getByProject('p1'),
+      isEmpty,
+    );
+  });
+
   test('ProjectRecord survives JSON round trip with structured data', () {
     final record = ProjectRecord(
       id: 'r1',
