@@ -21,11 +21,13 @@ abstract final class ModulePreferences {
       return Set<String>.from(allModuleIds);
     }
     final visible = saved.where(allModuleIds.contains).toSet();
-    final known = (prefs.getStringList(_knownKey) ?? saved).toSet();
-    final newModules = allModuleIds.difference(known);
-    if (newModules.isNotEmpty) {
-      visible.addAll(newModules);
-      await prefs.setStringList(_key, visible.toList()..sort());
+    final knownSaved = prefs.getStringList(_knownKey);
+    if (knownSaved != null) {
+      final newModules = allModuleIds.difference(knownSaved.toSet());
+      if (newModules.isNotEmpty) {
+        visible.addAll(newModules);
+        await prefs.setStringList(_key, visible.toList()..sort());
+      }
     }
     await prefs.setStringList(_knownKey, allModuleIds.toList()..sort());
     return visible;
