@@ -25,7 +25,7 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
   LoadSurveyResult get result => LoadSurveyCalculator.calculate(
         items,
         daysPerMonth: daysPerMonth,
-        system: system,
+        system: parsedVoltage != null && parsedVoltage! > 0 ? system : null,
         voltageV: parsedVoltage != null && parsedVoltage! > 0 ? parsedVoltage : null,
       );
 
