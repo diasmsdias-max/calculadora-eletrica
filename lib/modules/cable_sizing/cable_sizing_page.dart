@@ -97,6 +97,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
         'dropPercent': r.voltageDrop.dropPercent,
         'voltageDropMeets': r.voltageDrop.withinLimit,
         'minimumSectionByDropMm2': r.voltageDrop.minimumSectionMm2,
+        'commercialSectionByDropMm2': r.voltageDrop.commercialSectionMm2,
         'meetsBothCriteria': r.meetsBothCriteria,
         'scope': 'ampacity_corrected_and_voltage_drop',
       },
@@ -315,6 +316,13 @@ class _CableSizingPageState extends State<CableSizingPage> {
             _result('Queda', result!.voltageDrop.dropV, 'V'),
             _result('Queda percentual', result!.voltageDrop.dropPercent, '%'),
             _result('Seção mínima pelo critério de queda', result!.voltageDrop.minimumSectionMm2, 'mm²'),
+            if (result!.voltageDrop.commercialSectionMm2 != null)
+              _result('Próxima seção comercial', result!.voltageDrop.commercialSectionMm2!, 'mm²')
+            else
+              const Card(child: ListTile(
+                title: Text('Próxima seção comercial'),
+                subtitle: Text('Acima da faixa de referência do app (até 300 mm²). Avalie outra solução de circuito.'),
+              )),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _saveToProject,
