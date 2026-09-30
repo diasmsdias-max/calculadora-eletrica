@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/calculations/motor_calculator.dart';
 import '../../core/calculations/motor_transformer_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
+import '../../core/database/project_record.dart';
+import '../../core/projects/project_record_saver.dart';
 
 class MotorTransformerPage extends StatefulWidget {
   const MotorTransformerPage({super.key});
@@ -31,6 +33,36 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
       startingMultiplier.text = MotorCalculator.suggestedStartingMultiplier(value)
           .toStringAsFixed(1).replaceAll('.', ',');
     });
+  }
+
+  Future<void> _saveToProject() async {
+    final r = result;
+    if (r == null) return;
+    await ProjectRecordSaver.save(
+      context,
+      type: ProjectRecordType.motorTransformer,
+      title: 'Motor × Trafo — ${_n(motorPower.text).toStringAsFixed(2)} ${unit.name.toUpperCase()}',
+      summary: '${r.motorTransformerPercent.toStringAsFixed(1)}% em regime • partida ${r.startingTransformerPercent.toStringAsFixed(1)}%',
+      data: {
+        'transformerKva': _n(transformerKva.text),
+        'motorRatedPower': _n(motorPower.text),
+        'motorUnit': unit.name,
+        'system': system.name,
+        'voltageV': _n(voltage.text),
+        'powerFactor': _n(pf.text),
+        'efficiency': _n(efficiency.text),
+        'startingMethod': startingMethod.name,
+        'startingMultiplier': _n(startingMultiplier.text),
+        'motorApparentPowerKva': r.motor.apparentPowerKva,
+        'motorNominalCurrentA': r.motor.nominalCurrentA,
+        'motorStartingCurrentA': r.motor.estimatedStartingCurrentA,
+        'motorTransformerPercent': r.motorTransformerPercent,
+        'remainingKva': r.transformer.remainingKva,
+        'meetsSteadyState': r.transformer.meetsLoad,
+        'startingKvaEstimate': r.startingKvaEstimate,
+        'startingTransformerPercent': r.startingTransformerPercent,
+      },
+    );
   }
 
   void _calculate() {
@@ -132,6 +164,12 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
           _result('Corrente de partida', result!.motor.estimatedStartingCurrentA, 'A'),
           _result('Demanda aparente na partida', result!.startingKvaEstimate, 'kVA'),
           _result('Relação com a potência do trafo', result!.startingTransformerPercent, '%'),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _saveToProject,
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('SALVAR NO PROJETO'),
+          ),
           const SizedBox(height: 12),
           const Text('A seção de partida é uma estimativa baseada no multiplicador Ip/In. Ela não confirma, isoladamente, que o transformador suportará a partida. A avaliação completa deve considerar impedância do transformador, queda de tensão admissível, rede a montante, método de partida e dados do fabricante.'),
         ],
