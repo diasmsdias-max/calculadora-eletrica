@@ -3,6 +3,8 @@ import '../../core/database/local_project.dart';
 import '../../core/database/project_record.dart';
 import '../../core/database/project_record_repository.dart';
 import '../../core/database/project_repository.dart';
+import '../../core/pdf/project_pdf_generator.dart';
+import 'package:printing/printing.dart';
 import 'projects_page.dart';
 
 class ProjectDetailPage extends StatefulWidget {
@@ -75,6 +77,29 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     }
   }
 
+  Future<void> _sharePdf() async {
+    try {
+      final latestRecords = await recordsRepository.getByProject(project.id);
+      final bytes = await ProjectPdfGenerator.generate(
+        project: project,
+        records: latestRecords,
+      );
+      if (!mounted) return;
+      final safeName = project.name
+          .trim()
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_-]+'), '_');
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'relatorio_${safeName.isEmpty ? project.id : safeName}.pdf',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível gerar o PDF: $e')),
+      );
+    }
+  }
+
   String _typeLabel(ProjectRecordType type) => switch (type) {
     ProjectRecordType.motor => 'Motor',
     ProjectRecordType.transformer => 'Transformador',
@@ -112,6 +137,12 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
             if (project.address.isNotEmpty) _info('Endereço', project.address),
             if (project.responsible.isNotEmpty) _info('Responsável', project.responsible),
             if (project.notes.isNotEmpty) _info('Observações', project.notes),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: loading ? null : _sharePdf,
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              label: const Text('GERAR / COMPARTILHAR PDF'),
+            ),
             const SizedBox(height: 20),
             Text('Registros técnicos', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
