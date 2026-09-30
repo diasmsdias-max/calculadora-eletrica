@@ -17,10 +17,19 @@ class PreferencesProjectRecordRepository implements ProjectRecordRepository {
   Future<List<ProjectRecord>> _all() async {
     final raw = (await _prefs).getString(_key);
     if (raw == null || raw.isEmpty) return [];
-    final decoded = jsonDecode(raw) as List<dynamic>;
-    return decoded
-        .map((e) => ProjectRecord.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return [];
+    final records = <ProjectRecord>[];
+    for (final item in decoded) {
+      try {
+        if (item is! Map) continue;
+        records.add(ProjectRecord.fromJson(Map<String, dynamic>.from(item)));
+      } catch (_) {
+        // Preserve access to valid records if one stored entry is malformed
+        // or belongs to a record type no longer understood by this version.
+      }
+    }
+    return records;
   }
 
   Future<void> _write(List<ProjectRecord> records) async {
