@@ -147,10 +147,12 @@ class ProjectPdfGenerator {
           ['Corrente nominal do motor', _unit(d['motorNominalCurrentA'], 'A')],
           ['Transformador ocupado', _unit(d['motorTransformerPercent'], '%')],
           ['Regime permanente', d['meetsSteadyState'] == true ? 'ATENDE' : 'NÃO ATENDE'],
+          ['Método de partida', _startingMethod(d['startingMethod'])],
+          ['Multiplicador Ip/In', '${_num(d['startingMultiplier'])} x'],
           ['Corrente de partida estimada', _unit(d['motorStartingCurrentA'], 'A')],
           ['Demanda aparente na partida', _unit(d['startingKvaEstimate'], 'kVA')],
           ['Relação na partida', _unit(d['startingTransformerPercent'], '%')],
-          ['Observação', 'A estimativa de partida não confirma isoladamente a capacidade de partida do transformador.'],
+          ['Observação', 'A estimativa de partida usa o multiplicador Ip/In registrado. A relação com a potência nominal do transformador não é um limite de aprovação; impedância, queda de tensão, duração da partida, rede a montante e dados do fabricante também devem ser avaliados.'],
         ]);
       case ProjectRecordType.loadSurvey:
         final loads = (d['loads'] as List?) ?? const [];
@@ -287,6 +289,15 @@ class ProjectPdfGenerator {
   static String _reactanceSource(dynamic value) => switch (value?.toString()) {
     'practical_estimate' => 'estimativa rápida',
     'custom' => 'personalizado',
+    _ => 'não registrado',
+  };
+
+  static String _startingMethod(dynamic value) => switch (value?.toString()) {
+    'direct' => 'Partida direta',
+    'starDelta' => 'Estrela-triângulo',
+    'softStarter' => 'Soft-starter',
+    'vfd' => 'Inversor de frequência',
+    'custom' => 'Personalizado',
     _ => 'não registrado',
   };
 
