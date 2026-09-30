@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/database/local_project.dart';
 import '../../core/database/project_repository.dart';
 import '../../core/database/project_record_repository.dart';
+import 'project_detail_page.dart';
 
 class ProjectsPage extends StatefulWidget {
   const ProjectsPage({super.key});
@@ -34,6 +35,18 @@ class _ProjectsPageState extends State<ProjectsPage> {
       ),
     );
     if (saved == true) await _load();
+  }
+
+  Future<void> _open(LocalProject project) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ProjectDetailPage(
+          project: project,
+          projectRepository: repository,
+        ),
+      ),
+    );
+    if (changed == true) await _load();
   }
 
   Future<void> _delete(LocalProject project) async {
@@ -85,7 +98,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                           if (p.client.isNotEmpty) p.client,
                           if (p.address.isNotEmpty) p.address,
                         ].join('\n')),
-                        onTap: () => _edit(p),
+                        onTap: () => _open(p),
                         trailing: IconButton(
                           tooltip: 'Excluir',
                           icon: const Icon(Icons.delete_outline),
