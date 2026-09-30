@@ -202,7 +202,15 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
             _result('Queda de tensão', result!.dropV, 'V'),
             _result('Queda percentual', result!.dropPercent, '%'),
             _result('Seção mínima pelo critério de queda', result!.minimumSectionMm2, 'mm²'),
-            _result('Próxima seção comercial', result!.commercialSectionMm2, 'mm²'),
+            if (result!.commercialSectionMm2 != null)
+              _result('Próxima seção comercial', result!.commercialSectionMm2!, 'mm²')
+            else
+              const Card(
+                child: ListTile(
+                  title: Text('Próxima seção comercial'),
+                  subtitle: Text('Acima da faixa de referência do app (até 300 mm²). Avalie outra solução de circuito.'),
+                ),
+              ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _saveToProject,
