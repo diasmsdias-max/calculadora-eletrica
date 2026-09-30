@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/calculations/conductor_check_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
 import '../../core/calculations/voltage_drop_calculator.dart';
+import '../../core/database/project_record.dart';
+import '../../core/projects/project_record_saver.dart';
 
 class CableSizingPage extends StatefulWidget {
   const CableSizingPage({super.key});
@@ -27,6 +29,41 @@ class _CableSizingPageState extends State<CableSizingPage> {
   String? error;
 
   double _n(String v) => double.parse(v.trim().replaceAll(',', '.'));
+
+  Future<void> _saveToProject() async {
+    final r = result;
+    if (r == null) return;
+    await ProjectRecordSaver.save(
+      context,
+      type: ProjectRecordType.cableSizing,
+      title: 'Condutor — ${_n(section.text).toStringAsFixed(2)} mm²',
+      summary: '${_n(current.text).toStringAsFixed(2)} A • queda ${r.voltageDrop.dropPercent.toStringAsFixed(2)}% • ${r.meetsBothCriteria ? 'ATENDE' : 'NÃO ATENDE'}',
+      data: {
+        'system': system.name,
+        'voltageV': _n(voltage.text),
+        'designCurrentA': _n(current.text),
+        'lengthM': _n(length.text),
+        'sectionMm2': _n(section.text),
+        'material': material.name,
+        'powerFactor': _n(powerFactor.text),
+        'maxDropPercent': _n(maxDrop.text),
+        'reactanceOhmPerKm': _n(reactance.text),
+        'temperatureFactor': _n(temperatureFactor.text),
+        'groupingFactor': _n(groupingFactor.text),
+        'referenceAmpacityA': _n(referenceAmpacity.text),
+        'combinedCorrectionFactor': r.ampacity.combinedCorrectionFactor,
+        'requiredReferenceAmpacityA': r.ampacity.requiredAmpacityA,
+        'correctedAmpacityA': r.correctedAmpacityA,
+        'ampacityMeets': r.ampacityMeets,
+        'dropV': r.voltageDrop.dropV,
+        'dropPercent': r.voltageDrop.dropPercent,
+        'voltageDropMeets': r.voltageDrop.withinLimit,
+        'minimumSectionByDropMm2': r.voltageDrop.minimumSectionMm2,
+        'meetsBothCriteria': r.meetsBothCriteria,
+        'scope': 'ampacity_corrected_and_voltage_drop',
+      },
+    );
+  }
 
   void _calculate() {
     try {
@@ -151,6 +188,12 @@ class _CableSizingPageState extends State<CableSizingPage> {
             _result('Queda', result!.voltageDrop.dropV, 'V'),
             _result('Queda percentual', result!.voltageDrop.dropPercent, '%'),
             _result('Seção mínima pelo critério de queda', result!.voltageDrop.minimumSectionMm2, 'mm²'),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _saveToProject,
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('SALVAR NO PROJETO'),
+            ),
             const SizedBox(height: 12),
             const Text(
               'Resultado técnico parcial: a aprovação acima confirma somente capacidade de corrente corrigida '
