@@ -102,7 +102,8 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
 
   Future<void> _viewRecord(ProjectRecord record) async {
     final entries = record.data.entries
-        .where((entry) => entry.value is! List && entry.value is! Map)
+        .where((entry) =>
+            entry.value is! List && entry.value is! Map && entry.key != 'scope')
         .toList();
     await showModalBottomSheet<void>(
       context: context,
@@ -181,6 +182,10 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
   String _dataLabel(String key) {
     const labels = <String, String>{
       'system': 'Sistema',
+      'inputMode': 'Modo de entrada',
+      'ratedPower': 'Potência nominal informada',
+      'powerUnit': 'Unidade da potência',
+      'informedCurrentA': 'Corrente informada',
       'voltageV': 'Tensão',
       'ratedKva': 'Potência do transformador',
       'transformerKva': 'Potência do transformador',
@@ -189,6 +194,12 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       'powerFactor': 'Fator de potência',
       'efficiency': 'Rendimento',
       'servicePowerKw': 'Potência com fator de serviço',
+      'serviceFactor': 'Fator de serviço',
+      'shaftPowerKw': 'Potência no eixo',
+      'absorbedPowerKw': 'Potência absorvida',
+      'hoursPerDay': 'Horas de uso por dia',
+      'dailyEnergyKwh': 'Consumo diário estimado',
+      'monthlyEnergyKwh': 'Consumo mensal estimado',
       'nominalCurrentA': 'Corrente nominal',
       'motorNominalCurrentA': 'Corrente nominal do motor',
       'motorStartingCurrentA': 'Corrente de partida estimada',
@@ -201,6 +212,13 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       'startingMethod': 'Método de partida',
       'startingMultiplier': 'Multiplicador Ip/In',
       'loadPercent': 'Carregamento',
+      'loadUnit': 'Unidade da carga',
+      'loadValue': 'Carga informada',
+      'availableCurrentA': 'Corrente nominal disponível',
+      'availableActivePowerKw': 'Potência ativa disponível',
+      'loadKva': 'Carga equivalente',
+      'apparentKva': 'Potência aparente da demanda',
+      'demandCurrentA': 'Corrente estimada da demanda',
       'remainingKva': 'Capacidade restante',
       'installedKw': 'Potência instalada',
       'demandKw': 'Demanda estimada',
@@ -213,6 +231,10 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       'lengthM': 'Comprimento',
       'material': 'Material',
       'referenceAmpacityA': 'Ampacidade de referência',
+      'temperatureFactor': 'Fator de temperatura',
+      'groupingFactor': 'Fator de agrupamento',
+      'combinedCorrectionFactor': 'Fator de correção combinado',
+      'ampacityReference': 'Referência de ampacidade',
       'requiredReferenceAmpacityA': 'Iz mínima de referência',
       'correctedAmpacityA': 'Iz corrigida',
       'reactanceOhmPerKm': 'Reatância X',
@@ -248,6 +270,11 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       'ratedKva': 'kVA',
       'transformerKva': 'kVA',
       'servicePowerKw': 'kW',
+      'shaftPowerKw': 'kW',
+      'absorbedPowerKw': 'kW',
+      'informedCurrentA': 'A',
+      'dailyEnergyKwh': 'kWh',
+      'monthlyEnergyKwh': 'kWh',
       'nominalCurrentA': 'A',
       'motorNominalCurrentA': 'A',
       'motorStartingCurrentA': 'A',
@@ -256,6 +283,11 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       'motorApparentPowerKva': 'kVA',
       'startingKvaEstimate': 'kVA',
       'remainingKva': 'kVA',
+      'availableCurrentA': 'A',
+      'availableActivePowerKw': 'kW',
+      'loadKva': 'kVA',
+      'apparentKva': 'kVA',
+      'demandCurrentA': 'A',
       'installedKw': 'kW',
       'demandKw': 'kW',
       'dailyKwh': 'kWh',
@@ -291,6 +323,24 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
         'singlePhase': 'Monofásico',
         'twoPhase': 'Bifásico',
         'threePhase': 'Trifásico',
+      },
+      'inputMode': {
+        'power': 'Potência',
+        'current': 'Corrente',
+      },
+      'powerUnit': {
+        'cv': 'CV',
+        'hp': 'HP',
+        'kw': 'kW',
+      },
+      'motorUnit': {
+        'cv': 'CV',
+        'hp': 'HP',
+        'kw': 'kW',
+      },
+      'loadUnit': {
+        'kw': 'kW',
+        'kva': 'kVA',
       },
       'material': {'copper': 'Cobre', 'aluminum': 'Alumínio'},
       'startingMethod': {
