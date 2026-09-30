@@ -42,8 +42,8 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
     await ProjectRecordSaver.save(
       context,
       type: ProjectRecordType.motorTransformer,
-      title: 'Motor × Trafo — ${_n(motorPower.text).toStringAsFixed(2)} ${unit.name.toUpperCase()}',
-      summary: '${r.motorTransformerPercent.toStringAsFixed(1)}% em regime • partida ${r.startingTransformerPercent.toStringAsFixed(1)}%',
+      title: 'Motor × Trafo — ${TechnicalFormat.number(_n(motorPower.text))} ${unit.name.toUpperCase()}',
+      summary: '${TechnicalFormat.number(r.motorTransformerPercent, decimals: 1)}% em regime | partida ${TechnicalFormat.number(r.startingTransformerPercent, decimals: 1)}%',
       data: {
         'transformerKva': _n(transformerKva.text),
         'motorRatedPower': _n(motorPower.text),
