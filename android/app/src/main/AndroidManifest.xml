@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:label="Vis Electrica"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_vis_electrica"
         android:name="${applicationName}">
         <activity
             android:name=".MainActivity"
