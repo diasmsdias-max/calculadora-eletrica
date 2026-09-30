@@ -196,7 +196,13 @@ class ProjectPdfGenerator {
         ];
       case ProjectRecordType.cableSizing:
         return _lines([
+          ['Sistema', _system(d['system'])],
           ['Circuito', '${_unit(d['voltageV'], 'V')} | ${_unit(d['designCurrentA'], 'A')}'],
+          ['Fator de potência', _num(d['powerFactor'])],
+          ['Limite de queda', _unit(d['maxDropPercent'], '%')],
+          ['Fator de temperatura', _num(d['temperatureFactor'])],
+          ['Fator de agrupamento', _num(d['groupingFactor'])],
+          ['Fator de correção combinado', _num(d['combinedCorrectionFactor'])],
           ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} | ${_material(d['material'])}'],
           ['Comprimento', _unit(d['lengthM'], 'm')],
           ['Ampacidade informada', '${_unit(d['referenceAmpacityA'], 'A')} | ${_ampacitySource(d['ampacitySource'])}'],
@@ -219,7 +225,9 @@ class ProjectPdfGenerator {
         ]);
       case ProjectRecordType.voltageDrop:
         return _lines([
+          ['Sistema', _system(d['system'])],
           ['Circuito', '${_unit(d['voltageV'], 'V')} | ${_unit(d['currentA'], 'A')}'],
+          ['Fator de potência', _num(d['powerFactor'])],
           ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} | ${_material(d['material'])}'],
           ['Comprimento', _unit(d['lengthM'], 'm')],
           ['Reatância X', '${_unit(d['reactanceOhmPerKm'], 'Ω/km')} | ${_reactanceSource(d['reactanceSource'])}'],
