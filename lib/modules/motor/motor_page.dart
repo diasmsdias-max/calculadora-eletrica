@@ -261,7 +261,7 @@ class _MotorPageState extends State<MotorPage> {
           label: const Text('SALVAR NO PROJETO'),
         ),
         const SizedBox(height: 12),
-        const Text('Consumo estimado considerando operação à carga nominal. A corrente de partida é uma estimativa baseada no multiplicador informado. Use Ip/In de placa ou dados do fabricante quando disponíveis.'),
+        const Text('O fator de serviço é apresentado como referência de potência mecânica disponível e não é aplicado automaticamente à corrente nominal, potência aparente ou consumo. O consumo considera operação à carga nominal. A corrente de partida é uma estimativa baseada no multiplicador informado. Use Ip/In de placa ou dados do fabricante quando disponíveis.'),
       ],
     ])),
   );
