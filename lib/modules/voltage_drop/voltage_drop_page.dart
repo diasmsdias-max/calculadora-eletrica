@@ -144,11 +144,15 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
             }),
           ),
           const SizedBox(height: 8),
-          _field(
-            reactance,
-            useEstimatedReactance
-                ? 'Reatância X (Ω/km) — estimativa'
-                : 'Reatância X (Ω/km) — personalizado',
+          TextField(
+            controller: reactance,
+            readOnly: useEstimatedReactance,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: useEstimatedReactance
+                  ? 'Reatância X (Ω/km) — estimativa'
+                  : 'Reatância X (Ω/km) — personalizado',
+            ),
           ),
           const SizedBox(height: 6),
           Text(
