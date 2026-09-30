@@ -131,7 +131,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: Text(_dataLabel(entry.key)),
-                  subtitle: Text(_dataValue(entry.value)),
+                  subtitle: Text(_dataValue(entry.key, entry.value)),
                 )),
             ],
           ),
@@ -142,44 +142,137 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
 
   String _dataLabel(String key) {
     const labels = <String, String>{
+      'system': 'Sistema',
       'voltageV': 'Tensão',
       'ratedKva': 'Potência do transformador',
       'transformerKva': 'Potência do transformador',
       'motorRatedPower': 'Potência nominal do motor',
+      'motorUnit': 'Unidade do motor',
+      'powerFactor': 'Fator de potência',
+      'efficiency': 'Rendimento',
+      'servicePowerKw': 'Potência com fator de serviço',
       'nominalCurrentA': 'Corrente nominal',
       'motorNominalCurrentA': 'Corrente nominal do motor',
       'motorStartingCurrentA': 'Corrente de partida estimada',
       'estimatedStartingCurrentA': 'Corrente de partida estimada',
       'apparentPowerKva': 'Potência aparente',
       'motorApparentPowerKva': 'Potência aparente do motor',
+      'startingKvaEstimate': 'Demanda aparente na partida',
+      'motorTransformerPercent': 'Transformador ocupado',
+      'startingTransformerPercent': 'Relação na partida',
+      'startingMethod': 'Método de partida',
+      'startingMultiplier': 'Multiplicador Ip/In',
       'loadPercent': 'Carregamento',
       'remainingKva': 'Capacidade restante',
       'installedKw': 'Potência instalada',
       'demandKw': 'Demanda estimada',
       'dailyKwh': 'Consumo diário estimado',
       'monthlyKwh': 'Consumo mensal estimado',
+      'daysPerMonth': 'Dias considerados no mês',
       'designCurrentA': 'Corrente de projeto',
       'currentA': 'Corrente',
       'sectionMm2': 'Seção do condutor',
       'lengthM': 'Comprimento',
+      'material': 'Material',
+      'referenceAmpacityA': 'Ampacidade de referência',
+      'requiredReferenceAmpacityA': 'Iz mínima de referência',
+      'correctedAmpacityA': 'Iz corrigida',
+      'reactanceOhmPerKm': 'Reatância X',
       'dropV': 'Queda de tensão',
       'dropPercent': 'Queda percentual',
+      'maxDropPercent': 'Limite de queda',
       'minimumSectionMm2': 'Seção mínima pela queda',
       'minimumSectionByDropMm2': 'Seção mínima pela queda',
       'commercialSectionMm2': 'Próxima seção comercial',
       'commercialSectionByDropMm2': 'Próxima seção comercial',
+      'ampacityMeets': 'Capacidade de corrente',
+      'voltageDropMeets': 'Critério de queda',
+      'withinLimit': 'Critério de queda',
+      'meetsBothCriteria': 'Resultado combinado',
+      'meetsLoad': 'Regime permanente',
+      'meetsSteadyState': 'Regime permanente',
+      'ampacitySource': 'Fonte da ampacidade',
+      'reactanceSource': 'Fonte da reatância',
     };
     return labels[key] ?? key;
   }
 
-  String _dataValue(dynamic value) {
+  String _dataValue(String key, dynamic value) {
     if (value == null) return 'Não determinado';
-    if (value is bool) return value ? 'Sim' : 'Não';
-    if (value is double) {
-      if (!value.isFinite) return 'Não determinado';
-      return value.toStringAsFixed(2).replaceAll('.', ',');
+    if (value is bool) {
+      if (key.startsWith('meets') || key.endsWith('Meets') || key == 'withinLimit') {
+        return value ? 'ATENDE' : 'NÃO ATENDE';
+      }
+      return value ? 'Sim' : 'Não';
     }
-    return value.toString();
+    const units = <String, String>{
+      'voltageV': 'V',
+      'ratedKva': 'kVA',
+      'transformerKva': 'kVA',
+      'servicePowerKw': 'kW',
+      'nominalCurrentA': 'A',
+      'motorNominalCurrentA': 'A',
+      'motorStartingCurrentA': 'A',
+      'estimatedStartingCurrentA': 'A',
+      'apparentPowerKva': 'kVA',
+      'motorApparentPowerKva': 'kVA',
+      'startingKvaEstimate': 'kVA',
+      'remainingKva': 'kVA',
+      'installedKw': 'kW',
+      'demandKw': 'kW',
+      'dailyKwh': 'kWh',
+      'monthlyKwh': 'kWh',
+      'designCurrentA': 'A',
+      'currentA': 'A',
+      'sectionMm2': 'mm²',
+      'lengthM': 'm',
+      'referenceAmpacityA': 'A',
+      'requiredReferenceAmpacityA': 'A',
+      'correctedAmpacityA': 'A',
+      'reactanceOhmPerKm': 'Ω/km',
+      'dropV': 'V',
+      'dropPercent': '%',
+      'maxDropPercent': '%',
+      'minimumSectionMm2': 'mm²',
+      'minimumSectionByDropMm2': 'mm²',
+      'commercialSectionMm2': 'mm²',
+      'commercialSectionByDropMm2': 'mm²',
+      'loadPercent': '%',
+      'motorTransformerPercent': '%',
+      'startingTransformerPercent': '%',
+    };
+    if (value is num) {
+      if (!value.toDouble().isFinite) return 'Não determinado';
+      var text = value.toStringAsFixed(value is int ? 0 : 2).replaceAll('.', ',');
+      if (key == 'efficiency') text = '${(value * 100).toStringAsFixed(0)}%';
+      final unit = units[key];
+      return unit == null ? text : '$text $unit';
+    }
+    const values = <String, Map<String, String>>{
+      'system': {
+        'singlePhase': 'Monofásico',
+        'twoPhase': 'Bifásico',
+        'threePhase': 'Trifásico',
+      },
+      'material': {'copper': 'Cobre', 'aluminum': 'Alumínio'},
+      'startingMethod': {
+        'direct': 'Partida direta',
+        'starDelta': 'Estrela-triângulo',
+        'softStarter': 'Soft-starter',
+        'vfd': 'Inversor de frequência',
+        'custom': 'Personalizado',
+      },
+      'ampacitySource': {
+        'copperQuick': 'Referência rápida Cu',
+        'aluminumQuick': 'Referência rápida Al',
+        'custom': 'Personalizado',
+      },
+      'reactanceSource': {
+        'practical_estimate': 'Estimativa rápida',
+        'custom': 'Personalizado',
+      },
+    };
+    return values[key]?[value.toString()] ?? value.toString();
   }
 
   String _typeLabel(ProjectRecordType type) => switch (type) {
