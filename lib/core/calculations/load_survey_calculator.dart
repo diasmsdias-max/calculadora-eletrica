@@ -45,6 +45,16 @@ abstract final class LoadSurveyCalculator {
     AcSystem? system,
     double? voltageV,
   }) {
+    if (daysPerMonth < 0 || daysPerMonth > 31) {
+      throw ArgumentError('Dias/mês inválidos.');
+    }
+    if ((system == null) != (voltageV == null)) {
+      throw ArgumentError('Sistema e tensão devem ser informados juntos.');
+    }
+    if (voltageV != null && (!voltageV.isFinite || voltageV <= 0)) {
+      throw ArgumentError('Tensão inválida.');
+    }
+
     if (items.isEmpty) {
       return const LoadSurveyResult(
         installedKw: 0,
@@ -80,9 +90,6 @@ abstract final class LoadSurveyCalculator {
 
     double? current;
     if (system != null && voltageV != null) {
-      if (!voltageV.isFinite || voltageV <= 0) {
-        throw ArgumentError('Tensão inválida.');
-      }
       final factor = system == AcSystem.threePhase ? math.sqrt(3) : 1.0;
       current = apparent * 1000 / (factor * voltageV);
     }
