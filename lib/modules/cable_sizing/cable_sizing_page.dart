@@ -286,7 +286,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
           const SizedBox(height: 6),
           Text(ampacityMode == _AmpacityMode.custom
               ? 'Valor informado pelo profissional.'
-              : 'Referência rápida: PVC 70 °C, método B1, \${system == AcSystem.threePhase ? 3 : 2} condutores carregados. Ajuste os fatores de correção conforme a instalação.'),
+              : 'Referência rápida: PVC 70 °C, método B1, ${system == AcSystem.threePhase ? 3 : 2} condutores carregados. Ajuste os fatores de correção conforme a instalação.'),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: _calculate,
