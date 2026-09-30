@@ -37,6 +37,33 @@ void main() {
       );
     });
 
+    test('usa coluna de 3 condutores carregados no trifásico', () {
+      expect(
+        QuickAmpacityReference.ampacityA(
+          material: QuickAmpacityMaterial.copper,
+          sectionMm2: 6,
+          loadedConductors: 3,
+        ),
+        36,
+      );
+      expect(
+        QuickAmpacityReference.ampacityA(
+          material: QuickAmpacityMaterial.aluminum,
+          sectionMm2: 16,
+          loadedConductors: 3,
+        ),
+        53,
+      );
+      expect(
+        QuickAmpacityReference.ampacityA(
+          material: QuickAmpacityMaterial.aluminum,
+          sectionMm2: 70,
+          loadedConductors: 3,
+        ),
+        133,
+      );
+    });
+
     test('retorna nulo quando a seção não existe na referência rápida', () {
       expect(
         QuickAmpacityReference.ampacityA(
