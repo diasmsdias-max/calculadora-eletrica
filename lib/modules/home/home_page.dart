@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/settings/module_preferences.dart';
+import '../../core/theme/app_theme.dart';
 import '../cable_sizing/cable_sizing_page.dart';
 import '../load_survey/load_survey_page.dart';
 import '../motor/motor_page.dart';
@@ -71,7 +72,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calculadora Elétrica'),
+        title: const _BrandTitle(),
         actions: [
           IconButton(
             onPressed: _openSettings,
@@ -119,6 +120,53 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+class _BrandTitle extends StatelessWidget {
+  const _BrandTitle();
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 34,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(3),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppTheme.red, AppTheme.yellow],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'BOECKER',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              Text(
+                'VIS ELECTRICA',
+                style: TextStyle(
+                  color: AppTheme.yellow,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 2,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
 }
 
 class _ModuleCard extends StatelessWidget {
