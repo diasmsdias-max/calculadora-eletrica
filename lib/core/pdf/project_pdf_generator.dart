@@ -162,6 +162,8 @@ class ProjectPdfGenerator {
             ['Demanda estimada', _unit(d['demandKw'], 'kW')],
             ['Potência aparente', _unit(d['apparentKva'], 'kVA')],
             ['Corrente de demanda', _unit(d['demandCurrentA'], 'A')],
+            ['Dias considerados no mês', d['daysPerMonth']?.toString() ?? 'não registrado'],
+            ['Consumo diário estimado', _unit(d['dailyKwh'], 'kWh')],
             ['Consumo mensal estimado', _unit(d['monthlyKwh'], 'kWh')],
           ]),
           if (loads.isNotEmpty) ...[
