@@ -33,6 +33,7 @@ abstract final class ConductorCheckCalculator {
     required double temperatureFactor,
     required double groupingFactor,
     required double referenceAmpacityA,
+    double reactanceOhmPerKm = 0,
   }) {
     if (!referenceAmpacityA.isFinite || referenceAmpacityA <= 0) {
       throw ArgumentError('Ampacidade de referência inválida.');
@@ -53,6 +54,7 @@ abstract final class ConductorCheckCalculator {
       material: material,
       powerFactor: powerFactor,
       maxDropPercent: maxDropPercent,
+      reactanceOhmPerKm: reactanceOhmPerKm,
     );
 
     return ConductorCheckResult(
