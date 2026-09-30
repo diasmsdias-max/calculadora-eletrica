@@ -11,11 +11,7 @@ class ProjectPdfGenerator {
     required LocalProject project,
     required List<ProjectRecord> records,
   }) async {
-    final pdf = pw.Document(
-      title: 'Relatório técnico - ${project.name}',
-      author: project.responsible.isEmpty ? 'Calculadora Elétrica' : project.responsible,
-      subject: 'Dossiê técnico do projeto',
-    );
+    final pdf = pw.Document();
 
     pdf.addPage(
       pw.MultiPage(
