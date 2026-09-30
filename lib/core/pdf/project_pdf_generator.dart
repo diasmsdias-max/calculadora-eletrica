@@ -208,6 +208,11 @@ class ProjectPdfGenerator {
           ['Limite informado', _unit(d['maxDropPercent'], '%')],
           ['Resultado', d['withinLimit'] == true ? 'DENTRO DO LIMITE' : 'ACIMA DO LIMITE'],
           ['Seção mínima pelo critério de queda', _unit(d['minimumSectionMm2'], 'mm²')],
+          ['Próxima seção comercial', d.containsKey('commercialSectionMm2')
+              ? (d['commercialSectionMm2'] == null
+                  ? 'acima da faixa de referência do app (até 300 mm²)'
+                  : _unit(d['commercialSectionMm2'], 'mm²'))
+              : 'não registrada'],
           ['Observação', 'A seção indicada considera somente o critério matemático de queda de tensão.'],
         ]);
     }
