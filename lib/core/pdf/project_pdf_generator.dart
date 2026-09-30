@@ -186,6 +186,8 @@ class ProjectPdfGenerator {
           ['Circuito', '${_unit(d['voltageV'], 'V')} | ${_unit(d['designCurrentA'], 'A')}'],
           ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} | ${_material(d['material'])}'],
           ['Comprimento', _unit(d['lengthM'], 'm')],
+          ['Ampacidade informada', '${_unit(d['referenceAmpacityA'], 'A')} | ${_ampacitySource(d['ampacitySource'])}'],
+          ['Reatância X', '${_unit(d['reactanceOhmPerKm'], 'Ω/km')} | ${_reactanceSource(d['reactanceSource'])}'],
           ['Iz mínima de referência', _unit(d['requiredReferenceAmpacityA'], 'A')],
           ['Iz corrigida', _unit(d['correctedAmpacityA'], 'A')],
           ['Capacidade de corrente', d['ampacityMeets'] == true ? 'ATENDE' : 'NÃO ATENDE'],
@@ -199,6 +201,7 @@ class ProjectPdfGenerator {
           ['Circuito', '${_unit(d['voltageV'], 'V')} | ${_unit(d['currentA'], 'A')}'],
           ['Condutor', '${_unit(d['sectionMm2'], 'mm²')} | ${_material(d['material'])}'],
           ['Comprimento', _unit(d['lengthM'], 'm')],
+          ['Reatância X', '${_unit(d['reactanceOhmPerKm'], 'Ω/km')} | ${_reactanceSource(d['reactanceSource'])}'],
           ['Queda', '${_unit(d['dropV'], 'V')} (${_unit(d['dropPercent'], '%')})'],
           ['Limite informado', _unit(d['maxDropPercent'], '%')],
           ['Resultado', d['withinLimit'] == true ? 'DENTRO DO LIMITE' : 'ACIMA DO LIMITE'],
@@ -254,6 +257,19 @@ class ProjectPdfGenerator {
     'twoPhase' => 'Bifásico',
     'threePhase' => 'Trifásico',
     _ => value?.toString() ?? '-',
+  };
+
+  static String _ampacitySource(dynamic value) => switch (value?.toString()) {
+    'copperQuick' => 'referência rápida Cu',
+    'aluminumQuick' => 'referência rápida Al',
+    'custom' => 'personalizado',
+    _ => 'não registrado',
+  };
+
+  static String _reactanceSource(dynamic value) => switch (value?.toString()) {
+    'practical_estimate' => 'estimativa rápida',
+    'custom' => 'personalizado',
+    _ => 'não registrado',
   };
 
   static String _material(dynamic value) => switch (value?.toString()) {
