@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/calculations/load_survey_calculator.dart';
+import '../../core/calculations/power_calculator.dart';
 
 class LoadSurveyPage extends StatefulWidget {
   const LoadSurveyPage({super.key});
@@ -10,9 +11,18 @@ class LoadSurveyPage extends StatefulWidget {
 class _LoadSurveyPageState extends State<LoadSurveyPage> {
   final List<LoadItem> items = [];
   int daysPerMonth = 30;
+  AcSystem system = AcSystem.threePhase;
+  final voltage = TextEditingController(text: '220');
 
-  LoadSurveyResult get result =>
-      LoadSurveyCalculator.calculate(items, daysPerMonth: daysPerMonth);
+  double get voltageValue =>
+      double.tryParse(voltage.text.trim().replaceAll(',', '.')) ?? 0;
+
+  LoadSurveyResult get result => LoadSurveyCalculator.calculate(
+        items,
+        daysPerMonth: daysPerMonth,
+        system: system,
+        voltageV: voltageValue,
+      );
 
   Future<void> _openEditor({int? index}) async {
     final item = index == null ? null : items[index];
@@ -32,6 +42,12 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
 
   void _remove(int index) {
     setState(() => items.removeAt(index));
+  }
+
+  @override
+  void dispose() {
+    voltage.dispose();
+    super.dispose();
   }
 
   @override
@@ -81,6 +97,26 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
                 );
               }),
             const SizedBox(height: 20),
+            Text('Instalação', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<AcSystem>(
+              initialValue: system,
+              decoration: const InputDecoration(labelText: 'Sistema'),
+              items: const [
+                DropdownMenuItem(value: AcSystem.singlePhase, child: Text('Monofásico')),
+                DropdownMenuItem(value: AcSystem.twoPhase, child: Text('Bifásico')),
+                DropdownMenuItem(value: AcSystem.threePhase, child: Text('Trifásico')),
+              ],
+              onChanged: (v) => setState(() => system = v!),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: voltage,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Tensão da instalação (V)'),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(child: Text('Resumo', style: Theme.of(context).textTheme.titleLarge)),
@@ -97,6 +133,8 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
             _result('Potência instalada', totals.installedKw, 'kW'),
             _result('Demanda estimada', totals.demandKw, 'kW'),
             _result('Potência aparente da demanda', totals.apparentKva, 'kVA'),
+            if (totals.demandCurrentA != null)
+              _result('Corrente estimada da demanda', totals.demandCurrentA!, 'A'),
             _result('Consumo diário', totals.dailyKwh, 'kWh'),
             _result('Consumo mensal', totals.monthlyKwh, 'kWh'),
             const SizedBox(height: 12),
