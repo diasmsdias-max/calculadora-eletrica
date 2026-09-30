@@ -17,7 +17,12 @@ class PreferencesProjectRecordRepository implements ProjectRecordRepository {
   Future<List<ProjectRecord>> _all() async {
     final raw = (await _prefs).getString(_key);
     if (raw == null || raw.isEmpty) return [];
-    final decoded = jsonDecode(raw);
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } catch (_) {
+      return [];
+    }
     if (decoded is! List) return [];
     final records = <ProjectRecord>[];
     for (final item in decoded) {
