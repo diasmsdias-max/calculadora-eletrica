@@ -38,7 +38,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
       context,
       type: ProjectRecordType.cableSizing,
       title: 'Condutor — ${TechnicalFormat.number(_n(section.text))} mm²',
-      summary: '${_n(current.text).toStringAsFixed(2)} A • queda ${r.voltageDrop.dropPercent.toStringAsFixed(2)}% • ${r.meetsBothCriteria ? 'ATENDE' : 'NÃO ATENDE'}',
+      summary: '${TechnicalFormat.number(_n(current.text))} A | queda ${TechnicalFormat.number(r.voltageDrop.dropPercent)}% | ${r.meetsBothCriteria ? 'ATENDE' : 'NÃO ATENDE'}',
       data: {
         'system': system.name,
         'voltageV': _n(voltage.text),
