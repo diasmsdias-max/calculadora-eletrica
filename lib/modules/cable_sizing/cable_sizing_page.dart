@@ -19,6 +19,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
   final temperatureFactor = TextEditingController(text: '1,00');
   final groupingFactor = TextEditingController(text: '1,00');
   final referenceAmpacity = TextEditingController(text: '50');
+  final reactance = TextEditingController(text: '0');
 
   AcSystem system = AcSystem.twoPhase;
   ConductorMaterial material = ConductorMaterial.copper;
@@ -41,6 +42,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
         temperatureFactor: _n(temperatureFactor.text),
         groupingFactor: _n(groupingFactor.text),
         referenceAmpacityA: _n(referenceAmpacity.text),
+        reactanceOhmPerKm: _n(reactance.text),
       );
       setState(() { result = r; error = null; });
     } catch (_) {
@@ -52,7 +54,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
   void dispose() {
     for (final c in [
       voltage, current, length, section, powerFactor, maxDrop,
-      temperatureFactor, groupingFactor, referenceAmpacity,
+      temperatureFactor, groupingFactor, referenceAmpacity, reactance,
     ]) {
       c.dispose();
     }
@@ -107,6 +109,8 @@ class _CableSizingPageState extends State<CableSizingPage> {
             const SizedBox(width: 12),
             Expanded(child: _field(maxDrop, 'Limite queda (%)')),
           ]),
+          const SizedBox(height: 12),
+          _field(reactance, 'Reatância X (Ω/km) — opcional'),
           const SizedBox(height: 20),
           Text('Capacidade de condução', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
