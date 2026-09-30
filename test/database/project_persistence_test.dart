@@ -1,0 +1,112 @@
+import 'package:calculadora_eletrica/core/database/local_project.dart';
+import 'package:calculadora_eletrica/core/database/project_record.dart';
+import 'package:calculadora_eletrica/core/database/project_record_repository.dart';
+import 'package:calculadora_eletrica/core/database/project_repository.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  test('LocalProject survives JSON round trip', () {
+    final created = DateTime.utc(2026, 9, 30, 1);
+    final updated = DateTime.utc(2026, 9, 30, 2);
+    final project = LocalProject(
+      id: 'p1',
+      name: 'Obra A',
+      client: 'Cliente',
+      address: 'Endereço',
+      responsible: 'Responsável',
+      notes: 'Notas',
+      createdAt: created,
+      updatedAt: updated,
+    );
+    final restored = LocalProject.fromJson(project.toJson());
+    expect(restored.id, project.id);
+    expect(restored.name, project.name);
+    expect(restored.client, project.client);
+    expect(restored.address, project.address);
+    expect(restored.responsible, project.responsible);
+    expect(restored.notes, project.notes);
+    expect(restored.createdAt, created);
+    expect(restored.updatedAt, updated);
+  });
+
+  test('project repository saves, updates, sorts and deletes', () async {
+    final repository = PreferencesProjectRepository();
+    final old = LocalProject(
+      id: 'old', name: 'Antigo', client: '', address: '', responsible: '',
+      notes: '', createdAt: DateTime.utc(2026, 9, 1), updatedAt: DateTime.utc(2026, 9, 1),
+    );
+    final recent = LocalProject(
+      id: 'recent', name: 'Recente', client: '', address: '', responsible: '',
+      notes: '', createdAt: DateTime.utc(2026, 9, 2), updatedAt: DateTime.utc(2026, 9, 2),
+    );
+    await repository.save(old);
+    await repository.save(recent);
+    var projects = await repository.getAll();
+    expect(projects.map((p) => p.id), ['recent', 'old']);
+
+    await repository.save(old.copyWith(name: 'Antigo editado', updatedAt: DateTime.utc(2026, 9, 3)));
+    projects = await repository.getAll();
+    expect(projects.first.id, 'old');
+    expect(projects.first.name, 'Antigo editado');
+
+    await repository.delete('recent');
+    projects = await repository.getAll();
+    expect(projects.map((p) => p.id), ['old']);
+  });
+
+  test('technical records are isolated by project and can cascade delete', () async {
+    final repository = PreferencesProjectRecordRepository();
+    ProjectRecord record(String id, String projectId, DateTime date) => ProjectRecord(
+      id: id,
+      projectId: projectId,
+      type: ProjectRecordType.motor,
+      title: 'Motor',
+      summary: 'Resumo',
+      data: {'currentA': 10.0, 'nested': [{'value': 1}]},
+      createdAt: date,
+    );
+
+    await repository.save(record('a1', 'a', DateTime.utc(2026, 9, 1)));
+    await repository.save(record('b1', 'b', DateTime.utc(2026, 9, 2)));
+    await repository.save(record('a2', 'a', DateTime.utc(2026, 9, 3)));
+
+    final a = await repository.getByProject('a');
+    expect(a.map((r) => r.id), ['a2', 'a1']);
+    expect(a.first.data['currentA'], 10.0);
+
+    await repository.delete('a1');
+    expect((await repository.getByProject('a')).map((r) => r.id), ['a2']);
+    expect((await repository.getByProject('b')).length, 1);
+
+    await repository.deleteByProject('a');
+    expect(await repository.getByProject('a'), isEmpty);
+    expect((await repository.getByProject('b')).single.id, 'b1');
+  });
+
+  test('ProjectRecord survives JSON round trip with structured data', () {
+    final record = ProjectRecord(
+      id: 'r1',
+      projectId: 'p1',
+      type: ProjectRecordType.loadSurvey,
+      title: 'Levantamento',
+      summary: '2 cargas',
+      data: {
+        'installedKw': 6.0,
+        'loads': [
+          {'description': 'Motor', 'quantity': 1, 'powerFactor': 0.85}
+        ],
+      },
+      createdAt: DateTime.utc(2026, 9, 30),
+    );
+    final restored = ProjectRecord.fromJson(record.toJson());
+    expect(restored.type, ProjectRecordType.loadSurvey);
+    expect(restored.projectId, 'p1');
+    expect(restored.data['installedKw'], 6.0);
+    expect((restored.data['loads'] as List).length, 1);
+  });
+}
