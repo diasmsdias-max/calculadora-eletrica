@@ -36,5 +36,46 @@ void main() {
       expect(result.transformer.meetsLoad, isTrue);
       expect(result.transformer.remainingKva, greaterThan(15));
     });
+    test('multiplicador de partida altera somente a estimativa de partida', () {
+      final direct = MotorTransformerCalculator.calculate(
+        transformerKva: 30,
+        motorRatedPower: 15,
+        motorUnit: MotorPowerUnit.cv,
+        system: AcSystem.threePhase,
+        voltageV: 220,
+        powerFactor: 0.85,
+        efficiency: 0.90,
+        startingMultiplier: 6,
+      );
+      final reduced = MotorTransformerCalculator.calculate(
+        transformerKva: 30,
+        motorRatedPower: 15,
+        motorUnit: MotorPowerUnit.cv,
+        system: AcSystem.threePhase,
+        voltageV: 220,
+        powerFactor: 0.85,
+        efficiency: 0.90,
+        startingMultiplier: 2,
+      );
+
+      expect(reduced.motor.apparentPowerKva, closeTo(direct.motor.apparentPowerKva, 0.001));
+      expect(reduced.motorTransformerPercent, closeTo(direct.motorTransformerPercent, 0.001));
+      expect(direct.startingKvaEstimate, closeTo(reduced.startingKvaEstimate * 3, 0.01));
+    });
+
+    test('rejeita transformador com potência nominal inválida', () {
+      expect(
+        () => MotorTransformerCalculator.calculate(
+          transformerKva: 0,
+          motorRatedPower: 15,
+          motorUnit: MotorPowerUnit.cv,
+          system: AcSystem.threePhase,
+          voltageV: 220,
+          powerFactor: 0.85,
+          efficiency: 0.90,
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }
