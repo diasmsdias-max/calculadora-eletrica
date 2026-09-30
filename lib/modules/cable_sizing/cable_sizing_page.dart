@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/conductor_check_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
+import '../../core/calculations/quick_ampacity_reference.dart';
 import '../../core/calculations/voltage_drop_calculator.dart';
 import '../../core/database/project_record.dart';
 import '../../core/projects/project_record_saver.dart';
@@ -26,16 +27,6 @@ class _CableSizingPageState extends State<CableSizingPage> {
   final referenceAmpacity = TextEditingController(text: '41');
   final reactance = TextEditingController(text: '0,10');
 
-  static final _quickCuB1TwoLoaded = <double, double>{
-    1.5: 17.5, 2.5: 24, 4: 32, 6: 41, 10: 57, 16: 76,
-    25: 101, 35: 125, 50: 151, 70: 192, 95: 232, 120: 269,
-    150: 309, 185: 353, 240: 415, 300: 477,
-  };
-  static final _quickAlB1TwoLoaded = <double, double>{
-    16: 60, 25: 79, 35: 97, 50: 118, 70: 150, 95: 181,
-    120: 210, 150: 241, 185: 275, 240: 324, 300: 372,
-  };
-
   AcSystem system = AcSystem.twoPhase;
   ConductorMaterial material = ConductorMaterial.copper;
   _AmpacityMode ampacityMode = _AmpacityMode.copperQuick;
@@ -48,10 +39,14 @@ class _CableSizingPageState extends State<CableSizingPage> {
   void _applyQuickAmpacity() {
     if (ampacityMode == _AmpacityMode.custom) return;
     final selectedSection = double.tryParse(section.text.trim().replaceAll(',', '.'));
-    final table = ampacityMode == _AmpacityMode.copperQuick
-        ? _quickCuB1TwoLoaded
-        : _quickAlB1TwoLoaded;
-    final value = selectedSection == null ? null : table[selectedSection];
+    final value = selectedSection == null
+        ? null
+        : QuickAmpacityReference.ampacityA(
+            material: ampacityMode == _AmpacityMode.copperQuick
+                ? QuickAmpacityMaterial.copper
+                : QuickAmpacityMaterial.aluminum,
+            sectionMm2: selectedSection,
+          );
     if (value != null) {
       referenceAmpacity.text = TechnicalFormat.number(value, decimals: value % 1 == 0 ? 0 : 1);
     }
