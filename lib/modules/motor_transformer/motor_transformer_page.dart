@@ -28,11 +28,22 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
 
   double _n(String v) => double.parse(v.trim().replaceAll(',', '.'));
 
+  void _invalidateResult() {
+    if (result != null || error != null) {
+      setState(() {
+        result = null;
+        error = null;
+      });
+    }
+  }
+
   void _methodChanged(MotorStartingMethod value) {
     setState(() {
       startingMethod = value;
       startingMultiplier.text = MotorCalculator.suggestedStartingMultiplier(value)
           .toStringAsFixed(1).replaceAll('.', ',');
+      result = null;
+      error = null;
     });
   }
 
@@ -114,7 +125,11 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
               DropdownMenuItem(value: MotorPowerUnit.cv, child: Text('CV')),
               DropdownMenuItem(value: MotorPowerUnit.hp, child: Text('HP')),
               DropdownMenuItem(value: MotorPowerUnit.kw, child: Text('kW')),
-            ], onChanged: (v) => setState(() => unit = v!),
+            ], onChanged: (v) => setState(() {
+              unit = v!;
+              result = null;
+              error = null;
+            }),
           )),
         ]),
         const SizedBox(height: 12),
@@ -124,7 +139,11 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
             DropdownMenuItem(value: AcSystem.singlePhase, child: Text('Monofásico')),
             DropdownMenuItem(value: AcSystem.twoPhase, child: Text('Bifásico')),
             DropdownMenuItem(value: AcSystem.threePhase, child: Text('Trifásico')),
-          ], onChanged: (v) => setState(() => system = v!),
+          ], onChanged: (v) => setState(() {
+            system = v!;
+            result = null;
+            error = null;
+          }),
         ),
         const SizedBox(height: 12),
         _field(voltage, 'Tensão (V)'),
@@ -182,6 +201,7 @@ class _MotorTransformerPageState extends State<MotorTransformerPage> {
 
   Widget _field(TextEditingController c, String label) => TextField(
     controller: c,
+    onChanged: (_) => _invalidateResult(),
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
     decoration: InputDecoration(labelText: label),
   );
