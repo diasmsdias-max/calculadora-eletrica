@@ -22,10 +22,11 @@ class _CableSizingPageState extends State<CableSizingPage> {
   final temperatureFactor = TextEditingController(text: '1,00');
   final groupingFactor = TextEditingController(text: '1,00');
   final referenceAmpacity = TextEditingController(text: '50');
-  final reactance = TextEditingController(text: '0');
+  final reactance = TextEditingController(text: '0,10');
 
   AcSystem system = AcSystem.twoPhase;
   ConductorMaterial material = ConductorMaterial.copper;
+  bool useEstimatedReactance = true;
   ConductorCheckResult? result;
   String? error;
 
@@ -49,6 +50,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
         'powerFactor': _n(powerFactor.text),
         'maxDropPercent': _n(maxDrop.text),
         'reactanceOhmPerKm': _n(reactance.text),
+        'reactanceSource': useEstimatedReactance ? 'practical_estimate' : 'custom',
         'temperatureFactor': _n(temperatureFactor.text),
         'groupingFactor': _n(groupingFactor.text),
         'referenceAmpacityA': _n(referenceAmpacity.text),
@@ -148,7 +150,30 @@ class _CableSizingPageState extends State<CableSizingPage> {
             Expanded(child: _field(maxDrop, 'Limite queda (%)')),
           ]),
           const SizedBox(height: 12),
-          _field(reactance, 'Reatância X (Ω/km) — opcional'),
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('Estimativa rápida')),
+              ButtonSegment(value: false, label: Text('Personalizado')),
+            ],
+            selected: {useEstimatedReactance},
+            onSelectionChanged: (selection) => setState(() {
+              useEstimatedReactance = selection.first;
+              if (useEstimatedReactance) reactance.text = '0,10';
+            }),
+          ),
+          const SizedBox(height: 8),
+          _field(
+            reactance,
+            useEstimatedReactance
+                ? 'Reatância X (Ω/km) — estimativa'
+                : 'Reatância X (Ω/km) — personalizado',
+          ),
+          const SizedBox(height: 6),
+          Text(
+            useEstimatedReactance
+                ? 'Estimativa prática: X = 0,10 Ω/km. Referência preliminar para cálculo rápido em campo.'
+                : 'Informe a reatância conforme os dados do cabo ou da instalação.',
+          ),
           const SizedBox(height: 20),
           Text('Capacidade de condução', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
