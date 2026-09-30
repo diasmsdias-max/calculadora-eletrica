@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/calculations/motor_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
+import '../../core/database/local_project.dart';
+import '../../core/database/project_record.dart';
+import '../../core/database/project_record_repository.dart';
+import '../../core/database/project_repository.dart';
 
 class MotorPage extends StatefulWidget {
   const MotorPage({super.key});
@@ -34,6 +38,74 @@ class _MotorPageState extends State<MotorPage> {
       startingMultiplier.text =
           MotorCalculator.suggestedStartingMultiplier(value).toStringAsFixed(1).replaceAll('.', ',');
     });
+  }
+
+  Future<void> _saveToProject() async {
+    final r = result;
+    if (r == null) return;
+    final projects = await PreferencesProjectRepository().getAll();
+    if (!mounted) return;
+    if (projects.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Crie um projeto em Meus Projetos antes de salvar o cálculo.')),
+      );
+      return;
+    }
+    final selected = await showDialog<LocalProject>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Salvar em qual projeto?'),
+        children: projects.map((p) => SimpleDialogOption(
+          onPressed: () => Navigator.pop(context, p),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(p.client.isEmpty ? p.name : '${p.name}\n${p.client}'),
+          ),
+        )).toList(),
+      ),
+    );
+    if (selected == null) return;
+    final now = DateTime.now();
+    final inputValue = inputMode == MotorInputMode.power ? _n(power.text) : _n(current.text);
+    final inputLabel = inputMode == MotorInputMode.power
+        ? '${inputValue.toStringAsFixed(2)} ${unit.name.toUpperCase()}'
+        : '${inputValue.toStringAsFixed(2)} A';
+    final record = ProjectRecord(
+      id: now.microsecondsSinceEpoch.toString(),
+      projectId: selected.id,
+      type: ProjectRecordType.motor,
+      title: 'Motor — $inputLabel',
+      summary: '${r.nominalCurrentA.toStringAsFixed(2)} A • ${r.apparentPowerKva.toStringAsFixed(2)} kVA',
+      createdAt: now,
+      data: {
+        'inputMode': inputMode.name,
+        'ratedPower': inputMode == MotorInputMode.power ? _n(power.text) : null,
+        'powerUnit': unit.name,
+        'informedCurrentA': inputMode == MotorInputMode.current ? _n(current.text) : null,
+        'system': system.name,
+        'voltageV': _n(voltage.text),
+        'powerFactor': _n(pf.text),
+        'efficiency': _n(efficiency.text),
+        'serviceFactor': _n(serviceFactor.text),
+        'startingMethod': startingMethod.name,
+        'startingMultiplier': _n(startingMultiplier.text),
+        'hoursPerDay': _n(hours.text),
+        'daysPerMonth': int.parse(days.text),
+        'shaftPowerKw': r.shaftPowerKw,
+        'servicePowerKw': r.servicePowerKw,
+        'absorbedPowerKw': r.absorbedPowerKw,
+        'apparentPowerKva': r.apparentPowerKva,
+        'nominalCurrentA': r.nominalCurrentA,
+        'estimatedStartingCurrentA': r.estimatedStartingCurrentA,
+        'dailyEnergyKwh': r.dailyEnergyKwh,
+        'monthlyEnergyKwh': r.monthlyEnergyKwh,
+      },
+    );
+    await PreferencesProjectRecordRepository().save(record);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Cálculo salvo em “${selected.name}”.')),
+    );
   }
 
   void _calculate() {
@@ -158,6 +230,12 @@ class _MotorPageState extends State<MotorPage> {
         _result('Corrente de partida estimada', result!.estimatedStartingCurrentA, 'A'),
         _result('Consumo diário estimado', result!.dailyEnergyKwh, 'kWh'),
         _result('Consumo mensal estimado', result!.monthlyEnergyKwh, 'kWh'),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _saveToProject,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('SALVAR NO PROJETO'),
+        ),
         const SizedBox(height: 12),
         const Text('Consumo estimado considerando operação à carga nominal. A corrente de partida é uma estimativa baseada no multiplicador informado. Use Ip/In de placa ou dados do fabricante quando disponíveis.'),
       ],
