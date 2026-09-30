@@ -150,7 +150,13 @@ class _TransformerPageState extends State<TransformerPage> {
             _status(result!.meetsLoad),
             const SizedBox(height: 8),
             _result('Corrente nominal disponível', result!.availableCurrentA, 'A'),
-            _result('Potência ativa disponível', result!.availableActivePowerKw, 'kW'),
+            if (loadUnit == TransformerLoadUnit.kw)
+              _result('Potência ativa disponível no FP informado', result!.availableActivePowerKw, 'kW')
+            else
+              const Card(child: ListTile(
+                title: Text('Potência ativa disponível'),
+                subtitle: Text('Não determinada sem fator de potência da carga.'),
+              )),
             _result('Carga equivalente', result!.loadKva, 'kVA'),
             _result('Carregamento do transformador', result!.loadPercent, '%'),
             _result('Capacidade restante', result!.remainingKva, 'kVA'),
