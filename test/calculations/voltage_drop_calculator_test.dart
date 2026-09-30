@@ -60,6 +60,23 @@ void main() {
       expect(withReactance.dropV, greaterThan(resistiveOnly.dropV));
     });
 
+
+    test('não sugere 300 mm² quando a seção mínima excede a faixa comercial', () {
+      final r = VoltageDropCalculator.calculate(
+        system: AcSystem.singlePhase,
+        voltageV: 127,
+        currentA: 200,
+        lengthM: 500,
+        sectionMm2: 300,
+        material: ConductorMaterial.copper,
+        powerFactor: 0.8,
+        maxDropPercent: 1,
+        reactanceOhmPerKm: 0.10,
+      );
+      expect(r.minimumSectionMm2, greaterThan(300));
+      expect(r.commercialSectionMm2, isNull);
+    });
+
     test('alumínio apresenta maior queda que cobre na mesma seção', () {
       final copper = VoltageDropCalculator.calculate(
         system: AcSystem.twoPhase,
