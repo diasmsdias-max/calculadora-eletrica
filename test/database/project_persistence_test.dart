@@ -59,6 +59,24 @@ void main() {
     expect(projects.map((p) => p.id), ['old']);
   });
 
+  test('project repository reorders project after activity update', () async {
+    final repository = PreferencesProjectRepository();
+    final active = LocalProject(
+      id: 'active', name: 'Obra ativa', client: '', address: '', responsible: '',
+      notes: '', createdAt: DateTime.utc(2026, 9, 1), updatedAt: DateTime.utc(2026, 9, 1),
+    );
+    final other = LocalProject(
+      id: 'other', name: 'Outra obra', client: '', address: '', responsible: '',
+      notes: '', createdAt: DateTime.utc(2026, 9, 2), updatedAt: DateTime.utc(2026, 9, 2),
+    );
+    await repository.save(active);
+    await repository.save(other);
+    expect((await repository.getAll()).first.id, 'other');
+
+    await repository.save(active.copyWith(updatedAt: DateTime.utc(2026, 9, 3)));
+    expect((await repository.getAll()).first.id, 'active');
+  });
+
   test('technical records are isolated by project and can cascade delete', () async {
     final repository = PreferencesProjectRecordRepository();
     ProjectRecord record(String id, String projectId, DateTime date) => ProjectRecord(
