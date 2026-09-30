@@ -28,6 +28,15 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
 
   double _n(String v) => double.parse(v.trim().replaceAll(',', '.'));
 
+  void _invalidateResult() {
+    if (result != null || error != null) {
+      setState(() {
+        result = null;
+        error = null;
+      });
+    }
+  }
+
   Future<void> _saveToProject() async {
     final r = result;
     if (r == null) return;
@@ -101,7 +110,11 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
               DropdownMenuItem(value: AcSystem.twoPhase, child: Text('Bifásico')),
               DropdownMenuItem(value: AcSystem.threePhase, child: Text('Trifásico')),
             ],
-            onChanged: (v) => setState(() => system = v!),
+            onChanged: (v) => setState(() {
+              system = v!;
+              result = null;
+              error = null;
+            }),
           ),
           const SizedBox(height: 12),
           Row(children: [
@@ -123,7 +136,11 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
               DropdownMenuItem(value: ConductorMaterial.copper, child: Text('Cobre')),
               DropdownMenuItem(value: ConductorMaterial.aluminum, child: Text('Alumínio')),
             ],
-            onChanged: (v) => setState(() => material = v!),
+            onChanged: (v) => setState(() {
+              material = v!;
+              result = null;
+              error = null;
+            }),
           ),
           const SizedBox(height: 12),
           Row(children: [
@@ -141,11 +158,14 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
             onSelectionChanged: (selection) => setState(() {
               useEstimatedReactance = selection.first;
               if (useEstimatedReactance) reactance.text = '0,10';
+              result = null;
+              error = null;
             }),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: reactance,
+            onChanged: (_) => _invalidateResult(),
             readOnly: useEstimatedReactance,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
@@ -203,6 +223,7 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
 
   Widget _field(TextEditingController c, String label) => TextField(
     controller: c,
+    onChanged: (_) => _invalidateResult(),
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
     decoration: InputDecoration(labelText: label),
   );
