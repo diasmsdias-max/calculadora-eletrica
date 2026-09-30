@@ -109,6 +109,7 @@ void main() {
         'maxDropPercent': 4.0,
         'withinLimit': true,
         'minimumSectionMm2': 2.39,
+        'commercialSectionMm2': 2.5,
       }),
     ];
 
@@ -118,6 +119,28 @@ void main() {
     );
 
     expect(bytes.length, greaterThan(1000));
+    expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
+  });
+
+  test('generates PDF when commercial section exceeds quick range', () async {
+    final now = DateTime(2026, 9, 30);
+    final project = LocalProject(
+      id: 'range', name: 'Fora da faixa', client: '', address: '',
+      responsible: '', notes: '', createdAt: now, updatedAt: now,
+    );
+    final record = ProjectRecord(
+      id: 'vd-range', projectId: project.id, type: ProjectRecordType.voltageDrop,
+      title: 'Queda de tensão', summary: 'Acima da faixa', createdAt: now,
+      data: {
+        'voltageV': 127.0, 'currentA': 200.0, 'sectionMm2': 300.0,
+        'material': 'copper', 'lengthM': 500.0, 'reactanceOhmPerKm': 0.10,
+        'reactanceSource': 'practical_estimate', 'dropV': 20.0,
+        'dropPercent': 15.75, 'maxDropPercent': 1.0, 'withinLimit': false,
+        'minimumSectionMm2': double.infinity, 'commercialSectionMm2': null,
+      },
+    );
+    final bytes = await ProjectPdfGenerator.generate(project: project, records: [record]);
+    expect(bytes.length, greaterThan(500));
     expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
   });
 
