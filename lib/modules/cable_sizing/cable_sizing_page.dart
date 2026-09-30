@@ -288,6 +288,11 @@ class _CableSizingPageState extends State<CableSizingPage> {
           Text(ampacityMode == _AmpacityMode.custom
               ? 'Valor informado pelo profissional.'
               : 'Referência rápida: PVC 70 °C, método B1, ${system == AcSystem.threePhase ? 3 : 2} condutores carregados. Ajuste os fatores de correção conforme a instalação.'),
+          const SizedBox(height: 12),
+          if (ampacityMode != _AmpacityMode.custom)
+            const Text(
+              'A referência rápida é uma simplificação para uso preliminar em campo. Confirme o método de instalação, número real de condutores carregados, temperatura, agrupamento e demais condições antes do dimensionamento final.',
+            ),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: _calculate,
