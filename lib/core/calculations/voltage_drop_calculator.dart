@@ -56,7 +56,7 @@ abstract final class VoltageDropCalculator {
     final dropPercent = dropV / voltageV * 100;
     final maxDropV = voltageV * maxDropPercent / 100;
     final minimum = maxDropV == 0
-        ? 0
+        ? 0.0
         : circuitFactor * rho * lengthM * currentA * powerFactor / maxDropV;
 
     final commercial = _commercialSections.firstWhere(
