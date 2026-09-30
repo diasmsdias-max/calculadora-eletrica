@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import '../formatters/technical_format.dart';
 
 import '../database/local_project.dart';
 import '../database/project_record.dart';
@@ -236,7 +237,7 @@ class ProjectPdfGenerator {
     if (value == null) return '-';
     if (value is num) {
       if (!value.toDouble().isFinite) return 'não determinado';
-      return value.toDouble().toStringAsFixed(2).replaceAll('.', ',');
+      return TechnicalFormat.number(value, decimals: 2);
     }
     return value.toString();
   }
@@ -244,7 +245,7 @@ class ProjectPdfGenerator {
   static String _unit(dynamic value, String unit) => value == null ? '-' : '${_num(value)} $unit';
 
   static String _numPercentFraction(dynamic value) {
-    if (value is num) return (value.toDouble() * 100).toStringAsFixed(0);
+    if (value is num) return TechnicalFormat.number(value.toDouble() * 100, decimals: 0);
     return '-';
   }
 
