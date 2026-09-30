@@ -124,20 +124,58 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                 Text(record.summary),
               ],
               const Divider(height: 28),
-              if (entries.isEmpty)
+              if (entries.isEmpty && record.data['loads'] is! List)
                 const Text('Este registro não possui dados adicionais para exibir.')
-              else
+              else ...[
                 ...entries.map((entry) => ListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: Text(_dataLabel(entry.key)),
                   subtitle: Text(_dataValue(entry.key, entry.value)),
                 )),
+                if (record.data['loads'] case final List loads) ...[
+                  const Divider(height: 28),
+                  Text('Cargas', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  ...loads.asMap().entries.map((entry) {
+                    final raw = entry.value;
+                    if (raw is! Map) return const SizedBox.shrink();
+                    final load = Map<String, dynamic>.from(raw);
+                    final description = (load['description'] ?? '').toString().trim();
+                    final title = description.isEmpty
+                        ? 'Carga ${entry.key + 1}'
+                        : description;
+                    return Card(
+                      child: ListTile(
+                        title: Text(title),
+                        subtitle: Text(_loadDetails(load)),
+                      ),
+                    );
+                  }),
+                ],
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _loadDetails(Map<String, dynamic> load) {
+    String number(dynamic value, {int decimals = 2}) {
+      if (value is! num || !value.toDouble().isFinite) return '-';
+      return value.toDouble().toStringAsFixed(decimals).replaceAll('.', ',');
+    }
+
+    final unitPowerKw = load['unitPowerKw'];
+    final powerW = unitPowerKw is num ? unitPowerKw.toDouble() * 1000 : null;
+    final simultaneity = load['simultaneity'];
+    final simultaneityPercent =
+        simultaneity is num ? simultaneity.toDouble() * 100 : null;
+    return '${number(powerW, decimals: 0)} W × ${load['quantity'] ?? '-'}'
+        '  |  FP ${number(load['powerFactor'])}'
+        '  |  Simult. ${number(simultaneityPercent, decimals: 0)}%'
+        '  |  ${number(load['hoursPerDay'], decimals: 1)} h/dia';
   }
 
   String _dataLabel(String key) {
