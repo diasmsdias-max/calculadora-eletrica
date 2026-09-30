@@ -1,35 +1,41 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static const _background = Color(0xFF0B0F14);
-  static const _surface = Color(0xFF141A22);
-  static const _accent = Color(0xFFFFC107);
+  static const background = Color(0xFF090C10);
+  static const surface = Color(0xFF141A22);
+  static const yellow = Color(0xFFFFC107);
+  static const red = Color(0xFFE51B23);
 
   static ThemeData get dark {
     final scheme = ColorScheme.fromSeed(
-      seedColor: _accent,
+      seedColor: yellow,
       brightness: Brightness.dark,
-      surface: _surface,
+      surface: surface,
+    ).copyWith(
+      primary: yellow,
+      secondary: red,
+      error: red,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: scheme,
-      scaffoldBackgroundColor: _background,
+      scaffoldBackgroundColor: background,
       appBarTheme: const AppBarTheme(
-        backgroundColor: _surface,
+        backgroundColor: background,
+        foregroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
       ),
       cardTheme: const CardThemeData(
         elevation: 0,
-        color: _surface,
+        color: surface,
         margin: EdgeInsets.zero,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: _surface,
+        fillColor: surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
