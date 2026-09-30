@@ -8,7 +8,7 @@ class CalculadoraEletricaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Vis Electrica',
+      title: 'VIS ELECTRICA',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       home: const HomePage(),
