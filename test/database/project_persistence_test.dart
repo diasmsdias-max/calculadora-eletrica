@@ -61,6 +61,34 @@ void main() {
     expect(projects.map((p) => p.id), ['old']);
   });
 
+  test('project repository keeps valid projects beside malformed data', () async {
+    final valid = LocalProject(
+      id: 'valid',
+      name: 'Projeto válido',
+      client: '',
+      address: '',
+      responsible: '',
+      notes: '',
+      createdAt: DateTime.utc(2026, 9, 30),
+      updatedAt: DateTime.utc(2026, 9, 30),
+    );
+    SharedPreferences.setMockInitialValues({
+      'local_projects_v1': jsonEncode([
+        valid.toJson(),
+        {
+          'id': 'broken',
+          'name': 'Projeto incompatível',
+          'createdAt': 'invalid-date',
+          'updatedAt': 'invalid-date',
+        },
+      ]),
+    });
+
+    final projects = await PreferencesProjectRepository().getAll();
+
+    expect(projects.map((p) => p.id), ['valid']);
+  });
+
   test('project repository reorders project after activity update', () async {
     final repository = PreferencesProjectRepository();
     final active = LocalProject(
