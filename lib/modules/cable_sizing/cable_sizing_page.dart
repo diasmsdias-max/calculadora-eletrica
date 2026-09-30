@@ -12,6 +12,8 @@ class CableSizingPage extends StatefulWidget {
   State<CableSizingPage> createState() => _CableSizingPageState();
 }
 
+enum _AmpacityMode { copperQuick, aluminumQuick, custom }
+
 class _CableSizingPageState extends State<CableSizingPage> {
   final voltage = TextEditingController(text: '220');
   final current = TextEditingController(text: '40');
@@ -24,13 +26,36 @@ class _CableSizingPageState extends State<CableSizingPage> {
   final referenceAmpacity = TextEditingController(text: '50');
   final reactance = TextEditingController(text: '0,10');
 
+  static const _quickCuB1TwoLoaded = <double, double>{
+    1.5: 17.5, 2.5: 24, 4: 32, 6: 41, 10: 57, 16: 76,
+    25: 101, 35: 125, 50: 151, 70: 192, 95: 232, 120: 269,
+    150: 309, 185: 353, 240: 415, 300: 477,
+  };
+  static const _quickAlB1TwoLoaded = <double, double>{
+    16: 60, 25: 79, 35: 97, 50: 118, 70: 150, 95: 181,
+    120: 210, 150: 241, 185: 275, 240: 324, 300: 372,
+  };
+
   AcSystem system = AcSystem.twoPhase;
   ConductorMaterial material = ConductorMaterial.copper;
+  _AmpacityMode ampacityMode = _AmpacityMode.custom;
   bool useEstimatedReactance = true;
   ConductorCheckResult? result;
   String? error;
 
   double _n(String v) => double.parse(v.trim().replaceAll(',', '.'));
+
+  void _applyQuickAmpacity() {
+    if (ampacityMode == _AmpacityMode.custom) return;
+    final selectedSection = double.tryParse(section.text.trim().replaceAll(',', '.'));
+    final table = ampacityMode == _AmpacityMode.copperQuick
+        ? _quickCuB1TwoLoaded
+        : _quickAlB1TwoLoaded;
+    final value = selectedSection == null ? null : table[selectedSection];
+    if (value != null) {
+      referenceAmpacity.text = TechnicalFormat.number(value, decimals: value % 1 == 0 ? 0 : 1);
+    }
+  }
 
   Future<void> _saveToProject() async {
     final r = result;
@@ -54,6 +79,10 @@ class _CableSizingPageState extends State<CableSizingPage> {
         'temperatureFactor': _n(temperatureFactor.text),
         'groupingFactor': _n(groupingFactor.text),
         'referenceAmpacityA': _n(referenceAmpacity.text),
+        'ampacitySource': ampacityMode.name,
+        'ampacityReference': ampacityMode == _AmpacityMode.custom
+            ? 'custom'
+            : 'NBR 5410 Tabela 36 - PVC 70 C - metodo B1 - 2 condutores carregados',
         'combinedCorrectionFactor': r.ampacity.combinedCorrectionFactor,
         'requiredReferenceAmpacityA': r.ampacity.requiredAmpacityA,
         'correctedAmpacityA': r.correctedAmpacityA,
@@ -131,7 +160,12 @@ class _CableSizingPageState extends State<CableSizingPage> {
           Row(children: [
             Expanded(child: _field(length, 'Comprimento (m)')),
             const SizedBox(width: 12),
-            Expanded(child: _field(section, 'Seção (mm²)')),
+            Expanded(child: TextField(
+              controller: section,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Seção (mm²)'),
+              onChanged: (_) => setState(_applyQuickAmpacity),
+            )),
           ]),
           const SizedBox(height: 12),
           DropdownButtonFormField<ConductorMaterial>(
@@ -185,7 +219,29 @@ class _CableSizingPageState extends State<CableSizingPage> {
             Expanded(child: _field(groupingFactor, 'Fator agrupamento')),
           ]),
           const SizedBox(height: 12),
+          SegmentedButton<_AmpacityMode>(
+            segments: const [
+              ButtonSegment(value: _AmpacityMode.copperQuick, label: Text('Cu rápido')),
+              ButtonSegment(value: _AmpacityMode.aluminumQuick, label: Text('Al rápido')),
+              ButtonSegment(value: _AmpacityMode.custom, label: Text('Personalizado')),
+            ],
+            selected: {ampacityMode},
+            onSelectionChanged: (selection) => setState(() {
+              ampacityMode = selection.first;
+              if (ampacityMode == _AmpacityMode.copperQuick) {
+                material = ConductorMaterial.copper;
+              } else if (ampacityMode == _AmpacityMode.aluminumQuick) {
+                material = ConductorMaterial.aluminum;
+              }
+              _applyQuickAmpacity();
+            }),
+          ),
+          const SizedBox(height: 8),
           _field(referenceAmpacity, 'Ampacidade de referência (A)'),
+          const SizedBox(height: 6),
+          Text(ampacityMode == _AmpacityMode.custom
+              ? 'Valor informado pelo profissional.'
+              : 'Referência rápida: PVC 70 °C, método B1, 2 condutores carregados. Ajuste os fatores de correção conforme a instalação.'),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: _calculate,
