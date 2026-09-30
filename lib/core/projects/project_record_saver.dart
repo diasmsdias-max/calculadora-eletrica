@@ -44,6 +44,7 @@ class ProjectRecordSaver {
       data: data,
       createdAt: now,
     ));
+    await PreferencesProjectRepository().save(selected.copyWith(updatedAt: now));
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Cálculo salvo em “${selected.name}”.')),
