@@ -98,10 +98,10 @@ class ProjectPdfGenerator {
       children: [
         pw.Text(_typeLabel(r.type), style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 3),
-        pw.Text(r.title, style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        pw.Text(_pdfSafeText(r.title), style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
         if (r.summary.isNotEmpty) ...[
           pw.SizedBox(height: 3),
-          pw.Text(r.summary, style: const pw.TextStyle(fontSize: 9)),
+          pw.Text(_pdfSafeText(r.summary), style: const pw.TextStyle(fontSize: 9)),
         ],
         pw.SizedBox(height: 7),
         ..._recordDetails(r),
@@ -262,10 +262,16 @@ class ProjectPdfGenerator {
     _ => value?.toString() ?? '-',
   };
 
+  static String _pdfSafeText(String value) => value
+      .replaceAll('×', '-')
+      .replaceAll(' x ', ' - ')
+      .replaceAll('•', '|')
+      .replaceAll('—', '-');
+
   static String _typeLabel(ProjectRecordType type) => switch (type) {
     ProjectRecordType.motor => 'MOTOR ELÉTRICO',
     ProjectRecordType.transformer => 'TRANSFORMADOR',
-    ProjectRecordType.motorTransformer => 'MOTOR x TRANSFORMADOR',
+    ProjectRecordType.motorTransformer => 'MOTOR - TRANSFORMADOR',
     ProjectRecordType.loadSurvey => 'LEVANTAMENTO DE CARGAS',
     ProjectRecordType.cableSizing => 'DIMENSIONAMENTO DE CABOS',
     ProjectRecordType.voltageDrop => 'QUEDA DE TENSÃO',
