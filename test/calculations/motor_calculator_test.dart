@@ -86,5 +86,40 @@ void main() {
       expect(result.shaftPowerKw, closeTo(11.662, 0.01));
       expect(result.absorbedPowerKw, closeTo(12.958, 0.01));
     });
+    test('rejeita parâmetros físicos inválidos', () {
+      expect(
+        () => MotorCalculator.calculate(
+          ratedPower: 5,
+          unit: MotorPowerUnit.kw,
+          system: AcSystem.threePhase,
+          voltageV: 0,
+          powerFactor: 0.85,
+          efficiency: 0.9,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => MotorCalculator.calculate(
+          ratedPower: 5,
+          unit: MotorPowerUnit.kw,
+          system: AcSystem.threePhase,
+          voltageV: 220,
+          powerFactor: 1.1,
+          efficiency: 0.9,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => MotorCalculator.calculate(
+          ratedPower: 5,
+          unit: MotorPowerUnit.kw,
+          system: AcSystem.threePhase,
+          voltageV: 220,
+          powerFactor: 0.85,
+          efficiency: 0,
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }
