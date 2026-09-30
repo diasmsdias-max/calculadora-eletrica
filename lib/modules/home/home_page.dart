@@ -6,6 +6,7 @@ import '../motor_transformer/motor_transformer_page.dart';
 import '../load_survey/load_survey_page.dart';
 import '../voltage_drop/voltage_drop_page.dart';
 import '../cable_sizing/cable_sizing_page.dart';
+import '../projects/projects_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -51,6 +52,7 @@ class HomePage extends StatelessWidget {
                           3 => const LoadSurveyPage(),
                           4 => const CableSizingPage(),
                           5 => const VoltageDropPage(),
+                          6 => const ProjectsPage(),
                           _ => ModulePlaceholderPage(
                               title: module.title,
                               subtitle: module.subtitle,
