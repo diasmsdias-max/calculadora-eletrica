@@ -84,6 +84,10 @@ void main() {
         'sectionMm2': 10.0,
         'material': 'copper',
         'lengthM': 40.0,
+        'referenceAmpacityA': 76.0,
+        'ampacitySource': 'copperQuick',
+        'reactanceOhmPerKm': 0.10,
+        'reactanceSource': 'practical_estimate',
         'requiredReferenceAmpacityA': 62.5,
         'correctedAmpacityA': 64.0,
         'ampacityMeets': true,
@@ -98,6 +102,8 @@ void main() {
         'sectionMm2': 4.0,
         'material': 'copper',
         'lengthM': 30.0,
+        'reactanceOhmPerKm': 0.08,
+        'reactanceSource': 'custom',
         'dropV': 5.25,
         'dropPercent': 2.39,
         'maxDropPercent': 4.0,
@@ -112,6 +118,45 @@ void main() {
     );
 
     expect(bytes.length, greaterThan(1000));
+    expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
+  });
+
+  test('generates PDF when new source metadata is absent', () async {
+    final now = DateTime(2026, 9, 30);
+    final project = LocalProject(
+      id: 'legacy',
+      name: 'Projeto legado',
+      client: '',
+      address: '',
+      responsible: '',
+      notes: '',
+      createdAt: now,
+      updatedAt: now,
+    );
+    final record = ProjectRecord(
+      id: 'legacy-cable',
+      projectId: project.id,
+      type: ProjectRecordType.cableSizing,
+      title: 'Condutor — 6,00 mm²',
+      summary: 'Registro anterior',
+      data: {
+        'voltageV': 220.0,
+        'designCurrentA': 40.0,
+        'sectionMm2': 6.0,
+        'material': 'copper',
+        'lengthM': 30.0,
+        'requiredReferenceAmpacityA': 40.0,
+        'correctedAmpacityA': 41.0,
+        'ampacityMeets': true,
+        'dropV': 3.0,
+        'dropPercent': 1.36,
+        'voltageDropMeets': true,
+        'meetsBothCriteria': true,
+      },
+      createdAt: now,
+    );
+    final bytes = await ProjectPdfGenerator.generate(project: project, records: [record]);
+    expect(bytes.length, greaterThan(500));
     expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
   });
 
