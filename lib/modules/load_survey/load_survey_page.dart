@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/load_survey_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
 import '../../core/database/project_record.dart';
@@ -38,7 +39,7 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
       context,
       type: ProjectRecordType.loadSurvey,
       title: 'Levantamento de Cargas — ${items.length} ${items.length == 1 ? 'item' : 'itens'}',
-      summary: '${totals.installedKw.toStringAsFixed(2)} kW instalados • demanda ${totals.demandKw.toStringAsFixed(2)} kW',
+      summary: '${TechnicalFormat.number(totals.installedKw)} kW instalados | demanda ${TechnicalFormat.number(totals.demandKw)} kW',
       data: {
         'system': system.name,
         'voltageV': voltageValue,
@@ -119,9 +120,9 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
                   child: ListTile(
                     title: Text(item.description.isEmpty ? 'Carga ${index + 1}' : item.description),
                     subtitle: Text(
-                      '${(item.unitPowerKw * 1000).toStringAsFixed(0)} W × ${item.quantity}  •  '
-                      'Demanda ${itemResult.demandKw.toStringAsFixed(2)} kW  •  '
-                      '${item.hoursPerDay.toStringAsFixed(1)} h/dia',
+                      '${TechnicalFormat.number(item.unitPowerKw * 1000, decimals: 0)} W x ${item.quantity}  |  '
+                      'Demanda ${TechnicalFormat.number(itemResult.demandKw)} kW  |  '
+                      '${TechnicalFormat.number(item.hoursPerDay, decimals: 1)} h/dia',
                     ),
                     isThreeLine: true,
                     onTap: () => _openEditor(index: index),
@@ -195,7 +196,7 @@ class _LoadSurveyPageState extends State<LoadSurveyPage> {
     child: ListTile(
       title: Text(label),
       trailing: Text(
-        '${value.toStringAsFixed(2)} $unit',
+        '${TechnicalFormat.number(value)} $unit',
         style: Theme.of(context).textTheme.titleMedium,
       ),
     ),
