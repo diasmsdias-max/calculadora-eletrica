@@ -83,7 +83,7 @@ class _CableSizingPageState extends State<CableSizingPage> {
         'ampacitySource': ampacityMode.name,
         'ampacityReference': ampacityMode == _AmpacityMode.custom
             ? 'custom'
-            : 'NBR 5410 Tabela 36 - PVC 70 C - metodo B1 - \${QuickAmpacityReference.loadedConductorsForSystemName(system.name)} condutores carregados',
+            : '${QuickAmpacityReference.referenceDescription} - ${QuickAmpacityReference.loadedConductorsForSystemName(system.name)} condutores carregados',
         'combinedCorrectionFactor': r.ampacity.combinedCorrectionFactor,
         'requiredReferenceAmpacityA': r.ampacity.requiredAmpacityA,
         'correctedAmpacityA': r.correctedAmpacityA,
