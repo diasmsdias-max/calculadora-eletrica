@@ -17,10 +17,17 @@ class PreferencesProjectRepository implements ProjectRepository {
   Future<List<LocalProject>> getAll() async {
     final raw = (await _prefs).getString(_key);
     if (raw == null || raw.isEmpty) return [];
-    final decoded = jsonDecode(raw) as List<dynamic>;
-    final projects = decoded
-        .map((e) => LocalProject.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return [];
+    final projects = <LocalProject>[];
+    for (final item in decoded) {
+      try {
+        if (item is! Map) continue;
+        projects.add(LocalProject.fromJson(Map<String, dynamic>.from(item)));
+      } catch (_) {
+        // Keep valid projects accessible if one stored entry is malformed.
+      }
+    }
     projects.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return projects;
   }
