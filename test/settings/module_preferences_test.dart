@@ -41,6 +41,25 @@ void main() {
     expect(await ModulePreferences.loadVisibleModules(), {'motor'});
   });
 
+  test('shows newly added modules without restoring modules hidden by the user', () async {
+    SharedPreferences.setMockInitialValues({
+      'visible_home_modules': <String>['motor'],
+      'known_home_modules': <String>[
+        'motor',
+        'transformer',
+        'motorTransformer',
+        'loadSurvey',
+        'cableSizing',
+      ],
+    });
+
+    final visible = await ModulePreferences.loadVisibleModules();
+
+    expect(visible.contains('motor'), isTrue);
+    expect(visible.contains('voltageDrop'), isTrue);
+    expect(visible.contains('transformer'), isFalse);
+  });
+
   test('ignores obsolete identifiers already stored', () async {
     SharedPreferences.setMockInitialValues({
       'visible_home_modules': <String>['motor', 'obsoleteModule'],
