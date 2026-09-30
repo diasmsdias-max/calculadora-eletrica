@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/power_calculator.dart';
 import '../../core/calculations/voltage_drop_calculator.dart';
 import '../../core/database/project_record.dart';
@@ -32,8 +33,8 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
     await ProjectRecordSaver.save(
       context,
       type: ProjectRecordType.voltageDrop,
-      title: 'Queda de Tensão — ${_n(section.text).toStringAsFixed(2)} mm²',
-      summary: '${r.dropPercent.toStringAsFixed(2)}% • ${r.withinLimit ? 'DENTRO DO LIMITE' : 'ACIMA DO LIMITE'}',
+      title: 'Queda de Tensão — ${TechnicalFormat.number(_n(section.text))} mm²',
+      summary: '${TechnicalFormat.number(r.dropPercent)}% | ${r.withinLimit ? 'DENTRO DO LIMITE' : 'ACIMA DO LIMITE'}',
       data: {
         'system': system.name,
         'voltageV': _n(voltage.text),
@@ -182,7 +183,7 @@ class _VoltageDropPageState extends State<VoltageDropPage> {
   Widget _result(String label, double value, String unit) => Card(
     child: ListTile(
       title: Text(label),
-      trailing: Text('${value.toStringAsFixed(2)} $unit', style: Theme.of(context).textTheme.titleMedium),
+      trailing: Text('${TechnicalFormat.number(value)} $unit', style: Theme.of(context).textTheme.titleMedium),
     ),
   );
 }
