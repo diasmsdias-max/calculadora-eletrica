@@ -9,6 +9,8 @@ import '../professional/professional_load_repository.dart';
 import '../professional/sqlite_professional_load_repository.dart';
 import '../professional/professional_circuit_repository.dart';
 import '../professional/sqlite_professional_circuit_repository.dart';
+import '../professional/professional_board_repository.dart';
+import '../professional/sqlite_professional_board_repository.dart';
 
 class V2Persistence {
   final ProjectRepository projects;
@@ -16,6 +18,7 @@ class V2Persistence {
   final ProfessionalProjectRepository professionalProjects;
   final ProfessionalLoadRepository professionalLoads;
   final ProfessionalCircuitRepository professionalCircuits;
+  final ProfessionalBoardRepository professionalBoards;
 
   const V2Persistence({
     required this.projects,
@@ -23,6 +26,7 @@ class V2Persistence {
     required this.professionalProjects,
     required this.professionalLoads,
     required this.professionalCircuits,
+    required this.professionalBoards,
   });
 }
 
@@ -61,6 +65,7 @@ class V2PersistenceFactory {
       professionalProjects: SqliteProfessionalProjectRepository(db),
       professionalLoads: SqliteProfessionalLoadRepository(db),
       professionalCircuits: SqliteProfessionalCircuitRepository(db),
+      professionalBoards: SqliteProfessionalBoardRepository(db),
     );
   }
 }
