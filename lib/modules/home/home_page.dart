@@ -195,7 +195,7 @@ class _BrandTitle extends StatelessWidget {
             children: [
               Text(
                 identity.ownerName,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
@@ -203,7 +203,7 @@ class _BrandTitle extends StatelessWidget {
               ),
               Text(
                 identity.productNameLabel,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.yellow,
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
