@@ -48,7 +48,7 @@ Disponível com licença Profissional.
 Campos iniciais:
 
 - Nome da empresa/profissional: obrigatório;
-- CNPJ/CPF: opcional;
+- CNPJ: opcional;
 - Telefone/WhatsApp: opcional.
 
 Regra de marca:
@@ -129,7 +129,7 @@ Esses itens entram nas EPs seguintes.
 5. Perfil Profissional não armazena dados de autenticação.
 6. Identidade padrão continua BOECKER / VIS ELECTRICA.
 7. Com entitlement Profissional, a identidade pode usar o nome configurado mantendo VIS ELECTRICA.
-8. Estrutura aceita CNPJ/CPF e telefone opcionais.
+8. Estrutura aceita CNPJ e telefone opcionais.
 9. Licença não é tratada como dado exportável.
 10. A arquitetura prevê modo leitura/backup dos dados profissionais sem licença ativa.
 11. Todos os testes de regressão da V1 continuam aprovados.
