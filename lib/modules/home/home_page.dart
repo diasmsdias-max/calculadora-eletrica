@@ -75,6 +75,13 @@ class _HomePageState extends State<HomePage> {
     await _reloadPreferences();
   }
 
+  Future<void> _openProfessional() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ProfessionalLandingPage()),
+    );
+    await _reloadPreferences();
+  }
+
   void _openModule(_Module module) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -128,17 +135,17 @@ class _HomePageState extends State<HomePage> {
                     ),
                     if (_professionalVisible == true)
                       _ModuleCard(
-                        module: const _Module(
+                        module: _Module(
                           'professional',
                           'VIS ELECTRICA Profissional',
-                          'Cargas → Circuitos → Quadros → PDF',
-                          Icons.workspace_premium_outlined,
+                          _license?.hasProfessional == true
+                              ? 'Ativo • Cargas → Circuitos → Quadros → PDF'
+                              : 'Bloqueado • Cargas → Circuitos → Quadros → PDF',
+                          _license?.hasProfessional == true
+                              ? Icons.workspace_premium
+                              : Icons.lock_outline,
                         ),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ProfessionalLandingPage(),
-                          ),
-                        ),
+                        onTap: _openProfessional,
                       ),
                     _ModuleCard(
                       module: const _Module(
