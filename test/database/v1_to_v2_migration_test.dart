@@ -6,6 +6,7 @@ import 'package:calculadora_eletrica/core/database/v1_to_v2_migration.dart';
 import 'package:calculadora_eletrica/core/database/vis_database.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
