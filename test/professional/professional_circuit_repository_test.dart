@@ -14,8 +14,8 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test('circuit accepts only loads from its own project', () async {
-    final db = await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'));
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects = SqliteProfessionalProjectRepository(db);
     final loads = SqliteProfessionalLoadRepository(db);
@@ -46,8 +46,8 @@ void main() {
   });
 
   test('deleting load or circuit cleans relation table', () async {
-    final db = await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'));
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects = SqliteProfessionalProjectRepository(db);
     final loads = SqliteProfessionalLoadRepository(db);
