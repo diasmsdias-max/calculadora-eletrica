@@ -61,4 +61,6 @@ class ProfessionalLoad {
         'createdAt': createdAt.toUtc().toIso8601String(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
+  factory ProfessionalLoad.fromPortableJson(Map<String,Object?> j){_contract(j);return ProfessionalLoad(id:j['id'] as String,projectId:j['projectId'] as String,revision:j['revision'] as int,name:j['name'] as String,category:j['category'] as String? ?? '',quantity:j['quantity'] as int,powerW:(j['powerW'] as num).toDouble(),voltageV:(j['voltageV'] as num).toDouble(),powerFactor:(j['powerFactor'] as num?)?.toDouble(),notes:j['notes'] as String? ?? '',createdAt:DateTime.parse(j['createdAt'] as String),updatedAt:DateTime.parse(j['updatedAt'] as String)).normalized();}
+  static void _contract(Map<String,Object?> j){if(j['contractVersion']!=contractVersion)throw const FormatException('Unsupported professional load contract.');}
 }

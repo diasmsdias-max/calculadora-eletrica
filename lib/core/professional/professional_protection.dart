@@ -26,4 +26,6 @@ class ProfessionalProtection {
     'poles':poles,'tripCurve':tripCurve,'breakingCapacityKa':breakingCapacityKa,'notes':notes,
     'createdAt':createdAt.toUtc().toIso8601String(),'updatedAt':updatedAt.toUtc().toIso8601String()
   };
+  factory ProfessionalProtection.fromPortableJson(Map<String,Object?> j){_contract(j);return ProfessionalProtection(id:j['id'] as String,projectId:j['projectId'] as String,circuitId:j['circuitId'] as String,revision:j['revision'] as int,name:j['name'] as String,deviceType:j['deviceType'] as String? ?? '',ratedCurrentA:(j['ratedCurrentA'] as num?)?.toDouble(),poles:j['poles'] as int?,tripCurve:j['tripCurve'] as String? ?? '',breakingCapacityKa:(j['breakingCapacityKa'] as num?)?.toDouble(),notes:j['notes'] as String? ?? '',createdAt:DateTime.parse(j['createdAt'] as String),updatedAt:DateTime.parse(j['updatedAt'] as String)).normalized();}
+  static void _contract(Map<String,Object?> j){if(j['contractVersion']!=contractVersion)throw const FormatException('Unsupported professional protection contract.');}
 }

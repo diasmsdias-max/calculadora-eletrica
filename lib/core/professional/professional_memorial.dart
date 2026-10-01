@@ -11,4 +11,6 @@ class ProfessionalMemorial {
   Map<String,Object?> toPortableJson()=>{'contractVersion':contractVersion,'id':id,'projectId':projectId,
     'revision':revision,'title':title,'scope':scope,'criteria':criteria,'conclusions':conclusions,
     'notes':notes,'createdAt':createdAt.toUtc().toIso8601String(),'updatedAt':updatedAt.toUtc().toIso8601String()};
+  factory ProfessionalMemorial.fromPortableJson(Map<String,Object?> j){_contract(j);return ProfessionalMemorial(id:j['id'] as String,projectId:j['projectId'] as String,revision:j['revision'] as int,title:j['title'] as String? ?? '',scope:j['scope'] as String? ?? '',criteria:j['criteria'] as String? ?? '',conclusions:j['conclusions'] as String? ?? '',notes:j['notes'] as String? ?? '',createdAt:DateTime.parse(j['createdAt'] as String),updatedAt:DateTime.parse(j['updatedAt'] as String)).normalized();}
+  static void _contract(Map<String,Object?> j){if(j['contractVersion']!=contractVersion)throw const FormatException('Unsupported professional memorial contract.');}
 }

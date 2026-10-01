@@ -28,4 +28,6 @@ class ProfessionalBoard {
     'createdAt': createdAt.toUtc().toIso8601String(),
     'updatedAt': updatedAt.toUtc().toIso8601String(),
   };
+  factory ProfessionalBoard.fromPortableJson(Map<String,Object?> j){_contract(j);return ProfessionalBoard(id:j['id'] as String,projectId:j['projectId'] as String,revision:j['revision'] as int,name:j['name'] as String,description:j['description'] as String? ?? '',location:j['location'] as String? ?? '',notes:j['notes'] as String? ?? '',createdAt:DateTime.parse(j['createdAt'] as String),updatedAt:DateTime.parse(j['updatedAt'] as String)).normalized();}
+  static void _contract(Map<String,Object?> j){if(j['contractVersion']!=contractVersion)throw const FormatException('Unsupported professional board contract.');}
 }
