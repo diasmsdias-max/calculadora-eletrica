@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-
 import '../../core/database/v2_persistence_factory.dart';
 import '../../core/licensing/license_state.dart';
 import '../../core/professional/professional_project.dart';
@@ -41,7 +39,7 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
     if (!widget.license.canEditProfessionalProjects || _repository == null) return;
     final now = DateTime.now().toUtc();
     final project = ProfessionalProject(
-      id: const Uuid().v4(),
+      id: _newProjectId(now),
       revision: 1,
       name: '',
       createdAt: now,
@@ -72,6 +70,9 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
     );
     await _load();
   }
+
+  String _newProjectId(DateTime now) =>
+      'pro-${now.microsecondsSinceEpoch.toRadixString(36)}';
 
   @override
   Widget build(BuildContext context) => Scaffold(
