@@ -28,8 +28,8 @@ void main() {
     ).encode();
 
     final tampered = encoded.replaceFirst(
-      '\"projects\":[]',
-      '\"projects\":[{\"id\":\"tampered\"}]',
+      '"projects":[]',
+      '"projects":[{"id":"tampered"}]',
     );
 
     expect(
