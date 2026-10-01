@@ -29,7 +29,10 @@ class VisDatabase {
     await current?.close();
   }
 
-  static Future<void> createSchemaForTesting(Database db) =>\n      _createSchema(db, schemaVersion);\n\n  static Future<void> _createSchema(Database db, int version) async {
+  static Future<void> createSchemaForTesting(Database db) =>
+      _createSchema(db, schemaVersion);
+
+  static Future<void> _createSchema(Database db, int version) async {
     await db.execute('''
       CREATE TABLE projects (
         id TEXT PRIMARY KEY,
