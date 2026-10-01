@@ -7,7 +7,8 @@ import 'package:calculadora_eletrica/core/professional/sqlite_professional_mater
 import 'package:calculadora_eletrica/core/professional/sqlite_professional_project_repository.dart';
 void main(){sqfliteFfiInit();databaseFactory=databaseFactoryFfi;
  test('materials are isolated by project and quantity is optional',()async{
-  final db=await databaseFactory.openDatabase(inMemoryDatabasePath,onConfigure:(d)=>d.execute('PRAGMA foreign_keys = ON'));
+  final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
   await VisDatabase.createSchemaForTesting(db);final p=SqliteProfessionalProjectRepository(db),m=SqliteProfessionalMaterialRepository(db);
   final now=DateTime.utc(2026,10,1);for(final id in ['p1','p2'])await p.save(ProfessionalProject(id:id,revision:1,name:id,createdAt:now,updatedAt:now));
   await m.save(ProfessionalMaterial(id:'m1',projectId:'p1',revision:1,description:'Cabo',createdAt:now,updatedAt:now));
@@ -18,7 +19,8 @@ void main(){sqfliteFfiInit();databaseFactory=databaseFactoryFfi;
   await db.close();
  });
  test('deleting project cascades materials',()async{
-  final db=await databaseFactory.openDatabase(inMemoryDatabasePath,onConfigure:(d)=>d.execute('PRAGMA foreign_keys = ON'));
+  final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
   await VisDatabase.createSchemaForTesting(db);final p=SqliteProfessionalProjectRepository(db),m=SqliteProfessionalMaterialRepository(db);
   final now=DateTime.utc(2026,10,1);await p.save(ProfessionalProject(id:'p',revision:1,name:'P',createdAt:now,updatedAt:now));
   await m.save(ProfessionalMaterial(id:'m',projectId:'p',revision:1,description:'Material',createdAt:now,updatedAt:now));
