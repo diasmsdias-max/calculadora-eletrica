@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 1;
+  static const schemaVersion = 2;
 
   Database? _database;
 
@@ -20,6 +20,7 @@ class VisDatabase {
       version: schemaVersion,
       onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: _createSchema,
+      onUpgrade: _upgradeSchema,
     );
   }
 
@@ -31,6 +32,37 @@ class VisDatabase {
 
   static Future<void> createSchemaForTesting(Database db) =>
       _createSchema(db, schemaVersion);
+
+  static Future<void> _upgradeSchema(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await _createProfessionalProjectsTable(db);
+    }
+  }
+
+  static Future<void> _createProfessionalProjectsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE professional_projects (
+        id TEXT PRIMARY KEY,
+        contract_version INTEGER NOT NULL,
+        revision INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        client TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
+        responsible TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_professional_projects_updated_at '
+      'ON professional_projects(updated_at DESC)',
+    );
+  }
 
   static Future<void> _createSchema(Database db, int version) async {
     await db.execute('''
@@ -109,6 +141,8 @@ class VisDatabase {
         FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
       )
     ''');
+    await _createProfessionalProjectsTable(db);
+
     await db.execute('''
       CREATE TABLE app_metadata (
         key TEXT PRIMARY KEY,
