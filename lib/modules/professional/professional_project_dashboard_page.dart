@@ -5,6 +5,7 @@ import '../../core/professional/professional_project.dart';
 import '../../core/professional/professional_project_repository.dart';
 import '../../core/database/v2_persistence_factory.dart';
 import 'professional_loads_page.dart';
+import 'professional_circuits_page.dart';
 import 'professional_project_form_page.dart';
 
 class ProfessionalProjectDashboardPage extends StatefulWidget {
@@ -100,11 +101,25 @@ class _ProfessionalProjectDashboardPageState
                 );
               },
             ),
-            const _ProjectSection(
+            _ProjectSection(
               icon: Icons.account_tree_outlined,
               title: 'Circuitos',
               subtitle: 'Agrupamento, alimentação e dados dos circuitos.',
-              enabled: false,
+              enabled: true,
+              onTap: () async {
+                final persistence = await V2PersistenceFactory.defaults().initialize();
+                if (!context.mounted) return;
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProfessionalCircuitsPage(
+                      repository: persistence.professionalCircuits,
+                      loadsRepository: persistence.professionalLoads,
+                      projectId: _project.id,
+                      readOnly: !widget.license.canEditProfessionalProjects,
+                    ),
+                  ),
+                );
+              },
             ),
             const _ProjectSection(
               icon: Icons.dashboard_customize_outlined,
