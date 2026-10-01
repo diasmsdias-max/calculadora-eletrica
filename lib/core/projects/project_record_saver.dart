@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/local_project.dart';
 import '../database/project_record.dart';
-import '../database/project_record_repository.dart';
-import '../database/project_repository.dart';
 import '../database/v2_persistence_factory.dart';
 
 class ProjectRecordSaver {
