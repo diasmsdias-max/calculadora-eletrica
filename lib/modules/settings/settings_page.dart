@@ -6,6 +6,7 @@ import '../../core/professional/professional_profile.dart';
 import '../../core/professional/professional_profile_repository.dart';
 import '../../core/settings/module_preferences.dart';
 import '../../core/settings/professional_module_preferences.dart';
+import '../professional/professional_profile_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -67,6 +68,15 @@ class _SettingsPageState extends State<SettingsPage> {
     await ProfessionalModulePreferences.saveVisible(value);
   }
 
+  Future<void> _openProfessionalProfile() async {
+    final profile = await Navigator.of(context).push<ProfessionalProfile>(
+      MaterialPageRoute(builder: (_) => const ProfessionalProfilePage()),
+    );
+    if (profile != null && mounted) {
+      setState(() => _profile = profile);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loaded = _visible != null &&
@@ -124,6 +134,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           ? _profile!.companyName
                           : 'Configure nome, CNPJ/CPF e telefone.',
                     ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _openProfessionalProfile,
                   ),
                 ],
                 const Divider(),
