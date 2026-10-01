@@ -11,7 +11,8 @@ import 'package:calculadora_eletrica/core/professional/sqlite_professional_sizin
 void main(){
  sqfliteFfiInit();databaseFactory=databaseFactoryFfi;
  Future<(Database,SqliteProfessionalCircuitRepository,SqliteProfessionalSizingRepository)> setup()async{
-  final db=await databaseFactory.openDatabase(inMemoryDatabasePath,onConfigure:(d)=>d.execute('PRAGMA foreign_keys = ON'));
+  final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
   await VisDatabase.createSchemaForTesting(db);final p=SqliteProfessionalProjectRepository(db);
   final c=SqliteProfessionalCircuitRepository(db);final s=SqliteProfessionalSizingRepository(db);final now=DateTime.utc(2026,10,1);
   for(final id in ['p1','p2'])await p.save(ProfessionalProject(id:id,revision:1,name:id,createdAt:now,updatedAt:now));
