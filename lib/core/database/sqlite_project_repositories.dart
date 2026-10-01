@@ -19,12 +19,21 @@ class SqliteProjectRepository implements ProjectRepository {
   }
 
   @override
-  Future<void> save(LocalProject project) {
-    return database.insert(
+  Future<void> save(LocalProject project) async {
+    final row = _projectToRow(project);
+    final updated = await database.update(
       'projects',
-      _projectToRow(project),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      row,
+      where: 'id = ?',
+      whereArgs: [project.id],
     );
+    if (updated == 0) {
+      await database.insert(
+        'projects',
+        row,
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    }
   }
 
   @override
@@ -50,12 +59,21 @@ class SqliteProjectRecordRepository implements ProjectRecordRepository {
   }
 
   @override
-  Future<void> save(ProjectRecord record) {
-    return database.insert(
+  Future<void> save(ProjectRecord record) async {
+    final row = _recordToRow(record);
+    final updated = await database.update(
       'project_records',
-      _recordToRow(record),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      row,
+      where: 'id = ?',
+      whereArgs: [record.id],
     );
+    if (updated == 0) {
+      await database.insert(
+        'project_records',
+        row,
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    }
   }
 
   @override
