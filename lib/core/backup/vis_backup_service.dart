@@ -18,6 +18,7 @@ class VisBackupService {
     'boards',
     'protections',
     'material_items',
+    'professional_projects',
   ];
 
   final Database database;
@@ -100,7 +101,12 @@ class VisBackupService {
     final result = <String, List<Map<String, Object?>>>{};
 
     for (final table in exportedTables) {
-      final rows = database[table];
+      var rows = database[table];
+      // Backups created before EP21 do not contain Professional Projects.
+      // Treat that table as empty so V1/EP20 backups remain restorable.
+      if (rows == null && table == 'professional_projects') {
+        rows = const <Object?>[];
+      }
       if (rows is! List) {
         throw FormatException('Tabela $table ausente ou inválida no backup.');
       }
