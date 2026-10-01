@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../core/licensing/license_provider.dart';
+import '../../core/licensing/license_state.dart';
+import '../../core/professional/brand_identity.dart';
+import '../../core/professional/professional_profile.dart';
+import '../../core/professional/professional_profile_repository.dart';
 import '../../core/settings/module_preferences.dart';
 import '../../core/settings/professional_module_preferences.dart';
 import '../../core/theme/app_theme.dart';
@@ -21,8 +26,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final LicenseProvider _licenseProvider = const FreeLicenseProvider();
+  final ProfessionalProfileRepository _profileRepository =
+      LocalProfessionalProfileRepository();
+
   Set<String>? _visible;
   bool? _professionalVisible;
+  LicenseState? _license;
+  ProfessionalProfile? _profile;
 
   static const modules = <_Module>[
     _Module('motor', 'Motor Elétrico', 'Dimensionamento e análise', Icons.electric_bolt),
@@ -40,14 +51,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _reloadPreferences() async {
-    final results = await Future.wait<Object>([
+    final results = await Future.wait<Object?>([
       ModulePreferences.loadVisibleModules(),
       ProfessionalModulePreferences.loadVisible(),
+      _licenseProvider.currentState(),
+      _profileRepository.load(),
     ]);
     if (mounted) {
       setState(() {
         _visible = results[0] as Set<String>;
         _professionalVisible = results[1] as bool;
+        _license = results[2] as LicenseState;
+        _profile = results[3] as ProfessionalProfile?;
       });
     }
   }
@@ -83,7 +98,12 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const _BrandTitle(),
+        title: _BrandTitle(
+          identity: BrandIdentity.resolve(
+            license: _license ?? const LicenseState(),
+            profile: _profile,
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: _openSettings,
@@ -148,7 +168,9 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _BrandTitle extends StatelessWidget {
-  const _BrandTitle();
+  final BrandIdentity identity;
+
+  const _BrandTitle({required this.identity});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -167,12 +189,12 @@ class _BrandTitle extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'BOECKER',
+                identity.ownerName,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -180,7 +202,7 @@ class _BrandTitle extends StatelessWidget {
                 ),
               ),
               Text(
-                'VIS ELECTRICA',
+                identity.productNameLabel,
                 style: TextStyle(
                   color: AppTheme.yellow,
                   fontSize: 9,
