@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/licensing/license_provider.dart';
 import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
+import 'professional_profile_page.dart';
 
 class ProfessionalLandingPage extends StatefulWidget {
   const ProfessionalLandingPage({super.key});
@@ -84,6 +85,16 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
                   text: 'Consolide materiais e gere o relatório profissional do projeto.',
                 ),
                 const SizedBox(height: 16),
+                if (license.hasProfessional)
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProfessionalProfilePage(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.business_outlined),
+                    label: const Text('Configurar Perfil Profissional'),
+                  ),
                 if (!license.hasProfessional) ...[
                   FilledButton.icon(
                     onPressed: _activate,
