@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/licensing/license_state.dart';
 import '../../core/professional/professional_project.dart';
 import '../../core/professional/professional_project_repository.dart';
+import '../../core/database/v2_persistence_factory.dart';
+import 'professional_loads_page.dart';
 import 'professional_project_form_page.dart';
 
 class ProfessionalProjectDashboardPage extends StatefulWidget {
@@ -79,11 +81,24 @@ class _ProfessionalProjectDashboardPageState
               ),
             ),
             const SizedBox(height: 8),
-            const _ProjectSection(
+            _ProjectSection(
               icon: Icons.electrical_services_outlined,
               title: 'Cargas',
               subtitle: 'Cargas levantadas e vinculadas ao projeto.',
-              enabled: false,
+              enabled: true,
+              onTap: () async {
+                final persistence = await V2PersistenceFactory.defaults().initialize();
+                if (!context.mounted) return;
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProfessionalLoadsPage(
+                      repository: persistence.professionalLoads,
+                      projectId: _project.id,
+                      readOnly: !widget.license.canEditProfessionalProjects,
+                    ),
+                  ),
+                );
+              },
             ),
             const _ProjectSection(
               icon: Icons.account_tree_outlined,
@@ -131,12 +146,14 @@ class _ProjectSection extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool enabled;
+  final VoidCallback? onTap;
 
   const _ProjectSection({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.enabled,
+    this.onTap,
   });
 
   @override
@@ -146,6 +163,7 @@ class _ProjectSection extends StatelessWidget {
           leading: Icon(icon),
           title: Text(title),
           subtitle: Text(subtitle),
+          onTap: enabled ? onTap : null,
           trailing: enabled
               ? const Icon(Icons.chevron_right)
               : const Chip(label: Text('Em breve')),
