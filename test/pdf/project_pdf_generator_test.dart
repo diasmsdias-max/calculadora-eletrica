@@ -5,8 +5,39 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:calculadora_eletrica/core/database/local_project.dart';
 import 'package:calculadora_eletrica/core/database/project_record.dart';
 import 'package:calculadora_eletrica/core/pdf/project_pdf_generator.dart';
+import 'package:calculadora_eletrica/core/professional/brand_identity.dart';
 
 void main() {
+
+  test('generates PDF with optional professional identity', () async {
+    final now = DateTime(2026, 10, 1);
+    final project = LocalProject(
+      id: 'professional',
+      name: 'Projeto Profissional',
+      client: '',
+      address: '',
+      responsible: '',
+      notes: '',
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    final bytes = await ProjectPdfGenerator.generate(
+      project: project,
+      records: const [],
+      identity: const BrandIdentity(
+        ownerName: 'Elétrica São José',
+        productNameLabel: BrandIdentity.productName,
+        document: '12.345.678/0001-90',
+        phone: '(27) 99999-9999',
+        isProfessional: true,
+      ),
+    );
+
+    expect(bytes.length, greaterThan(1000));
+    expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
+  });
+
   test('generates a valid PDF with project and all record types', () async {
     final now = DateTime(2026, 9, 30);
     final project = LocalProject(
