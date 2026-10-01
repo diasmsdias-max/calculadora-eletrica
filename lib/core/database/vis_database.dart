@@ -33,6 +33,12 @@ class VisDatabase {
   static Future<void> createSchemaForTesting(Database db) =>
       _createSchema(db, schemaVersion);
 
+  static Future<void> upgradeSchemaForTesting(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) => _upgradeSchema(db, oldVersion, newVersion);
+
   static Future<void> _upgradeSchema(
     Database db,
     int oldVersion,
