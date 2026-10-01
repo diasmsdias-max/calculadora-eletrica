@@ -8,10 +8,8 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test('schema 2 to 3 preserves professional projects and adds loads', () async {
-    final db = await databaseFactory.openDatabase(
-      inMemoryDatabasePath,
-      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
-    );
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
 
     await db.execute('''
       CREATE TABLE professional_projects (
