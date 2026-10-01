@@ -11,8 +11,8 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test('one memorial is persisted per professional project', () async {
-    final db = await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure: (d) => d.execute('PRAGMA foreign_keys = ON'));
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects = SqliteProfessionalProjectRepository(db);
     final memorials = SqliteProfessionalMemorialRepository(db);
@@ -30,8 +30,8 @@ void main() {
   });
 
   test('deleting project cascades memorial', () async {
-    final db = await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure: (d) => d.execute('PRAGMA foreign_keys = ON'));
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects = SqliteProfessionalProjectRepository(db);
     final memorials = SqliteProfessionalMemorialRepository(db);
