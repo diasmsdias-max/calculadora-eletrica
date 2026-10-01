@@ -8,9 +8,10 @@ import 'package:calculadora_eletrica/core/professional/sqlite_professional_proje
 void main(){sqfliteFfiInit();databaseFactory=databaseFactoryFfi;
  test('materials are isolated by project and quantity is optional',()async{
   final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
-    await db.execute('PRAGMA foreign_keys = ON');
   await VisDatabase.createSchemaForTesting(db);final p=SqliteProfessionalProjectRepository(db),m=SqliteProfessionalMaterialRepository(db);
-  final now=DateTime.utc(2026,10,1);for(final id in ['p1','p2'])await p.save(ProfessionalProject(id:id,revision:1,name:id,createdAt:now,updatedAt:now));
+  final now=DateTime.utc(2026,10,1);for (final id in ['p1','p2']) {
+    await p.save(ProfessionalProject(id:id,revision:1,name:id,createdAt:now,updatedAt:now));
+  }
   await m.save(ProfessionalMaterial(id:'m1',projectId:'p1',revision:1,description:'Cabo',createdAt:now,updatedAt:now));
   await m.save(ProfessionalMaterial(id:'m2',projectId:'p2',revision:1,description:'Disjuntor',quantity:2,unit:'un',createdAt:now,updatedAt:now));
   expect(await m.getByProject('p1'),hasLength(1));expect((await m.getById('m1'))!.quantity,isNull);
@@ -20,7 +21,6 @@ void main(){sqfliteFfiInit();databaseFactory=databaseFactoryFfi;
  });
  test('deleting project cascades materials',()async{
   final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
-    await db.execute('PRAGMA foreign_keys = ON');
   await VisDatabase.createSchemaForTesting(db);final p=SqliteProfessionalProjectRepository(db),m=SqliteProfessionalMaterialRepository(db);
   final now=DateTime.utc(2026,10,1);await p.save(ProfessionalProject(id:'p',revision:1,name:'P',createdAt:now,updatedAt:now));
   await m.save(ProfessionalMaterial(id:'m',projectId:'p',revision:1,description:'Material',createdAt:now,updatedAt:now));
