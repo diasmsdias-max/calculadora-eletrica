@@ -3,6 +3,7 @@ import '../settings/professional_module_preferences.dart';
 
 abstract interface class BackupPreferencesRepository {
   Future<Map<String, dynamic>> export();
+  void validate(Map<String, dynamic> data);
   Future<void> restore(Map<String, dynamic> data);
 }
 
@@ -18,7 +19,7 @@ class LocalBackupPreferencesRepository implements BackupPreferencesRepository {
       };
 
   @override
-  Future<void> restore(Map<String, dynamic> data) async {
+  void validate(Map<String, dynamic> data) {
     final rawModules = data['visibleHomeModules'];
     final professionalVisible = data['professionalModuleVisible'];
     if (rawModules is! List || professionalVisible is! bool) {
@@ -31,7 +32,15 @@ class LocalBackupPreferencesRepository implements BackupPreferencesRepository {
     if (modules.length != rawModules.length) {
       throw const FormatException('Módulo desconhecido nas preferências.');
     }
+  }
+
+  @override
+  Future<void> restore(Map<String, dynamic> data) async {
+    validate(data);
+    final modules = (data['visibleHomeModules'] as List).cast<String>().toSet();
     await ModulePreferences.saveVisibleModules(modules);
-    await ProfessionalModulePreferences.saveVisible(professionalVisible);
+    await ProfessionalModulePreferences.saveVisible(
+      data['professionalModuleVisible'] as bool,
+    );
   }
 }
