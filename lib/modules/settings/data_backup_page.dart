@@ -140,8 +140,8 @@ class _DataBackupPageState extends State<DataBackupPage> {
   }
 
   @override
-  Future<void> dispose() async {
-    await _database.close();
+  void dispose() {
+    _database.close();
     super.dispose();
   }
 
