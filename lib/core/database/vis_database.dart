@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 3;
+  static const schemaVersion = 4;
 
   Database? _database;
 
@@ -49,6 +49,9 @@ class VisDatabase {
     }
     if (oldVersion < 3) {
       await _createProfessionalLoadsTable(db);
+    }
+    if (oldVersion < 4) {
+      await _createProfessionalCircuitsTables(db);
     }
   }
 
@@ -96,6 +99,38 @@ class VisDatabase {
       'CREATE INDEX idx_professional_loads_project_id '
       'ON professional_loads(project_id)',
     );
+  }
+
+  static Future<void> _createProfessionalCircuitsTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE professional_circuits (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        contract_version INTEGER NOT NULL,
+        revision INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        voltage_v REAL,
+        phases INTEGER,
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES professional_projects(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_professional_circuits_project_id '
+      'ON professional_circuits(project_id)',
+    );
+    await db.execute('''
+      CREATE TABLE professional_circuit_loads (
+        circuit_id TEXT NOT NULL,
+        load_id TEXT NOT NULL,
+        PRIMARY KEY (circuit_id, load_id),
+        FOREIGN KEY (circuit_id) REFERENCES professional_circuits(id) ON DELETE CASCADE,
+        FOREIGN KEY (load_id) REFERENCES professional_loads(id) ON DELETE CASCADE
+      )
+    ''');
   }
 
   static Future<void> _createSchema(Database db, int version) async {
@@ -177,6 +212,7 @@ class VisDatabase {
     ''');
     await _createProfessionalProjectsTable(db);
     await _createProfessionalLoadsTable(db);
+    await _createProfessionalCircuitsTables(db);
 
     await db.execute('''
       CREATE TABLE app_metadata (
