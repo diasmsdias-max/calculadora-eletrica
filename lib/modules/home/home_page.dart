@@ -243,9 +243,19 @@ class _ModuleCard extends StatelessWidget {
               children: [
                 Icon(module.icon, size: 32),
                 const SizedBox(height: 12),
-                Text(module.title, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  module.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 6),
-                Text(module.subtitle, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  module.subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
