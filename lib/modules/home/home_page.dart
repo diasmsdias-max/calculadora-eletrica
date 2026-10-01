@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../core/licensing/license_provider.dart';
+import '../../core/licensing/license_provider_factory.dart';
+import '../../core/licensing/license_state.dart';
+import '../../core/professional/brand_identity.dart';
+import '../../core/professional/professional_profile.dart';
+import '../../core/professional/professional_profile_repository.dart';
 import '../../core/settings/module_preferences.dart';
+import '../../core/settings/professional_module_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../cable_sizing/cable_sizing_page.dart';
 import '../load_survey/load_survey_page.dart';
 import '../motor/motor_page.dart';
 import '../motor_transformer/motor_transformer_page.dart';
 import '../projects/projects_page.dart';
+import '../professional/professional_landing_page.dart';
 import '../settings/settings_page.dart';
 import '../transformer/transformer_page.dart';
 import '../voltage_drop/voltage_drop_page.dart';
@@ -19,7 +27,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final LicenseProvider _licenseProvider = LicenseProviderFactory.create();
+  final ProfessionalProfileRepository _profileRepository =
+      LocalProfessionalProfileRepository();
+
   Set<String>? _visible;
+  bool? _professionalVisible;
+  LicenseState? _license;
+  ProfessionalProfile? _profile;
 
   static const modules = <_Module>[
     _Module('motor', 'Motor Elétrico', 'Dimensionamento e análise', Icons.electric_bolt),
@@ -37,13 +52,32 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _reloadPreferences() async {
-    final visible = await ModulePreferences.loadVisibleModules();
-    if (mounted) setState(() => _visible = visible);
+    final results = await Future.wait<Object?>([
+      ModulePreferences.loadVisibleModules(),
+      ProfessionalModulePreferences.loadVisible(),
+      _licenseProvider.currentState(),
+      _profileRepository.load(),
+    ]);
+    if (mounted) {
+      setState(() {
+        _visible = results[0] as Set<String>;
+        _professionalVisible = results[1] as bool;
+        _license = results[2] as LicenseState;
+        _profile = results[3] as ProfessionalProfile?;
+      });
+    }
   }
 
   Future<void> _openSettings() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const SettingsPage()),
+    );
+    await _reloadPreferences();
+  }
+
+  Future<void> _openProfessional() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ProfessionalLandingPage()),
     );
     await _reloadPreferences();
   }
@@ -72,7 +106,12 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const _BrandTitle(),
+        title: _BrandTitle(
+          identity: BrandIdentity.resolve(
+            license: _license ?? const LicenseState(),
+            profile: _profile,
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: _openSettings,
@@ -82,7 +121,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SafeArea(
-        child: _visible == null
+        child: _visible == null || _professionalVisible == null
             ? const Center(child: CircularProgressIndicator())
             : LayoutBuilder(
                 builder: (context, constraints) {
@@ -94,6 +133,20 @@ class _HomePageState extends State<HomePage> {
                         onTap: () => _openModule(module),
                       ),
                     ),
+                    if (_professionalVisible == true)
+                      _ModuleCard(
+                        module: _Module(
+                          'professional',
+                          'VIS ELECTRICA Profissional',
+                          _license?.hasProfessional == true
+                              ? 'Ativo • Cargas → Circuitos → Quadros → PDF'
+                              : 'Bloqueado • Cargas → Circuitos → Quadros → PDF',
+                          _license?.hasProfessional == true
+                              ? Icons.workspace_premium
+                              : Icons.lock_outline,
+                        ),
+                        onTap: _openProfessional,
+                      ),
                     _ModuleCard(
                       module: const _Module(
                         'projects',
@@ -123,7 +176,9 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _BrandTitle extends StatelessWidget {
-  const _BrandTitle();
+  final BrandIdentity identity;
+
+  const _BrandTitle({required this.identity});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -142,21 +197,21 @@ class _BrandTitle extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'BOECKER',
-                style: TextStyle(
+                identity.ownerName,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                 ),
               ),
               Text(
-                'VIS ELECTRICA',
-                style: TextStyle(
+                identity.productNameLabel,
+                style: const TextStyle(
                   color: AppTheme.yellow,
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
@@ -188,9 +243,19 @@ class _ModuleCard extends StatelessWidget {
               children: [
                 Icon(module.icon, size: 32),
                 const SizedBox(height: 12),
-                Text(module.title, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  module.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 6),
-                Text(module.subtitle, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  module.subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
