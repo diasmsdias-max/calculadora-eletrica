@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/backup/vis_backup_envelope.dart';
 import '../../core/backup/vis_backup_service.dart';
+import '../../core/backup/vis_backup_restore_coordinator.dart';
 import '../../core/database/vis_database.dart';
 import '../../core/professional/professional_profile.dart';
 import '../../core/professional/professional_profile_repository.dart';
@@ -80,8 +81,10 @@ class _DataBackupPageState extends State<DataBackupPage> {
 
       // Database replacement is atomic. Profile is intentionally separate
       // from licensing and is applied only after a validated restore.
-      await service.restore(source);
-      await _restoreProfile(envelope);
+      await VisBackupRestoreCoordinator(
+        backupService: service,
+        profileRepository: _profileRepository,
+      ).restore(source);
 
       if (mounted) _message('Backup restaurado com sucesso.');
     } on FormatException catch (error) {
@@ -91,21 +94,6 @@ class _DataBackupPageState extends State<DataBackupPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  Future<void> _restoreProfile(VisBackupEnvelope envelope) async {
-    final raw = envelope.payload['professionalProfile'];
-    if (raw == null) {
-      await _profileRepository.clear();
-      return;
-    }
-    if (raw is! Map) {
-      throw const FormatException('Perfil Profissional inválido.');
-    }
-    final profile = ProfessionalProfile.fromJson(
-      raw.map((key, value) => MapEntry(key.toString(), value)),
-    );
-    await _profileRepository.save(profile);
   }
 
   Future<bool> _confirmRestore(VisBackupEnvelope envelope) async {
