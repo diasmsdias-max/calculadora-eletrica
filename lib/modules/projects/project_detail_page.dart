@@ -4,6 +4,10 @@ import '../../core/database/project_record.dart';
 import '../../core/database/project_record_repository.dart';
 import '../../core/database/project_repository.dart';
 import '../../core/pdf/project_pdf_generator.dart';
+import '../../core/licensing/license_provider.dart';
+import '../../core/licensing/license_provider_factory.dart';
+import '../../core/professional/brand_identity.dart';
+import '../../core/professional/professional_profile_repository.dart';
 import 'package:printing/printing.dart';
 import 'projects_page.dart';
 
@@ -23,6 +27,9 @@ class ProjectDetailPage extends StatefulWidget {
 class _ProjectDetailPageState extends State<ProjectDetailPage> {
   final ProjectRecordRepository recordsRepository =
       PreferencesProjectRecordRepository();
+  final LicenseProvider licenseProvider = LicenseProviderFactory.create();
+  final ProfessionalProfileRepository profileRepository =
+      LocalProfessionalProfileRepository();
   late LocalProject project;
   List<ProjectRecord> records = [];
   bool loading = true;
@@ -79,10 +86,20 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
 
   Future<void> _sharePdf() async {
     try {
-      final latestRecords = await recordsRepository.getByProject(project.id);
+      final results = await Future.wait<Object?>([
+        recordsRepository.getByProject(project.id),
+        licenseProvider.currentState(),
+        profileRepository.load(),
+      ]);
+      final latestRecords = results[0] as List<ProjectRecord>;
+      final identity = BrandIdentity.resolve(
+        license: results[1] as dynamic,
+        profile: results[2] as dynamic,
+      );
       final bytes = await ProjectPdfGenerator.generate(
         project: project,
         records: latestRecords,
+        identity: identity,
       );
       if (!mounted) return;
       final safeName = project.name
