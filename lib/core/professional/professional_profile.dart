@@ -25,10 +25,12 @@ class ProfessionalProfile {
 
   factory ProfessionalProfile.fromJson(Map<String, Object?> json) =>
       ProfessionalProfile(
-        companyName: (json['companyName'] as String?) ?? '',
-        document: json['document'] as String?,
-        phone: json['phone'] as String?,
-      );
+        companyName: _string(json['companyName']) ?? '',
+        document: _string(json['document']),
+        phone: _string(json['phone']),
+      ).normalized();
+
+  static String? _string(Object? value) => value is String ? value : null;
 
   static String? _optional(String? value) {
     final normalized = value?.trim();
