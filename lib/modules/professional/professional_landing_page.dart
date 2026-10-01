@@ -86,9 +86,13 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
                 const SizedBox(height: 16),
                 if (!license.hasProfessional) ...[
                   FilledButton.icon(
-                    onPressed: () => _showActivationInfo(context),
+                    onPressed: _activate,
                     icon: const Icon(Icons.lock_open_outlined),
-                    label: const Text('Ativar módulo Profissional'),
+                    label: Text(
+                      _licenseProvider is DebugLicenseProvider
+                          ? 'Ativar licença de teste'
+                          : 'Ativar módulo Profissional',
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -99,6 +103,21 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
               ],
             ),
     );
+  }
+
+  Future<void> _activate() async {
+    if (_licenseProvider is DebugLicenseProvider) {
+      final license = await _licenseProvider.activate();
+      if (!mounted) return;
+      setState(() => _license = license);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Licença Profissional de teste ativada neste build.'),
+        ),
+      );
+      return;
+    }
+    _showActivationInfo(context);
   }
 
   void _showActivationInfo(BuildContext context) {
