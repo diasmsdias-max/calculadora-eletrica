@@ -56,13 +56,10 @@ class VisBackupService {
   }
 
   Future<VisBackupEnvelope> restore(String source) async {
-    // Decode and validate everything before opening the write transaction.
     final envelope = VisBackupEnvelope.decode(source);
     final backup = _validatedDatabase(envelope.payload);
 
     await database.transaction((txn) async {
-      // Delete children before parents. Metadata, licensing and other local
-      // state are intentionally not touched.
       for (final table in exportedTables.reversed) {
         await txn.delete(table);
       }
@@ -77,8 +74,6 @@ class VisBackupService {
         }
       }
 
-      // Validate row counts while still inside the transaction. Any mismatch
-      // throws and sqflite rolls the whole replacement back.
       for (final table in exportedTables) {
         final expected = backup[table]!.length;
         final actual = Sqflite.firstIntValue(
@@ -121,7 +116,76 @@ class VisBackupService {
       }).toList(growable: false);
     }
 
+    _validateReferences(result);
     return result;
+  }
+
+  static void _validateReferences(
+    Map<String, List<Map<String, Object?>>> data,
+  ) {
+    final projectIds = _ids(data['projects']!);
+    final circuitIds = _ids(data['circuits']!);
+    final boardIds = _ids(data['boards']!);
+
+    for (final table in [
+      'project_records',
+      'loads',
+      'circuits',
+      'boards',
+      'protections',
+      'material_items',
+    ]) {
+      for (final row in data[table]!) {
+        _requireReference(row, 'project_id', projectIds, table);
+      }
+    }
+
+    for (final row in data['loads']!) {
+      _optionalReference(row, 'circuit_id', circuitIds, 'loads');
+    }
+    for (final row in data['circuits']!) {
+      _optionalReference(row, 'board_id', boardIds, 'circuits');
+    }
+    for (final row in data['protections']!) {
+      _optionalReference(row, 'circuit_id', circuitIds, 'protections');
+      _optionalReference(row, 'board_id', boardIds, 'protections');
+    }
+  }
+
+  static Set<String> _ids(List<Map<String, Object?>> rows) {
+    final result = <String>{};
+    for (final row in rows) {
+      final id = row['id'];
+      if (id is! String || id.isEmpty || !result.add(id)) {
+        throw const FormatException('Identificador ausente ou duplicado no backup.');
+      }
+    }
+    return result;
+  }
+
+  static void _requireReference(
+    Map<String, Object?> row,
+    String key,
+    Set<String> validIds,
+    String table,
+  ) {
+    final value = row[key];
+    if (value is! String || value.isEmpty || !validIds.contains(value)) {
+      throw FormatException('Referência inválida em $table.$key.');
+    }
+  }
+
+  static void _optionalReference(
+    Map<String, Object?> row,
+    String key,
+    Set<String> validIds,
+    String table,
+  ) {
+    final value = row[key];
+    if (value == null) return;
+    if (value is! String || value.isEmpty || !validIds.contains(value)) {
+      throw FormatException('Referência inválida em $table.$key.');
+    }
   }
 
   static Map<String, dynamic> _jsonMap(Map<String, dynamic> value) =>
