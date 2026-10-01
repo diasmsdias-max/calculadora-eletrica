@@ -14,8 +14,8 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test('protection belongs to circuit from same project', () async {
-    final db=await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure:(db)=>db.execute('PRAGMA foreign_keys = ON'));
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects=SqliteProfessionalProjectRepository(db);
     final circuits=SqliteProfessionalCircuitRepository(db);
@@ -40,8 +40,8 @@ void main() {
   });
 
   test('optional protection values validate only when informed', () async {
-    final db=await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure:(db)=>db.execute('PRAGMA foreign_keys = ON'));
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects=SqliteProfessionalProjectRepository(db);
     final circuits=SqliteProfessionalCircuitRepository(db);
@@ -63,8 +63,8 @@ void main() {
   });
 
   test('deleting circuit cascades its protections', () async {
-    final db=await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure:(db)=>db.execute('PRAGMA foreign_keys = ON'));
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects=SqliteProfessionalProjectRepository(db);
     final circuits=SqliteProfessionalCircuitRepository(db);
