@@ -14,8 +14,8 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test('board accepts only circuits from its project and circuit has one board', () async {
-    final db=await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure:(db)=>db.execute('PRAGMA foreign_keys = ON'));
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects=SqliteProfessionalProjectRepository(db);
     final circuits=SqliteProfessionalCircuitRepository(db);
@@ -47,8 +47,8 @@ void main() {
   });
 
   test('deleting board removes assignment but preserves circuit', () async {
-    final db=await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure:(db)=>db.execute('PRAGMA foreign_keys = ON'));
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects=SqliteProfessionalProjectRepository(db);
     final circuits=SqliteProfessionalCircuitRepository(db);
