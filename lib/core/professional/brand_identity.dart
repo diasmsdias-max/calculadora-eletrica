@@ -31,8 +31,8 @@ class BrandIdentity {
       ownerName:
           useProfessional ? normalized!.companyName : defaultOwnerName,
       productNameLabel: productName,
-      document: useProfessional ? normalized.document : null,
-      phone: useProfessional ? normalized.phone : null,
+      document: useProfessional ? normalized!.document : null,
+      phone: useProfessional ? normalized!.phone : null,
       isProfessional: useProfessional,
     );
   }
