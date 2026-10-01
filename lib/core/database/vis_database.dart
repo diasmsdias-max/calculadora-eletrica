@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 7;
+  static const schemaVersion = 8;
 
   Database? _database;
 
@@ -61,6 +61,9 @@ class VisDatabase {
     }
     if (oldVersion < 7) {
       await _createProfessionalSizingTable(db);
+    }
+    if (oldVersion < 8) {
+      await _createProfessionalMaterialsTable(db);
     }
   }
 
@@ -231,6 +234,30 @@ class VisDatabase {
     );
   }
 
+  static Future<void> _createProfessionalMaterialsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE professional_materials (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        contract_version INTEGER NOT NULL,
+        revision INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT '',
+        unit TEXT NOT NULL DEFAULT '',
+        quantity REAL,
+        source TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES professional_projects(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_professional_materials_project_id '
+      'ON professional_materials(project_id)',
+    );
+  }
+
   static Future<void> _createSchema(Database db, int version) async {
     await db.execute('''
       CREATE TABLE projects (
@@ -314,6 +341,7 @@ class VisDatabase {
     await _createProfessionalBoardsTables(db);
     await _createProfessionalProtectionsTable(db);
     await _createProfessionalSizingTable(db);
+    await _createProfessionalMaterialsTable(db);
 
     await db.execute('''
       CREATE TABLE app_metadata (
