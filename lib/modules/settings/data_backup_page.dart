@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../core/backup/backup_preferences_repository.dart';
 import '../../core/backup/vis_backup_envelope.dart';
 import '../../core/backup/vis_backup_service.dart';
 import '../../core/backup/vis_backup_restore_coordinator.dart';
@@ -22,6 +23,8 @@ class _DataBackupPageState extends State<DataBackupPage> {
   final _database = VisDatabase();
   final ProfessionalProfileRepository _profileRepository =
       LocalProfessionalProfileRepository();
+  final BackupPreferencesRepository _preferencesRepository =
+      const LocalBackupPreferencesRepository();
   bool _busy = false;
 
   Future<void> _createBackup() async {
@@ -30,9 +33,11 @@ class _DataBackupPageState extends State<DataBackupPage> {
       final db = await _database.database;
       final profile = await _profileRepository.load();
       final package = await PackageInfo.fromPlatform();
+      final preferences = await _preferencesRepository.export();
       final source = await VisBackupService(db).createBackup(
         appVersion: package.version,
         professionalProfile: profile?.toJson().cast<String, dynamic>(),
+        preferences: preferences,
       );
       final date = DateTime.now().toIso8601String().substring(0, 10);
       final path = await FilePicker.platform.saveFile(
@@ -83,6 +88,7 @@ class _DataBackupPageState extends State<DataBackupPage> {
       await VisBackupRestoreCoordinator(
         backupService: service,
         profileRepository: _profileRepository,
+        preferencesRepository: _preferencesRepository,
       ).restore(source);
 
       if (mounted) _message('Backup restaurado com sucesso.');
