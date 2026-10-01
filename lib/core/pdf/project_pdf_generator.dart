@@ -6,19 +6,27 @@ import '../formatters/technical_format.dart';
 
 import '../database/local_project.dart';
 import '../database/project_record.dart';
+import '../professional/brand_identity.dart';
 
 class ProjectPdfGenerator {
   static Future<Uint8List> generate({
     required LocalProject project,
     required List<ProjectRecord> records,
+    BrandIdentity? identity,
   }) async {
+    final brand = identity ??
+        const BrandIdentity(
+          ownerName: BrandIdentity.defaultOwnerName,
+          productNameLabel: BrandIdentity.productName,
+          isProfessional: false,
+        );
     final pdf = pw.Document();
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(36),
-        header: (context) => _header(project),
+        header: (context) => _header(project, brand),
         footer: (context) => pw.Container(
           alignment: pw.Alignment.centerRight,
           margin: const pw.EdgeInsets.only(top: 12),
@@ -49,7 +57,11 @@ class ProjectPdfGenerator {
     return pdf.save();
   }
 
-  static pw.Widget _header(LocalProject project) => pw.Container(
+  static pw.Widget _header(
+    LocalProject project,
+    BrandIdentity identity,
+  ) =>
+      pw.Container(
     padding: const pw.EdgeInsets.only(bottom: 8),
     decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400))),
     child: pw.Row(
@@ -58,9 +70,44 @@ class ProjectPdfGenerator {
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text('BOECKER', style: const pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-            pw.Text('VIS ELECTRICA', style: const pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8, color: PdfColors.amber800)),
-            pw.Text('Ferramentas Elétricas Profissionais', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700)),
+            pw.Text(
+              _pdfSafeText(identity.ownerName),
+              style: const pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+            pw.Text(
+              identity.productNameLabel,
+              style: const pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 8,
+                color: PdfColors.amber800,
+              ),
+            ),
+            if (identity.document != null)
+              pw.Text(
+                'CNPJ: ${_pdfSafeText(identity.document!)}',
+                style: const pw.TextStyle(
+                  fontSize: 7,
+                  color: PdfColors.grey700,
+                ),
+              ),
+            if (identity.phone != null)
+              pw.Text(
+                'Contato: ${_pdfSafeText(identity.phone!)}',
+                style: const pw.TextStyle(
+                  fontSize: 7,
+                  color: PdfColors.grey700,
+                ),
+              ),
+            pw.Text(
+              'Ferramentas Elétricas Profissionais',
+              style: const pw.TextStyle(
+                fontSize: 7,
+                color: PdfColors.grey700,
+              ),
+            ),
           ],
         ),
         pw.Text(project.name, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
