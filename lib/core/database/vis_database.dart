@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 5;
+  static const schemaVersion = 6;
 
   Database? _database;
 
@@ -55,6 +55,9 @@ class VisDatabase {
     }
     if (oldVersion < 5) {
       await _createProfessionalBoardsTables(db);
+    }
+    if (oldVersion < 6) {
+      await _createProfessionalProtectionsTable(db);
     }
   }
 
@@ -167,6 +170,37 @@ class VisDatabase {
     ''');
   }
 
+  static Future<void> _createProfessionalProtectionsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE professional_protections (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        circuit_id TEXT NOT NULL,
+        contract_version INTEGER NOT NULL,
+        revision INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        device_type TEXT NOT NULL DEFAULT '',
+        rated_current_a REAL,
+        poles INTEGER,
+        trip_curve TEXT NOT NULL DEFAULT '',
+        breaking_capacity_ka REAL,
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES professional_projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (circuit_id) REFERENCES professional_circuits(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_professional_protections_project_id '
+      'ON professional_protections(project_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_professional_protections_circuit_id '
+      'ON professional_protections(circuit_id)',
+    );
+  }
+
   static Future<void> _createSchema(Database db, int version) async {
     await db.execute('''
       CREATE TABLE projects (
@@ -248,6 +282,7 @@ class VisDatabase {
     await _createProfessionalLoadsTable(db);
     await _createProfessionalCircuitsTables(db);
     await _createProfessionalBoardsTables(db);
+    await _createProfessionalProtectionsTable(db);
 
     await db.execute('''
       CREATE TABLE app_metadata (
