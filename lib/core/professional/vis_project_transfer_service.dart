@@ -47,18 +47,34 @@ class VisProjectTransferService {
     await database.transaction((txn) async {
       await txn.delete('professional_projects',where:'id = ?',whereArgs:[package.project.id]);
       await txn.insert('professional_projects',_db(package.project.toPortableJson()));
-      for(final e in package.loads) await txn.insert('professional_loads',_db(e.toPortableJson()));
-      for(final e in package.circuits) await txn.insert('professional_circuits',_db(e.toPortableJson()));
-      for(final e in package.boards) await txn.insert('professional_boards',_db(e.toPortableJson()));
-      for(final e in package.protections) await txn.insert('professional_protections',_db(e.toPortableJson()));
-      for(final e in package.sizing) await txn.insert('professional_sizing',_db(e.toPortableJson()));
-      for(final e in package.materials) await txn.insert('professional_materials',_db(e.toPortableJson()));
-      if(package.memorial!=null) await txn.insert('professional_memorials',_db(package.memorial!.toPortableJson()));
-      for(final entry in package.circuitLoadIds.entries) for(final loadId in entry.value) {
-        await txn.insert('professional_circuit_loads',{'circuit_id':entry.key,'load_id':loadId});
+      for (final e in package.loads) {
+        await txn.insert('professional_loads', _db(e.toPortableJson()));
       }
-      for(final entry in package.boardCircuitIds.entries) for(final circuitId in entry.value) {
-        await txn.insert('professional_board_circuits',{'board_id':entry.key,'circuit_id':circuitId});
+      for (final e in package.circuits) {
+        await txn.insert('professional_circuits', _db(e.toPortableJson()));
+      }
+      for (final e in package.boards) {
+        await txn.insert('professional_boards', _db(e.toPortableJson()));
+      }
+      for (final e in package.protections) {
+        await txn.insert('professional_protections', _db(e.toPortableJson()));
+      }
+      for (final e in package.sizing) {
+        await txn.insert('professional_sizing', _db(e.toPortableJson()));
+      }
+      for (final e in package.materials) {
+        await txn.insert('professional_materials', _db(e.toPortableJson()));
+      }
+      if(package.memorial!=null) await txn.insert('professional_memorials',_db(package.memorial!.toPortableJson()));
+      for (final entry in package.circuitLoadIds.entries) {
+        for (final loadId in entry.value) {
+        await txn.insert('professional_circuit_loads', {'circuit_id':entry.key,'load_id':loadId});
+        }
+      }
+      for (final entry in package.boardCircuitIds.entries) {
+        for (final circuitId in entry.value) {
+        await txn.insert('professional_board_circuits', {'board_id':entry.key,'circuit_id':circuitId});
+        }
       }
     });
   }
