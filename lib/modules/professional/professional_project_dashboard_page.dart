@@ -10,6 +10,7 @@ import 'professional_boards_page.dart';
 import 'professional_protections_page.dart';
 import 'professional_sizing_page.dart';
 import 'professional_materials_page.dart';
+import 'professional_memorial_page.dart';
 import 'professional_project_form_page.dart';
 
 class ProfessionalProjectDashboardPage extends StatefulWidget {
