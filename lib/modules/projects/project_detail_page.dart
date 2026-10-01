@@ -6,7 +6,9 @@ import '../../core/database/project_repository.dart';
 import '../../core/pdf/project_pdf_generator.dart';
 import '../../core/licensing/license_provider.dart';
 import '../../core/licensing/license_provider_factory.dart';
+import '../../core/licensing/license_state.dart';
 import '../../core/professional/brand_identity.dart';
+import '../../core/professional/professional_profile.dart';
 import '../../core/professional/professional_profile_repository.dart';
 import 'package:printing/printing.dart';
 import 'projects_page.dart';
@@ -93,8 +95,8 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       ]);
       final latestRecords = results[0] as List<ProjectRecord>;
       final identity = BrandIdentity.resolve(
-        license: results[1] as dynamic,
-        profile: results[2] as dynamic,
+        license: results[1] as LicenseState,
+        profile: results[2] as ProfessionalProfile?,
       );
       final bytes = await ProjectPdfGenerator.generate(
         project: project,
