@@ -6,11 +6,6 @@ import '../../core/professional/professional_project_repository.dart';
 import '../../core/database/v2_persistence_factory.dart';
 import 'professional_loads_page.dart';
 import 'professional_circuits_page.dart';
-import 'professional_boards_page.dart';
-import 'professional_protections_page.dart';
-import 'professional_sizing_page.dart';
-import 'professional_materials_page.dart';
-import 'professional_memorial_page.dart';
 import 'professional_project_form_page.dart';
 
 class ProfessionalProjectDashboardPage extends StatefulWidget {
