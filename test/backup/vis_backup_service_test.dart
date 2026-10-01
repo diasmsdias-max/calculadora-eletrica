@@ -70,6 +70,47 @@ void main() {
     expect(metadata.single['value'], 'ACTIVE');
   });
 
+  test('backup includes professional projects', () async {
+    await db.insert('professional_projects', {
+      'id': 'pro-1',
+      'contract_version': 1,
+      'revision': 1,
+      'name': 'Projeto Profissional',
+      'client': '',
+      'address': '',
+      'responsible': '',
+      'notes': '',
+      'created_at': DateTime.utc(2026, 10, 1).toIso8601String(),
+      'updated_at': DateTime.utc(2026, 10, 1).toIso8601String(),
+    });
+
+    final service = VisBackupService(db);
+    final source = await service.createBackup(appVersion: '2.0.0-test');
+    await db.delete('professional_projects');
+
+    await service.restore(source);
+
+    final rows = await db.query('professional_projects');
+    expect(rows, hasLength(1));
+    expect(rows.single['id'], 'pro-1');
+  });
+
+  test('EP20 backup without professional_projects remains restorable', () async {
+    final database = <String, dynamic>{
+      for (final table in VisBackupService.exportedTables)
+        if (table != 'professional_projects') table: <dynamic>[],
+    };
+    final source = VisBackupEnvelope.create(
+      createdAt: DateTime.utc(2026, 10, 1),
+      appVersion: '1.0.0',
+      payload: {'database': database},
+    ).encode();
+
+    await VisBackupService(db).restore(source);
+
+    expect(await db.query('professional_projects'), isEmpty);
+  });
+
   test('database failure rolls restore back atomically', () async {
     final service = VisBackupService(db);
     await db.insert('projects', _project('local', 'Projeto local'));
