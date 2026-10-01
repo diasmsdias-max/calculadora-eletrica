@@ -53,9 +53,35 @@ class SqliteProfessionalCircuitRepository implements ProfessionalCircuitReposito
   @override
   Future<void> replaceLoads(String circuitId, Iterable<String> loadIds) async {
     await database.transaction((txn) async {
+      final circuitRows = await txn.query(
+        'professional_circuits',
+        columns: ['project_id'],
+        where: 'id = ?',
+        whereArgs: [circuitId],
+        limit: 1,
+      );
+      if (circuitRows.isEmpty) {
+        throw ArgumentError('Circuit not found.');
+      }
+      final projectId = circuitRows.single['project_id']! as String;
+      final uniqueLoadIds = loadIds.toSet();
+
+      for (final loadId in uniqueLoadIds) {
+        final loadRows = await txn.query(
+          'professional_loads',
+          columns: ['project_id'],
+          where: 'id = ?',
+          whereArgs: [loadId],
+          limit: 1,
+        );
+        if (loadRows.isEmpty || loadRows.single['project_id'] != projectId) {
+          throw ArgumentError('Circuit and load must belong to the same project.');
+        }
+      }
+
       await txn.delete('professional_circuit_loads',
           where: 'circuit_id = ?', whereArgs: [circuitId]);
-      for (final loadId in loadIds.toSet()) {
+      for (final loadId in uniqueLoadIds) {
         await txn.insert('professional_circuit_loads',
             {'circuit_id': circuitId, 'load_id': loadId});
       }
