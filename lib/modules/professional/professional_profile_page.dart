@@ -99,7 +99,7 @@ class _ProfessionalProfilePageState extends State<ProfessionalProfilePage> {
                     TextFormField(
                       controller: _documentController,
                       decoration: const InputDecoration(
-                        labelText: 'CNPJ/CPF (opcional)',
+                        labelText: 'CNPJ (opcional)',
                         border: OutlineInputBorder(),
                       ),
                     ),
