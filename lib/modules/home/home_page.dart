@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/licensing/license_provider.dart';
+import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
 import '../../core/professional/brand_identity.dart';
 import '../../core/professional/professional_profile.dart';
@@ -26,7 +27,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final LicenseProvider _licenseProvider = const FreeLicenseProvider();
+  final LicenseProvider _licenseProvider = LicenseProviderFactory.create();
   final ProfessionalProfileRepository _profileRepository =
       LocalProfessionalProfileRepository();
 
