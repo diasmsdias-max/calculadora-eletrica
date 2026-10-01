@@ -75,6 +75,18 @@ Todo Projeto Profissional deve possuir:
 
 Entidades futuras (cargas, circuitos, quadros, proteções e materiais) devem usar IDs estáveis e referências explícitas.
 
+## Preparação para representação gráfica
+
+A EP21 não implementa CAD, porém o núcleo do Projeto Profissional deve permitir que futuras EPs associem representação gráfica às entidades sem contaminar o domínio elétrico.
+
+Diretrizes:
+- Carga, Circuito e Quadro existem e permanecem válidos sem coordenadas gráficas;
+- posição, símbolo, rotação, escala, traçado e demais dados visuais pertencem a uma camada gráfica associada por IDs estáveis;
+- um circuito elétrico não deve depender de uma polyline para existir;
+- uma futura planta DXF/DWG é documento/base gráfica associada ao Projeto Profissional;
+- o `.visproject` deverá poder transportar essas associações quando o recurso for implementado;
+- o desenho poderá fornecer comprimentos ao cálculo somente quando escala/unidade forem conhecidas e validadas.
+
 ## Interoperabilidade futura
 
 O modelo não deve depender de:
