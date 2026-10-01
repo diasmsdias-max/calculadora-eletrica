@@ -12,10 +12,8 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test('professional loads stay isolated by project and cascade on delete', () async {
-    final db = await databaseFactory.openDatabase(
-      inMemoryDatabasePath,
-      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
-    );
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final projects = SqliteProfessionalProjectRepository(db);
     final loads = SqliteProfessionalLoadRepository(db);
@@ -64,6 +62,7 @@ void main() {
 
   test('professional load repository rejects incomplete identity', () async {
     final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
     await VisDatabase.createSchemaForTesting(db);
     final loads = SqliteProfessionalLoadRepository(db);
     final now = DateTime.utc(2026, 10, 1);
