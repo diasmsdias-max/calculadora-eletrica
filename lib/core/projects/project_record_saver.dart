@@ -3,6 +3,7 @@ import '../database/local_project.dart';
 import '../database/project_record.dart';
 import '../database/project_record_repository.dart';
 import '../database/project_repository.dart';
+import '../database/v2_persistence_factory.dart';
 
 class ProjectRecordSaver {
   static Future<bool> save(
@@ -12,7 +13,8 @@ class ProjectRecordSaver {
     required String summary,
     required Map<String, dynamic> data,
   }) async {
-    final projects = await PreferencesProjectRepository().getAll();
+    final persistence = await V2PersistenceFactory.defaults().initialize();
+    final projects = await persistence.projects.getAll();
     if (!context.mounted) return false;
     if (projects.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -35,7 +37,7 @@ class ProjectRecordSaver {
     );
     if (selected == null) return false;
     final now = DateTime.now();
-    await PreferencesProjectRecordRepository().save(ProjectRecord(
+    await persistence.records.save(ProjectRecord(
       id: now.microsecondsSinceEpoch.toString(),
       projectId: selected.id,
       type: type,
@@ -44,7 +46,7 @@ class ProjectRecordSaver {
       data: data,
       createdAt: now,
     ));
-    await PreferencesProjectRepository().save(selected.copyWith(updatedAt: now));
+    await persistence.projects.save(selected.copyWith(updatedAt: now));
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Cálculo salvo em “${selected.name}”.')),
