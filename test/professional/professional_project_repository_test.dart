@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:vis_electrica/core/database/vis_database.dart';
-import 'package:vis_electrica/core/professional/professional_project.dart';
-import 'package:vis_electrica/core/professional/sqlite_professional_project_repository.dart';
+import 'package:calculadora_eletrica/core/database/vis_database.dart';
+import 'package:calculadora_eletrica/core/professional/professional_project.dart';
+import 'package:calculadora_eletrica/core/professional/sqlite_professional_project_repository.dart';
 
 void main() {
   sqfliteFfiInit();
