@@ -38,6 +38,38 @@ void main() {
     expect(brand.isProfessional, isTrue);
   });
 
+  test('inactive license never exposes saved professional identity', () {
+    final brand = BrandIdentity.resolve(
+      license: const LicenseState(status: LicenseStatus.inactive),
+      profile: profile,
+    );
+
+    expect(brand.ownerName, 'BOECKER');
+    expect(brand.productNameLabel, 'VIS ELECTRICA');
+    expect(brand.document, isNull);
+    expect(brand.phone, isNull);
+    expect(brand.isProfessional, isFalse);
+  });
+
+  test('professional entitlement with empty company falls back to BOECKER', () {
+    final brand = BrandIdentity.resolve(
+      license: const LicenseState(
+        status: LicenseStatus.active,
+        entitlements: {Entitlement.professional},
+      ),
+      profile: const ProfessionalProfile(
+        companyName: '   ',
+        document: '00.000.000/0001-00',
+        phone: '(27) 99999-9999',
+      ),
+    );
+
+    expect(brand.ownerName, 'BOECKER');
+    expect(brand.document, isNull);
+    expect(brand.phone, isNull);
+    expect(brand.isProfessional, isFalse);
+  });
+
   test('professional entitlement without profile falls back to BOECKER', () {
     final brand = BrandIdentity.resolve(
       license: const LicenseState(
