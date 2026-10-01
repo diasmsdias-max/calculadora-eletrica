@@ -22,6 +22,8 @@ class ProfessionalLoadsPage extends StatefulWidget {
 class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
   List<ProfessionalLoad> _loads = const [];
   bool _loading = true;
+  final _searchController = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
@@ -36,6 +38,22 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
       _loads = loads;
       _loading = false;
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<ProfessionalLoad> get _filteredLoads {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return _loads;
+    return _loads.where((load) =>
+      load.name.toLowerCase().contains(query) ||
+      load.category.toLowerCase().contains(query) ||
+      load.notes.toLowerCase().contains(query)
+    ).toList(growable: false);
   }
 
   Future<void> _edit([ProfessionalLoad? load]) async {
@@ -53,7 +71,9 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final loads = _filteredLoads;
+    return Scaffold(
         appBar: AppBar(title: const Text('Cargas')),
         floatingActionButton: widget.readOnly
             ? null
@@ -64,7 +84,31 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
               ),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
-            : _loads.isEmpty
+            : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() => _query = value),
+                      decoration: InputDecoration(
+                        labelText: 'Buscar cargas',
+                        hintText: 'Nome, categoria ou observação',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _query.isEmpty ? null : IconButton(
+                          tooltip: 'Limpar busca',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
+                          icon: const Icon(Icons.clear),
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _loads.isEmpty
                 ? const Center(
                     child: Padding(
                       padding: EdgeInsets.all(32),
@@ -74,12 +118,14 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
                       ),
                     ),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                    itemCount: _loads.length,
+                : loads.isEmpty
+                    ? const Center(child: Text('Nenhuma carga encontrada para esta busca.'))
+                    : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    itemCount: loads.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, index) {
-                      final load = _loads[index];
+                      final load = loads[index];
                       return Card(
                         child: ListTile(
                           title: Text(load.name),
@@ -95,7 +141,11 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
                       );
                     },
                   ),
+                    ),
+                ],
+              ),
       );
+  }
 }
 
 class _LoadDialog extends StatefulWidget {
@@ -204,6 +254,10 @@ class _LoadDialogState extends State<_LoadDialog> {
                     readOnly: widget.readOnly,
                     keyboardType: TextInputType.number,
                     decoration: _decoration('Quantidade', 'Informe quantas cargas iguais serão consideradas'),
+                    validator: (v) {
+                      final value = int.tryParse(v?.trim() ?? '');
+                      return value == null || value < 1 ? 'Informe uma quantidade válida.' : null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -211,6 +265,10 @@ class _LoadDialogState extends State<_LoadDialog> {
                     readOnly: widget.readOnly,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: _decoration('Potência unitária (W)', 'Informe a potência nominal de uma unidade'),
+                    validator: (v) {
+                      final value = _number(v ?? '');
+                      return value == null || value <= 0 ? 'Informe uma potência válida.' : null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -218,6 +276,10 @@ class _LoadDialogState extends State<_LoadDialog> {
                     readOnly: widget.readOnly,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: _decoration('Tensão (V)', 'Informe a tensão de alimentação'),
+                    validator: (v) {
+                      final value = _number(v ?? '');
+                      return value == null || value <= 0 ? 'Informe uma tensão válida.' : null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -225,6 +287,13 @@ class _LoadDialogState extends State<_LoadDialog> {
                     readOnly: widget.readOnly,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: _decoration('Fator de potência', 'Informe quando conhecido, usando valor entre 0 e 1'),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      final value = _number(v);
+                      return value == null || value <= 0 || value > 1
+                          ? 'Use um valor maior que 0 e até 1.'
+                          : null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
