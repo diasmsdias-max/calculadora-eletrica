@@ -9,7 +9,6 @@ import '../../core/backup/vis_backup_envelope.dart';
 import '../../core/backup/vis_backup_service.dart';
 import '../../core/backup/vis_backup_restore_coordinator.dart';
 import '../../core/database/vis_database.dart';
-import '../../core/professional/professional_profile.dart';
 import '../../core/professional/professional_profile_repository.dart';
 
 class DataBackupPage extends StatefulWidget {
