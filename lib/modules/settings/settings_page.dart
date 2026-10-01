@@ -8,6 +8,7 @@ import '../../core/professional/professional_profile_repository.dart';
 import '../../core/settings/module_preferences.dart';
 import '../../core/settings/professional_module_preferences.dart';
 import '../professional/professional_profile_page.dart';
+import 'data_backup_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -140,6 +141,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ],
                 const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.storage_outlined),
+                  title: const Text('Dados e Backup'),
+                  subtitle: const Text('Criar ou restaurar arquivo .visbackup.'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DataBackupPage()),
+                  ),
+                ),
                 const ListTile(
                   leading: Icon(Icons.folder_outlined),
                   title: Text('Meus Projetos'),
