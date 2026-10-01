@@ -7,8 +7,8 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test('schema 3 to 4 adds professional circuits without losing data', () async {
-    final db = await databaseFactory.openDatabase(inMemoryDatabasePath,
-      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'));
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
     await db.execute('''CREATE TABLE professional_projects (
       id TEXT PRIMARY KEY, contract_version INTEGER NOT NULL, revision INTEGER NOT NULL,
       name TEXT NOT NULL, client TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '',
