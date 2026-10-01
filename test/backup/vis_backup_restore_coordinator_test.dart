@@ -23,7 +23,7 @@ void main() {
   test('profile failure restores previous database and profile', () async {
     final service = VisBackupService(db);
     final profileRepository = _FailOnceProfileRepository(
-      ProfessionalProfile(companyName: 'Empresa local'),
+      const ProfessionalProfile(companyName: 'Empresa local'),
     );
 
     await db.insert('projects', _project('backup', 'Projeto backup'));
