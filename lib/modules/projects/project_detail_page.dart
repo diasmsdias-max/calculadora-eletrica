@@ -16,10 +16,12 @@ import 'projects_page.dart';
 class ProjectDetailPage extends StatefulWidget {
   final LocalProject project;
   final ProjectRepository projectRepository;
+  final ProjectRecordRepository recordsRepository;
   const ProjectDetailPage({
     super.key,
     required this.project,
     required this.projectRepository,
+    required this.recordsRepository,
   });
 
   @override
@@ -27,8 +29,6 @@ class ProjectDetailPage extends StatefulWidget {
 }
 
 class _ProjectDetailPageState extends State<ProjectDetailPage> {
-  final ProjectRecordRepository recordsRepository =
-      PreferencesProjectRecordRepository();
   final LicenseProvider licenseProvider = LicenseProviderFactory.create();
   final ProfessionalProfileRepository profileRepository =
       LocalProfessionalProfileRepository();
@@ -45,7 +45,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
   }
 
   Future<void> _load() async {
-    final data = await recordsRepository.getByProject(project.id);
+    final data = await widget.recordsRepository.getByProject(project.id);
     if (!mounted) return;
     setState(() { records = data; loading = false; });
   }
@@ -81,7 +81,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       ),
     );
     if (ok == true) {
-      await recordsRepository.delete(record.id);
+      await widget.recordsRepository.delete(record.id);
       await _load();
     }
   }
@@ -89,7 +89,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
   Future<void> _sharePdf() async {
     try {
       final results = await Future.wait<Object?>([
-        recordsRepository.getByProject(project.id),
+        widget.recordsRepository.getByProject(project.id),
         licenseProvider.currentState(),
         profileRepository.load(),
       ]);

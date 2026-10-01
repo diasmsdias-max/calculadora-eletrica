@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/formatters/technical_format.dart';
 import '../../core/calculations/motor_calculator.dart';
 import '../../core/calculations/power_calculator.dart';
-import '../../core/database/local_project.dart';
 import '../../core/database/project_record.dart';
-import '../../core/database/project_record_repository.dart';
-import '../../core/database/project_repository.dart';
+import '../../core/projects/project_record_saver.dart';
 
 class MotorPage extends StatefulWidget {
   const MotorPage({super.key});
@@ -55,45 +53,24 @@ class _MotorPageState extends State<MotorPage> {
   Future<void> _saveToProject() async {
     final r = result;
     if (r == null) return;
-    final projects = await PreferencesProjectRepository().getAll();
-    if (!mounted) return;
-    if (projects.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Crie um projeto em Meus Projetos antes de salvar o cálculo.')),
-      );
-      return;
-    }
-    final selected = await showDialog<LocalProject>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Salvar em qual projeto?'),
-        children: projects.map((p) => SimpleDialogOption(
-          onPressed: () => Navigator.pop(context, p),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(p.client.isEmpty ? p.name : '${p.name}\n${p.client}'),
-          ),
-        )).toList(),
-      ),
-    );
-    if (selected == null) return;
-    final now = DateTime.now();
-    final inputValue = inputMode == MotorInputMode.power ? _n(power.text) : _n(current.text);
+    final inputValue =
+        inputMode == MotorInputMode.power ? _n(power.text) : _n(current.text);
     final inputLabel = inputMode == MotorInputMode.power
         ? '${TechnicalFormat.number(inputValue)} ${unit.name.toUpperCase()}'
         : '${TechnicalFormat.number(inputValue)} A';
-    final record = ProjectRecord(
-      id: now.microsecondsSinceEpoch.toString(),
-      projectId: selected.id,
+    await ProjectRecordSaver.save(
+      context,
       type: ProjectRecordType.motor,
       title: 'Motor — $inputLabel',
-      summary: '${TechnicalFormat.number(r.nominalCurrentA)} A | ${TechnicalFormat.number(r.apparentPowerKva)} kVA',
-      createdAt: now,
+      summary:
+          '${TechnicalFormat.number(r.nominalCurrentA)} A | ${TechnicalFormat.number(r.apparentPowerKva)} kVA',
       data: {
         'inputMode': inputMode.name,
-        'ratedPower': inputMode == MotorInputMode.power ? _n(power.text) : null,
+        'ratedPower':
+            inputMode == MotorInputMode.power ? _n(power.text) : null,
         'powerUnit': unit.name,
-        'informedCurrentA': inputMode == MotorInputMode.current ? _n(current.text) : null,
+        'informedCurrentA':
+            inputMode == MotorInputMode.current ? _n(current.text) : null,
         'system': system.name,
         'voltageV': _n(voltage.text),
         'powerFactor': _n(pf.text),
@@ -112,11 +89,6 @@ class _MotorPageState extends State<MotorPage> {
         'dailyEnergyKwh': r.dailyEnergyKwh,
         'monthlyEnergyKwh': r.monthlyEnergyKwh,
       },
-    );
-    await PreferencesProjectRecordRepository().save(record);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cálculo salvo em “${selected.name}”.')),
     );
   }
 

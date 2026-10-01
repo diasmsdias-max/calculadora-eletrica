@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/database/local_project.dart';
 import '../../core/database/project_repository.dart';
 import '../../core/database/project_record_repository.dart';
+import '../../core/database/v2_persistence_factory.dart';
 import 'project_detail_page.dart';
 
 class ProjectsPage extends StatefulWidget {
@@ -11,27 +12,42 @@ class ProjectsPage extends StatefulWidget {
 }
 
 class _ProjectsPageState extends State<ProjectsPage> {
-  final ProjectRepository repository = PreferencesProjectRepository();
-  final ProjectRecordRepository recordRepository = PreferencesProjectRecordRepository();
+  ProjectRepository? repository;
+  ProjectRecordRepository? recordRepository;
   List<LocalProject> projects = [];
   bool loading = true;
+  Object? loadError;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      final persistence = await V2PersistenceFactory.defaults().initialize();
+      repository = persistence.projects;
+      recordRepository = persistence.records;
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() { loadError = error; loading = false; });
+    }
   }
 
   Future<void> _load() async {
-    final data = await repository.getAll();
+    final repo = repository;
+    if (repo == null) return;
+    final data = await repo.getAll();
     if (!mounted) return;
-    setState(() { projects = data; loading = false; });
+    setState(() { projects = data; loading = false; loadError = null; });
   }
 
   Future<void> _edit([LocalProject? project]) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ProjectEditPage(repository: repository, project: project),
+        builder: (_) => ProjectEditPage(repository: repository!, project: project),
       ),
     );
     if (saved == true) await _load();
@@ -42,7 +58,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
       MaterialPageRoute(
         builder: (_) => ProjectDetailPage(
           project: project,
-          projectRepository: repository,
+          projectRepository: repository!,
+          recordsRepository: recordRepository!,
         ),
       ),
     );
@@ -65,8 +82,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
       ),
     );
     if (ok == true) {
-      await repository.delete(project.id);
-      await recordRepository.deleteByProject(project.id);
+      await repository!.delete(project.id);
+      await recordRepository!.deleteByProject(project.id);
       await _load();
     }
   }
@@ -83,6 +100,18 @@ class _ProjectsPageState extends State<ProjectsPage> {
       top: false,
       child: loading
           ? const Center(child: CircularProgressIndicator())
+          : loadError != null
+              ? Center(child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Não foi possível abrir os projetos.', textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      OutlinedButton(onPressed: () { setState(() { loading = true; loadError = null; }); _initialize(); }, child: const Text('TENTAR NOVAMENTE')),
+                    ],
+                  ),
+                ))
           : projects.isEmpty
               ? const Center(child: Padding(
                   padding: EdgeInsets.all(32),
