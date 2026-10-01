@@ -46,6 +46,41 @@ Windows:
 
 Não existe dependência obrigatória de nuvem. O conceito é semelhante a levantamento de topografia: coletar no campo, descarregar na estação, tratar e, quando necessário, retornar o projeto ao dispositivo.
 
+## VIS ELECTRICA Windows — Estação Visual Simplificada de Projeto Elétrico
+
+O objetivo da camada CAD no Windows não é reproduzir um CAD generalista nem exigir conhecimento de AutoCAD. A planta arquitetônica é uma base gráfica sobre a qual o profissional trabalha com entidades elétricas inteligentes.
+
+Fluxo pretendido:
+
+`Abrir Projeto → Carregar DXF/DWG → Escolher cargas levantadas → Posicionar cargas → Posicionar quadros → Formar/traçar circuitos → Dimensionar → Anexar/gerar unifilar e multifilar → Gerar memória de cálculo → Salvar/Exportar`
+
+Princípios:
+- importar DXF e, quando tecnicamente/licencialmente viável, DWG;
+- preservar a planta original como referência/base gráfica;
+- permitir posicionamento visual por seleção/arraste, sem exigir comandos CAD complexos;
+- cada símbolo elétrico representa uma entidade do Projeto Profissional, não apenas geometria;
+- cargas posicionadas mantêm vínculo com seus IDs e dados técnicos;
+- quadros posicionados mantêm vínculo com circuitos e proteções;
+- circuitos podem possuir representação gráfica/encaminhamento vinculada à entidade elétrica;
+- quando houver escala confiável, comprimentos gráficos poderão auxiliar dimensionamento e queda de tensão;
+- alterações de geometria poderão sinalizar necessidade de recalcular parâmetros dependentes de comprimento;
+- diagramas e memória de cálculo devem aproveitar os dados já existentes no projeto, evitando redigitação;
+- a geometria deve ser separada do núcleo de cálculo para que o projeto continue válido mesmo sem uma planta CAD.
+
+O arquivo mestre continua sendo o `.visproject`. DXF/DWG são documentos gráficos associados e formatos de interoperabilidade, não o banco de dados principal do VIS ELECTRICA.
+
+### Independência comercial
+
+VIS ELECTRICA Profissional Android e VIS ELECTRICA Windows são produtos/licenças independentes e complementares. Um não deve exigir a contratação do outro.
+
+Cenários previstos:
+- autônomo utiliza somente o App Profissional e conclui seus trabalhos no celular;
+- empresa/projetista utiliza somente Windows para receber e tratar levantamentos;
+- integradora utiliza Android + Windows no fluxo completo;
+- profissional de campo envia um `.visproject` para uma empresa/profissional habilitado desenvolver, revisar e documentar o projeto, com eventual responsabilidade técnica tratada pelo profissional legalmente habilitado conforme atribuições e exigências aplicáveis.
+
+O `.visproject` é o elo de colaboração e não deve transportar licença de nenhum dos produtos.
+
 ## Formatos
 
 .visbackup:
