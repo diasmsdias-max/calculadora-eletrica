@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/licensing/license_provider.dart';
+import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
 import '../../core/professional/professional_profile.dart';
 import '../../core/professional/professional_profile_repository.dart';
@@ -16,7 +17,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final LicenseProvider _licenseProvider = const FreeLicenseProvider();
+  final LicenseProvider _licenseProvider = LicenseProviderFactory.create();
   final ProfessionalProfileRepository _profileRepository =
       LocalProfessionalProfileRepository();
 
