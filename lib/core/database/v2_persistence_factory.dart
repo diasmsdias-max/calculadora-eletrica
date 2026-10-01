@@ -17,6 +17,8 @@ import '../professional/professional_sizing_repository.dart';
 import '../professional/sqlite_professional_sizing_repository.dart';
 import '../professional/professional_material_repository.dart';
 import '../professional/sqlite_professional_material_repository.dart';
+import '../professional/professional_memorial_repository.dart';
+import '../professional/sqlite_professional_memorial_repository.dart';
 
 class V2Persistence {
   final ProjectRepository projects;
@@ -28,6 +30,7 @@ class V2Persistence {
   final ProfessionalProtectionRepository professionalProtections;
   final ProfessionalSizingRepository professionalSizing;
   final ProfessionalMaterialRepository professionalMaterials;
+  final ProfessionalMemorialRepository professionalMemorials;
 
   const V2Persistence({
     required this.projects,
@@ -39,6 +42,7 @@ class V2Persistence {
     required this.professionalProtections,
     required this.professionalSizing,
     required this.professionalMaterials,
+    required this.professionalMemorials,
   });
 }
 
@@ -81,6 +85,7 @@ class V2PersistenceFactory {
       professionalProtections: SqliteProfessionalProtectionRepository(db),
       professionalSizing: SqliteProfessionalSizingRepository(db),
       professionalMaterials: SqliteProfessionalMaterialRepository(db),
+      professionalMemorials: SqliteProfessionalMemorialRepository(db),
     );
   }
 }
