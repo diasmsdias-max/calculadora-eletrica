@@ -94,7 +94,7 @@ void main() {
       payload: {'database': emptyDatabase},
     ).encode();
 
-    expect(() => service.restore(badSource), throwsA(anything));
+    await expectLater(service.restore(badSource), throwsA(isA<FormatException>()));
 
     final projects = await db.query('projects');
     expect(projects, hasLength(1));
