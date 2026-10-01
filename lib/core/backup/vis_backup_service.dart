@@ -18,6 +18,16 @@ class VisBackupService {
     'boards',
     'protections',
     'material_items',
+    'professional_projects',
+    'professional_loads',
+    'professional_circuits',
+    'professional_circuit_loads',
+    'professional_boards',
+    'professional_board_circuits',
+    'professional_protections',
+    'professional_sizing',
+    'professional_materials',
+    'professional_memorials',
   ];
 
   final Database database;
@@ -100,7 +110,12 @@ class VisBackupService {
     final result = <String, List<Map<String, Object?>>>{};
 
     for (final table in exportedTables) {
-      final rows = database[table];
+      var rows = database[table];
+      // Backups created before the Professional graph was introduced may
+      // omit any professional_* table. Treat it as empty for compatibility.
+      if (rows == null && table.startsWith('professional_')) {
+        rows = const <Object?>[];
+      }
       if (rows is! List) {
         throw FormatException('Tabela $table ausente ou inválida no backup.');
       }
@@ -149,6 +164,40 @@ class VisBackupService {
     for (final row in data['protections']!) {
       _optionalReference(row, 'circuit_id', circuitIds, 'protections');
       _optionalReference(row, 'board_id', boardIds, 'protections');
+    }
+
+    final professionalProjectIds = _ids(data['professional_projects']!);
+    final professionalLoadIds = _ids(data['professional_loads']!);
+    final professionalCircuitIds = _ids(data['professional_circuits']!);
+    final professionalBoardIds = _ids(data['professional_boards']!);
+
+    for (final table in [
+      'professional_loads',
+      'professional_circuits',
+      'professional_boards',
+      'professional_protections',
+      'professional_sizing',
+      'professional_materials',
+      'professional_memorials',
+    ]) {
+      for (final row in data[table]!) {
+        _requireReference(row, 'project_id', professionalProjectIds, table);
+      }
+    }
+
+    for (final row in data['professional_circuit_loads']!) {
+      _requireReference(row, 'circuit_id', professionalCircuitIds, 'professional_circuit_loads');
+      _requireReference(row, 'load_id', professionalLoadIds, 'professional_circuit_loads');
+    }
+    for (final row in data['professional_board_circuits']!) {
+      _requireReference(row, 'board_id', professionalBoardIds, 'professional_board_circuits');
+      _requireReference(row, 'circuit_id', professionalCircuitIds, 'professional_board_circuits');
+    }
+    for (final row in data['professional_protections']!) {
+      _requireReference(row, 'circuit_id', professionalCircuitIds, 'professional_protections');
+    }
+    for (final row in data['professional_sizing']!) {
+      _requireReference(row, 'circuit_id', professionalCircuitIds, 'professional_sizing');
     }
   }
 

@@ -4,6 +4,7 @@ import '../../core/licensing/license_provider.dart';
 import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
 import 'professional_profile_page.dart';
+import 'professional_projects_page.dart';
 
 class ProfessionalLandingPage extends StatefulWidget {
   const ProfessionalLandingPage({super.key});
@@ -85,6 +86,22 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
                   text: 'Consolide materiais e gere o relatório profissional do projeto.',
                 ),
                 const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProfessionalProjectsPage(license: license),
+                    ),
+                  ),
+                  icon: const Icon(Icons.folder_copy_outlined),
+                  label: const Text('Projetos Elétricos'),
+                ),
+                const SizedBox(height: 8),
+                if (!license.hasProfessional)
+                  const Text(
+                    'Projetos existentes permanecem acessíveis em modo de leitura.',
+                    textAlign: TextAlign.center,
+                  ),
+                const SizedBox(height: 8),
                 if (license.hasProfessional)
                   FilledButton.icon(
                     onPressed: () => Navigator.of(context).push(
