@@ -33,11 +33,13 @@ class ProfessionalProjectDashboardPage extends StatefulWidget {
 class _ProfessionalProjectDashboardPageState
     extends State<ProfessionalProjectDashboardPage> {
   late ProfessionalProject _project;
+  late final Future<V2Persistence> _persistence;
 
   @override
   void initState() {
     super.initState();
     _project = widget.project;
+    _persistence = V2PersistenceFactory.defaults().initialize();
   }
 
   Future<void> _editProject() async {
@@ -93,7 +95,7 @@ class _ProfessionalProjectDashboardPageState
               subtitle: 'Cargas levantadas e vinculadas ao projeto.',
               enabled: true,
               onTap: () async {
-                final persistence = await V2PersistenceFactory.defaults().initialize();
+                final persistence = await _persistence;
                 if (!context.mounted) return;
                 await Navigator.of(context).push(
                   MaterialPageRoute(
@@ -112,7 +114,7 @@ class _ProfessionalProjectDashboardPageState
               subtitle: 'Agrupamento, alimentação e dados dos circuitos.',
               enabled: true,
               onTap: () async {
-                final persistence = await V2PersistenceFactory.defaults().initialize();
+                final persistence = await _persistence;
                 if (!context.mounted) return;
                 await Navigator.of(context).push(
                   MaterialPageRoute(
@@ -132,7 +134,7 @@ class _ProfessionalProjectDashboardPageState
               subtitle: 'Quadros e distribuição dos circuitos.',
               enabled: true,
               onTap: () async {
-                final persistence = await V2PersistenceFactory.defaults().initialize();
+                final persistence = await _persistence;
                 if (!context.mounted) return;
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfessionalBoardsPage(
@@ -150,7 +152,7 @@ class _ProfessionalProjectDashboardPageState
               subtitle: 'Proteções associadas aos circuitos.',
               enabled: true,
               onTap: () async {
-                final persistence = await V2PersistenceFactory.defaults().initialize();
+                final persistence = await _persistence;
                 if (!context.mounted) return;
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfessionalProtectionsPage(
@@ -168,7 +170,7 @@ class _ProfessionalProjectDashboardPageState
               subtitle: 'Critérios e resultados técnicos do projeto.',
               enabled: true,
               onTap: () async {
-                final persistence = await V2PersistenceFactory.defaults().initialize();
+                final persistence = await _persistence;
                 if (!context.mounted) return;
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfessionalSizingPage(
@@ -186,7 +188,7 @@ class _ProfessionalProjectDashboardPageState
               subtitle: 'Lista consolidada de materiais.',
               enabled: true,
               onTap: () async {
-                final persistence = await V2PersistenceFactory.defaults().initialize();
+                final persistence = await _persistence;
                 if (!context.mounted) return;
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfessionalMaterialsPage(
@@ -203,7 +205,7 @@ class _ProfessionalProjectDashboardPageState
               subtitle: 'Memória de cálculo e documentação técnica.',
               enabled: true,
               onTap: () async {
-                final persistence = await V2PersistenceFactory.defaults().initialize();
+                final persistence = await _persistence;
                 if (!context.mounted) return;
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfessionalMemorialPage(
