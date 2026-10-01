@@ -1,6 +1,6 @@
 # EP19 — Fundação VIS ELECTRICA Profissional
 
-Status: Em desenvolvimento  
+Status: Implementação concluída — aguardando validação final/merge  
 Base: VIS ELECTRICA V1.0.0  
 Branch: `feature/ep19-professional-foundation`
 
@@ -133,3 +133,23 @@ Esses itens entram nas EPs seguintes.
 9. Licença não é tratada como dado exportável.
 10. A arquitetura prevê modo leitura/backup dos dados profissionais sem licença ativa.
 11. Todos os testes de regressão da V1 continuam aprovados.
+
+
+## Evidências de implementação
+
+- visibilidade do módulo permanece separada de licença/entitlement;
+- `LicenseProvider` abstrato com implementação gratuita segura para release;
+- `DebugLicenseProvider` persistente apenas em builds de desenvolvimento para validação em aparelho;
+- Perfil Profissional persistido separadamente da licença;
+- identidade centralizada em `BrandIdentity`;
+- Home recarrega licença/perfil ao retornar de Configurações ou do módulo Profissional;
+- PDF V1 mantém BOECKER / VIS ELECTRICA por padrão e aceita identidade Profissional opcional;
+- fluxo real de exportação resolve licença + perfil antes de gerar o PDF;
+- licença inativa não expõe identidade profissional, mas mantém contratos de leitura e backup;
+- suíte de regressão V1 permanece obrigatória no CI.
+
+### Segurança da licença de desenvolvimento
+
+A ativação local de teste existe somente quando `kDebugMode` é verdadeiro.
+Builds release usam `FreeLicenseProvider` até a integração do provedor comercial definitivo.
+O APK de desenvolvimento não deve ser distribuído como versão comercial.
