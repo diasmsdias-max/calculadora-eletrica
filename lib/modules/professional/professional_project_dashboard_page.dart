@@ -74,11 +74,6 @@ class _ProfessionalProjectDashboardPageState
     return summary == null ? fallback : '$fallback\n$summary';
   }
 
-  Future<void> _openModule(Future<void> Function() open) async {
-    await open();
-    await _loadSummaries();
-  }
-
   Future<void> _editProject() async {
     final updated = await Navigator.of(context).push<ProfessionalProject>(
       MaterialPageRoute(
