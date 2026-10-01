@@ -43,6 +43,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
         builder: (_) => ProjectDetailPage(
           project: project,
           projectRepository: repository,
+          recordsRepository: recordRepository,
         ),
       ),
     );
