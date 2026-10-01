@@ -83,15 +83,20 @@ O `.visproject` é o elo de colaboração e não deve transportar licença de ne
 
 ## Formatos
 
-.visbackup:
-- backup/restauração do ambiente local;
+`.visbackup`:
+- backup/restauração do ambiente local, incluindo o grafo Professional completo;
 - versionado e com integridade;
 - não contém licença, chave, tokens ou credenciais.
 
-.visproject:
-- formato reservado para intercâmbio de um Projeto Profissional;
-- deve preservar IDs, relações e revisões;
-- futuro transporte Android ↔ Windows sem nuvem obrigatória.
+`.visproject`:
+- contrato implementado com assinatura `VISPROJECT` e versão 1;
+- intercâmbio de um único Projeto Profissional;
+- preserva IDs, revisões e relações Carga↔Circuito e Quadro↔Circuito;
+- transporta Projeto, Cargas, Circuitos, Quadros, Proteções, Dimensionamento, Materiais e Memorial;
+- valida referências e pertencimento ao mesmo projeto;
+- importação SQLite substitui atomicamente o mesmo ID de projeto, com rollback em falha;
+- não transporta licença, tokens, credenciais, perfil comercial ou estado de UI;
+- preparado para Android ↔ Windows sem nuvem obrigatória.
 
 ## Estado concluído
 
@@ -107,7 +112,7 @@ EP20: Banco de Dados V2 e Backup Manual.
 - SQLite V2, migração V1, .visbackup, restauração segura, rollback, Perfil Profissional e preferências exportáveis;
 - licença/segredos excluídos do backup.
 
-## Em desenvolvimento
+## EP21 — implementação concluída, CI pendente
 
 EP21 — Núcleo de Projetos Profissionais.
 Branch: feature/ep21-professional-project-core.
@@ -116,9 +121,9 @@ Objetivos:
 - separar Projeto Profissional dos registros/projetos legados V1;
 - domínio independente da interface Android;
 - IDs estáveis, revisão e timestamps;
-- contrato portátil;
-- preparar .visproject;
-- preparar Cargas → Circuitos → Quadros → Proteções → Dimensionamento → Materiais → Memorial;
+- contrato portátil `.visproject` implementado;
+- exportação/importação do grafo Professional implementada;
+- Cargas → Circuitos → Quadros → Proteções → Dimensionamento → Materiais → Memorial implementados;
 - manter V1 intacta.
 
 ## Diretrizes permanentes
