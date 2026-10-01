@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 9;
+  static const schemaVersion = 10;
 
   Database? _database;
 
@@ -67,6 +67,9 @@ class VisDatabase {
     }
     if (oldVersion < 9) {
       await _createProfessionalMemorialTable(db);
+    }
+    if (oldVersion < 10) {
+      await _addProfessionalProtectionValidationColumns(db);
     }
   }
 
@@ -190,6 +193,9 @@ class VisDatabase {
         name TEXT NOT NULL,
         device_type TEXT NOT NULL DEFAULT '',
         rated_current_a REAL,
+        recommended_current_a REAL,
+        validation_status TEXT,
+        validation_criterion TEXT NOT NULL DEFAULT '',
         poles INTEGER,
         trip_curve TEXT NOT NULL DEFAULT '',
         breaking_capacity_ka REAL,
@@ -207,6 +213,23 @@ class VisDatabase {
     await db.execute(
       'CREATE INDEX idx_professional_protections_circuit_id '
       'ON professional_protections(circuit_id)',
+    );
+  }
+
+  static Future<void> _addProfessionalProtectionValidationColumns(
+    Database db,
+  ) async {
+    await db.execute(
+      'ALTER TABLE professional_protections '
+      'ADD COLUMN recommended_current_a REAL',
+    );
+    await db.execute(
+      'ALTER TABLE professional_protections '
+      'ADD COLUMN validation_status TEXT',
+    );
+    await db.execute(
+      'ALTER TABLE professional_protections '
+      "ADD COLUMN validation_criterion TEXT NOT NULL DEFAULT ''",
     );
   }
 
