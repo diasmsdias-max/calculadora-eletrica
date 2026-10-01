@@ -22,6 +22,9 @@ class VisBackupRestoreCoordinator {
     final incoming = await backupService.validate(source);
     final incomingProfile = _profileFrom(incoming);
     final incomingPreferences = _preferencesFrom(incoming);
+    if (incomingPreferences != null) {
+      preferencesRepository?.validate(incomingPreferences);
+    }
 
     // Snapshot the complete exportable local state before replacing anything.
     final previousProfile = await profileRepository.load();
