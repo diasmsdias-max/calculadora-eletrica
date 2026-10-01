@@ -1,6 +1,6 @@
 # EP21 — Núcleo de Projetos Profissionais
 
-Status: Em desenvolvimento  
+Status: Implementação funcional concluída; validação CI pendente  
 Base: EP20 integrada em `develop`  
 Branch: `feature/ep21-professional-project-core`
 
@@ -58,7 +58,15 @@ O `.visproject` é diferente de `.visbackup`:
 - `.visbackup`: recuperação/backup do ambiente local;
 - `.visproject`: transporte de um Projeto Profissional e suas dependências entre dispositivos/estações.
 
-Nesta EP, o foco é definir o contrato e garantir que IDs/modelos não dependam da interface Android. A experiência Windows não será implementada agora.
+A EP implementa o contrato portátil e o serviço de exportação/importação SQLite. A experiência Windows não será implementada agora.
+
+### Contrato implementado
+
+O `.visproject` possui assinatura `VISPROJECT`, `contractVersion = 1` e transporta um único Projeto Profissional com Cargas, Circuitos, Quadros, Proteções, Dimensionamento, Materiais, Memorial e relações Carga↔Circuito e Quadro↔Circuito.
+
+A importação valida IDs, versões, referências e pertencimento ao mesmo projeto. Um circuito não pode pertencer a mais de um quadro. Ao importar um projeto com o mesmo ID, o grafo local desse projeto é substituído atomicamente em transação SQLite; falhas provocam rollback.
+
+Licença, tokens, credenciais, perfil comercial e estado da interface não fazem parte do `.visproject`.
 
 ## Identidade e versionamento
 
@@ -129,7 +137,6 @@ A importação cria entidades Carga do Projeto Profissional sem alterar o compor
 - sincronização em nuvem;
 - sincronização automática entre dispositivos;
 - licenciamento comercial definitivo;
-- implementação completa de Cargas/Circuitos/Quadros;
 - editor Ladder/Industrial;
 - importação do Levantamento V1 nesta EP;
 - merge inteligente de duas revisões concorrentes do mesmo projeto.
