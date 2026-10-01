@@ -5,16 +5,20 @@ import 'v1_to_v2_migration.dart';
 import 'vis_database.dart';
 import '../professional/professional_project_repository.dart';
 import '../professional/sqlite_professional_project_repository.dart';
+import '../professional/professional_load_repository.dart';
+import '../professional/sqlite_professional_load_repository.dart';
 
 class V2Persistence {
   final ProjectRepository projects;
   final ProjectRecordRepository records;
   final ProfessionalProjectRepository professionalProjects;
+  final ProfessionalLoadRepository professionalLoads;
 
   const V2Persistence({
     required this.projects,
     required this.records,
     required this.professionalProjects,
+    required this.professionalLoads,
   });
 }
 
@@ -51,6 +55,7 @@ class V2PersistenceFactory {
       projects: SqliteProjectRepository(db),
       records: SqliteProjectRecordRepository(db),
       professionalProjects: SqliteProfessionalProjectRepository(db),
+      professionalLoads: SqliteProfessionalLoadRepository(db),
     );
   }
 }
