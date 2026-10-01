@@ -219,18 +219,35 @@ class VisDatabase {
   static Future<void> _addProfessionalProtectionValidationColumns(
     Database db,
   ) async {
-    await db.execute(
-      'ALTER TABLE professional_protections '
-      'ADD COLUMN recommended_current_a REAL',
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'professional_protections'",
     );
-    await db.execute(
-      'ALTER TABLE professional_protections '
-      'ADD COLUMN validation_status TEXT',
+    if (tables.isEmpty) return;
+
+    final columns = await db.rawQuery(
+      'PRAGMA table_info(professional_protections)',
     );
-    await db.execute(
-      'ALTER TABLE professional_protections '
-      "ADD COLUMN validation_criterion TEXT NOT NULL DEFAULT ''",
-    );
+    final names = columns.map((row) => row['name'] as String).toSet();
+
+    if (!names.contains('recommended_current_a')) {
+      await db.execute(
+        'ALTER TABLE professional_protections '
+        'ADD COLUMN recommended_current_a REAL',
+      );
+    }
+    if (!names.contains('validation_status')) {
+      await db.execute(
+        'ALTER TABLE professional_protections '
+        'ADD COLUMN validation_status TEXT',
+      );
+    }
+    if (!names.contains('validation_criterion')) {
+      await db.execute(
+        'ALTER TABLE professional_protections '
+        "ADD COLUMN validation_criterion TEXT NOT NULL DEFAULT ''",
+      );
+    }
   }
 
   static Future<void> _createProfessionalSizingTable(Database db) async {
