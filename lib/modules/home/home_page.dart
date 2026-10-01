@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/settings/module_preferences.dart';
+import '../../core/settings/professional_module_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../cable_sizing/cable_sizing_page.dart';
 import '../load_survey/load_survey_page.dart';
 import '../motor/motor_page.dart';
 import '../motor_transformer/motor_transformer_page.dart';
 import '../projects/projects_page.dart';
+import '../professional/professional_landing_page.dart';
 import '../settings/settings_page.dart';
 import '../transformer/transformer_page.dart';
 import '../voltage_drop/voltage_drop_page.dart';
@@ -20,6 +22,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Set<String>? _visible;
+  bool? _professionalVisible;
 
   static const modules = <_Module>[
     _Module('motor', 'Motor Elétrico', 'Dimensionamento e análise', Icons.electric_bolt),
@@ -37,8 +40,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _reloadPreferences() async {
-    final visible = await ModulePreferences.loadVisibleModules();
-    if (mounted) setState(() => _visible = visible);
+    final results = await Future.wait<Object>([
+      ModulePreferences.loadVisibleModules(),
+      ProfessionalModulePreferences.loadVisible(),
+    ]);
+    if (mounted) {
+      setState(() {
+        _visible = results[0] as Set<String>;
+        _professionalVisible = results[1] as bool;
+      });
+    }
   }
 
   Future<void> _openSettings() async {
@@ -82,7 +93,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SafeArea(
-        child: _visible == null
+        child: _visible == null || _professionalVisible == null
             ? const Center(child: CircularProgressIndicator())
             : LayoutBuilder(
                 builder: (context, constraints) {
@@ -94,6 +105,20 @@ class _HomePageState extends State<HomePage> {
                         onTap: () => _openModule(module),
                       ),
                     ),
+                    if (_professionalVisible == true)
+                      _ModuleCard(
+                        module: const _Module(
+                          'professional',
+                          'VIS ELECTRICA Profissional',
+                          'Cargas → Circuitos → Quadros → PDF',
+                          Icons.workspace_premium_outlined,
+                        ),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ProfessionalLandingPage(),
+                          ),
+                        ),
+                      ),
                     _ModuleCard(
                       module: const _Module(
                         'projects',
