@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/licensing/license_provider.dart';
+import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
 
 class ProfessionalLandingPage extends StatefulWidget {
@@ -12,7 +13,7 @@ class ProfessionalLandingPage extends StatefulWidget {
 }
 
 class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
-  final LicenseProvider _licenseProvider = const FreeLicenseProvider();
+  final LicenseProvider _licenseProvider = LicenseProviderFactory.create();
   LicenseState? _license;
 
   @override
