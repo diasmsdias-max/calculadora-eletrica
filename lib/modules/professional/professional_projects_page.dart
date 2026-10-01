@@ -4,6 +4,7 @@ import '../../core/licensing/license_state.dart';
 import '../../core/professional/professional_project.dart';
 import '../../core/professional/professional_project_repository.dart';
 import 'professional_project_form_page.dart';
+import 'professional_project_dashboard_page.dart';
 
 class ProfessionalProjectsPage extends StatefulWidget {
   final LicenseState license;
@@ -63,10 +64,10 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
     if (_repository == null) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ProfessionalProjectFormPage(
+        builder: (_) => ProfessionalProjectDashboardPage(
           repository: _repository!,
           project: project,
-          readOnly: !widget.license.canEditProfessionalProjects,
+          license: widget.license,
         ),
       ),
     );
