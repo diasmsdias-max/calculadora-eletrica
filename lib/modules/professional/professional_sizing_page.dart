@@ -36,7 +36,9 @@ class _State extends State<ProfessionalSizingPage>{
       const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('Cadastre circuitos antes de registrar dimensionamentos.'))):
       ListView.separated(padding:const EdgeInsets.all(16),itemCount:_circuits.length,
         separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){final c=_circuits[i],s=_for(c.id);
-          final details=<String>[if(s?.designCurrentA!=null)'${s!.designCurrentA} A',
+          final aggregation=_aggregation(c);
+          final details=<String>[
+            if(aggregation.designCurrentA!=null)'Ib ${aggregation.designCurrentA!.toStringAsFixed(2)} A',
             if(s?.conductorSectionMm2!=null)'${s!.conductorSectionMm2} mm²',
             if(s?.conductorAmpacityA!=null)'Iz ${s!.conductorAmpacityA} A',
             if(s?.voltageDropPercent!=null)'ΔV ${s!.voltageDropPercent}%'];
