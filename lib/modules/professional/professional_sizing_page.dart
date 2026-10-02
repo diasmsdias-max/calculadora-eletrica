@@ -106,6 +106,7 @@ class _AutomaticCurrentSummary extends StatelessWidget{
   @override Widget build(BuildContext context){final ib=aggregation.designCurrentA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('Corrente de projeto (Ib)',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
     Text(ib==null?'Não calculada':'${ib.toStringAsFixed(2)} A — calculada automaticamente'),
+    const SizedBox(height:4),const Text('Origem: cargas vinculadas ao circuito. Não é necessário digitar Ib manualmente.'),
     const SizedBox(height:4),Text(aggregation.currentMessage),
     if(aggregation.linkedLoadCount>0)Text('${aggregation.linkedLoadCount} carga(s) vinculada(s) • ${aggregation.totalPowerW.toStringAsFixed(0)} W'),
   ])));}
@@ -115,7 +116,8 @@ class _AutomaticCurrentSummary extends StatelessWidget{
 class _ProtectionSourceNotice extends StatelessWidget{
   const _ProtectionSourceNotice();
   @override Widget build(BuildContext context)=>const Card(child:Padding(padding:EdgeInsets.all(12),child:Text(
-    'A corrente adotada da proteção (In) é definida no módulo Proteções. '
-    'O Dimensionamento mantém Ib, seção, Iz e queda de tensão como dados do circuito.'
+    'Proteção (In): definida no módulo Proteções. '
+    'Aqui ficam os dados de dimensionamento do circuito: Ib, seção do condutor, Iz e queda de tensão. '
+    'O VIS ELECTRICA cruza esses dados automaticamente na validação Ib ≤ In ≤ Iz.'
   )));
 }
