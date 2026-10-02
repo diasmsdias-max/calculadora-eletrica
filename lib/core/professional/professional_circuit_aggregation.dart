@@ -69,6 +69,14 @@ class ProfessionalCircuitAggregator {
         currentMessage:'Informe tensão e fator de potência válido em todas as cargas.',
       );
     }
+    if(list.any((load)=>load.simultaneityFactor==null||
+        load.simultaneityFactor!<=0||load.simultaneityFactor!>1)) {
+      return ProfessionalCircuitAggregation(
+        totalPowerW:totalPower,linkedLoadCount:list.length,totalQuantity:quantity,
+        designCurrentA:null,currentStatus:CircuitCalculationStatus.insufficientData,
+        currentMessage:'Informe ou estime o fator de simultaneidade (FS) em todas as cargas.',
+      );
+    }
     final incompatible=list.any((load)=>(load.voltageV-voltage).abs()>0.01);
     if(incompatible) {
       return ProfessionalCircuitAggregation(
@@ -79,13 +87,13 @@ class ProfessionalCircuitAggregator {
     }
 
     final apparentPowerVa=list.fold<double>(0,(sum,load)=>
-      sum+(load.totalPowerW/load.powerFactor!));
+      sum+(load.totalPowerW*load.simultaneityFactor!/load.powerFactor!));
     final divisor=phases==3?math.sqrt(3)*voltage:voltage;
     return ProfessionalCircuitAggregation(
       totalPowerW:totalPower,linkedLoadCount:list.length,totalQuantity:quantity,
       designCurrentA:apparentPowerVa/divisor,
       currentStatus:CircuitCalculationStatus.calculated,
-      currentMessage:'Corrente calculada com os dados informados nas cargas e no circuito.',
+      currentMessage:'Corrente calculada considerando o FS informado ou adotado em cada carga.',
     );
   }
 }
