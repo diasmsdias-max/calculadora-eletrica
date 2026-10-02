@@ -194,6 +194,7 @@ class _ProfessionalProjectDashboardPageState
                     repository: persistence.professionalProtections,
                     circuitsRepository: persistence.professionalCircuits,
                     sizingRepository: persistence.professionalSizing,
+                    loadsRepository: persistence.professionalLoads,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
