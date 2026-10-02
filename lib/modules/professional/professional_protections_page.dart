@@ -3,27 +3,32 @@ import '../../core/professional/professional_circuit.dart';
 import '../../core/professional/professional_circuit_repository.dart';
 import '../../core/professional/professional_protection.dart';
 import '../../core/professional/professional_protection_repository.dart';
+import '../../core/professional/professional_sizing.dart';
+import '../../core/professional/professional_sizing_repository.dart';
+import '../../core/professional/overcurrent_protection_validator.dart';
+import '../../core/professional/technical_validation.dart';
 
 class ProfessionalProtectionsPage extends StatefulWidget {
   final ProfessionalProtectionRepository repository;
   final ProfessionalCircuitRepository circuitsRepository;
+  final ProfessionalSizingRepository sizingRepository;
   final String projectId; final bool readOnly;
   const ProfessionalProtectionsPage({super.key,required this.repository,required this.circuitsRepository,
-    required this.projectId,required this.readOnly});
+    required this.sizingRepository,required this.projectId,required this.readOnly});
   @override State<ProfessionalProtectionsPage> createState()=>_State();
 }
 class _State extends State<ProfessionalProtectionsPage>{
-  List<ProfessionalProtection> _items=const[]; List<ProfessionalCircuit> _circuits=const[];
+  List<ProfessionalProtection> _items=const[]; List<ProfessionalCircuit> _circuits=const[]; List<ProfessionalSizing> _sizing=const[];
   final _search=TextEditingController();String _query='';bool _loading=true;
   @override void initState(){super.initState();_reload();}
   @override void dispose(){_search.dispose();super.dispose();}
   Future<void> _reload()async{final v=await Future.wait([widget.repository.getByProject(widget.projectId),
-    widget.circuitsRepository.getByProject(widget.projectId)]);if(!mounted)return;
-    setState((){_items=v[0] as List<ProfessionalProtection>;_circuits=v[1] as List<ProfessionalCircuit>;_loading=false;});}
+    widget.circuitsRepository.getByProject(widget.projectId),widget.sizingRepository.getByProject(widget.projectId)]);if(!mounted)return;
+    setState((){_items=v[0] as List<ProfessionalProtection>;_circuits=v[1] as List<ProfessionalCircuit>;_sizing=v[2] as List<ProfessionalSizing>;_loading=false;});}
   Future<void> _edit([ProfessionalProtection? p])async{
     if(widget.readOnly&&p==null)return;
     final ok=await showDialog<bool>(context:context,builder:(_)=>_ProtectionDialog(repository:widget.repository,
-      projectId:widget.projectId,protection:p,circuits:_circuits,readOnly:widget.readOnly));
+      projectId:widget.projectId,protection:p,circuits:_circuits,sizing:_sizing,readOnly:widget.readOnly));
     if(ok==true)await _reload();
   }
   @override Widget build(BuildContext context){final q=_query.trim().toLowerCase();
@@ -57,9 +62,9 @@ class _State extends State<ProfessionalProtectionsPage>{
 }
 class _ProtectionDialog extends StatefulWidget{
   final ProfessionalProtectionRepository repository;final String projectId;
-  final ProfessionalProtection? protection;final List<ProfessionalCircuit> circuits;final bool readOnly;
+  final ProfessionalProtection? protection;final List<ProfessionalCircuit> circuits;final List<ProfessionalSizing> sizing;final bool readOnly;
   const _ProtectionDialog({required this.repository,required this.projectId,required this.protection,
-    required this.circuits,required this.readOnly});
+    required this.circuits,required this.sizing,required this.readOnly});
   @override State<_ProtectionDialog> createState()=>_ProtectionDialogState();
 }
 class _ProtectionDialogState extends State<_ProtectionDialog>{
@@ -71,11 +76,14 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
     _curve=TextEditingController(text:p?.tripCurve??'');_breaking=TextEditingController(text:p?.breakingCapacityKa?.toString()??'');
     _notes=TextEditingController(text:p?.notes??'');}
   double? _n(String v)=>double.tryParse(v.trim().replaceAll(',','.'));
+  ProfessionalSizing? _sizingFor(String? circuitId){if(circuitId==null)return null;for(final s in widget.sizing){if(s.circuitId==circuitId)return s;}return null;}
+  TechnicalValidationResult _validation(){final s=_sizingFor(_circuitId);return OvercurrentProtectionValidator.validate(designCurrentA:s?.designCurrentA,adoptedProtectionCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),conductorAmpacityA:s?.conductorAmpacityA);}
   InputDecoration _d(String l,String h)=>InputDecoration(labelText:l,hintText:h,border:const OutlineInputBorder());
   Future<void> _save()async{if(!_key.currentState!.validate())return;final now=DateTime.now().toUtc();final old=widget.protection;
     await widget.repository.save(ProfessionalProtection(id:old?.id??'protection-${now.microsecondsSinceEpoch.toRadixString(36)}',
       projectId:widget.projectId,circuitId:_circuitId!,revision:old==null?1:old.revision+1,name:_name.text,
       deviceType:_type.text,ratedCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),
+      validationStatus:_validation().status.name,validationCriterion:_validation().criterion??'',
       poles:_poles.text.trim().isEmpty?null:int.tryParse(_poles.text.trim()),tripCurve:_curve.text,
       breakingCapacityKa:_breaking.text.trim().isEmpty?null:_n(_breaking.text),notes:_notes.text,
       createdAt:old?.createdAt??now,updatedAt:now));if(mounted)Navigator.of(context).pop(true);}
@@ -94,7 +102,9 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
       if(widget.protection?.recommendedCurrentA!=null)
         _ValidationSummary(protection:widget.protection!),
       if(widget.protection?.recommendedCurrentA!=null)const SizedBox(height:12),
-      TextFormField(controller:_current,readOnly:widget.readOnly,
+      _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId)),
+      const SizedBox(height:12),TextFormField(controller:_current,readOnly:widget.readOnly,
+        onChanged:(_)=>setState((){}),
         keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:_d('Corrente adotada (A)','Informe o valor adotado pelo profissional'),
         validator:(v){if(v==null||v.trim().isEmpty)return null;final n=_n(v);return n==null||n<=0?'Informe uma corrente válida.':null;}),
       const SizedBox(height:12),TextFormField(controller:_poles,readOnly:widget.readOnly,keyboardType:TextInputType.number,
@@ -147,4 +157,16 @@ class _ValidationSummary extends StatelessWidget {
       ),
     );
   }
+}
+
+
+class _LiveProtectionValidation extends StatelessWidget{
+  final TechnicalValidationResult result;final ProfessionalSizing? sizing;
+  const _LiveProtectionValidation({required this.result,required this.sizing});
+  @override Widget build(BuildContext context){final ib=sizing?.designCurrentA,iz=sizing?.conductorAmpacityA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+    Text('Validação da proteção',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
+    Text('Critério: Ib ≤ In ≤ Iz'),Text('Ib: ${ib?.toStringAsFixed(2)??'não calculada'} A • Iz: ${iz?.toStringAsFixed(2)??'não informada'} A'),
+    const SizedBox(height:4),Text(result.title),Text(result.message),
+    const SizedBox(height:6),const Text('A validação orienta a decisão técnica e não bloqueia a escolha do profissional.'),
+  ])));}
 }
