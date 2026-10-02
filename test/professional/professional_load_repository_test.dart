@@ -60,6 +60,44 @@ void main() {
     await db.close();
   });
 
+
+  test('professional load repository preserves simultaneity metadata', () async {
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
+    await VisDatabase.createSchemaForTesting(db);
+    final projects = SqliteProfessionalProjectRepository(db);
+    final loads = SqliteProfessionalLoadRepository(db);
+    final now = DateTime.utc(2026, 10, 2);
+
+    await projects.save(ProfessionalProject(
+      id: 'p-fs',
+      revision: 1,
+      name: 'Projeto FS',
+      createdAt: now,
+      updatedAt: now,
+    ));
+    await loads.save(ProfessionalLoad(
+      id: 'l-fs',
+      projectId: 'p-fs',
+      revision: 1,
+      name: 'Motores',
+      quantity: 4,
+      powerW: 10000,
+      voltageV: 220,
+      simultaneityFactor: 0.75,
+      simultaneitySource: 'visEstimate',
+      simultaneityBasis: '3 de 4 unidades informadas como simultâneas.',
+      createdAt: now,
+      updatedAt: now,
+    ));
+
+    final saved = (await loads.getByProject('p-fs')).single;
+    expect(saved.simultaneityFactor, 0.75);
+    expect(saved.simultaneitySource, 'visEstimate');
+    expect(saved.simultaneityBasis, contains('3 de 4'));
+    await db.close();
+  });
+
   test('professional load repository rejects incomplete identity', () async {
     final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
     await db.execute('PRAGMA foreign_keys = ON');
