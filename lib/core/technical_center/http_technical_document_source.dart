@@ -42,11 +42,14 @@ class HttpTechnicalDocumentSource
 
   Uri _resolve(String path) {
     final candidate = Uri.parse(path);
-    if (candidate.hasScheme || candidate.hasAuthority) {
+    if (candidate.hasScheme ||
+        candidate.hasAuthority ||
+        path.startsWith('/') ||
+        candidate.pathSegments.contains('..')) {
       throw ArgumentError.value(
         path,
         'path',
-        'Technical document paths must be relative to the VIS server.',
+        'Technical document paths must stay inside the VIS server root.',
       );
     }
     return baseUri.resolve(path);
