@@ -18,9 +18,11 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
     var docs=await widget.repository.list();
     final actions=widget.actions;
     if(actions!=null){
-      for(final document in docs.where((d)=>d.isAvailableOffline)){
-        await actions.validateLocalCopy(document);
-      }
+      await Future.wait(
+        docs
+            .where((document)=>document.isAvailableOffline)
+            .map(actions.validateLocalCopy),
+      );
       docs=await widget.repository.list();
     }
     if(mounted)setState(()=>_documents=docs);
