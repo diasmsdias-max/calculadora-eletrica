@@ -23,7 +23,7 @@ class SqliteProfessionalSizingRepository implements ProfessionalSizingRepository
     if(s.id.isEmpty||s.projectId.isEmpty||s.circuitId.isEmpty) {
       throw ArgumentError('Sizing id, project id and circuit id are required.');
     }
-    for(final value in [s.designCurrentA,s.conductorSectionMm2,s.protectionCurrentA]) {
+    for(final value in [s.designCurrentA,s.conductorSectionMm2,s.conductorAmpacityA,s.protectionCurrentA]) {
       if(value!=null&&value<=0) throw ArgumentError('Sizing positive values must be greater than zero.');
     }
     if(s.voltageDropPercent!=null&&(s.voltageDropPercent!<0||s.voltageDropPercent!>100)) {
@@ -37,7 +37,7 @@ class SqliteProfessionalSizingRepository implements ProfessionalSizingRepository
     final row={'id':s.id,'project_id':s.projectId,'circuit_id':s.circuitId,
       'contract_version':ProfessionalSizing.contractVersion,'revision':s.revision,
       'design_current_a':s.designCurrentA,'conductor_section_mm2':s.conductorSectionMm2,
-      'voltage_drop_percent':s.voltageDropPercent,'protection_current_a':s.protectionCurrentA,
+      'conductor_ampacity_a':s.conductorAmpacityA,'voltage_drop_percent':s.voltageDropPercent,'protection_current_a':s.protectionCurrentA,
       'method':s.method,'criteria':s.criteria,'notes':s.notes,
       'created_at':s.createdAt.toIso8601String(),'updated_at':s.updatedAt.toIso8601String()};
     final n=await database.update('professional_sizing',row,where:'id = ?',whereArgs:[s.id]);
@@ -52,7 +52,7 @@ class SqliteProfessionalSizingRepository implements ProfessionalSizingRepository
     id:r['id']! as String,projectId:r['project_id']! as String,circuitId:r['circuit_id']! as String,
     revision:r['revision']! as int,designCurrentA:(r['design_current_a'] as num?)?.toDouble(),
     conductorSectionMm2:(r['conductor_section_mm2'] as num?)?.toDouble(),
-    voltageDropPercent:(r['voltage_drop_percent'] as num?)?.toDouble(),
+    conductorAmpacityA:(r['conductor_ampacity_a'] as num?)?.toDouble(),voltageDropPercent:(r['voltage_drop_percent'] as num?)?.toDouble(),
     protectionCurrentA:(r['protection_current_a'] as num?)?.toDouble(),
     method:r['method'] as String? ?? '',criteria:r['criteria'] as String? ?? '',
     notes:r['notes'] as String? ?? '',createdAt:DateTime.parse(r['created_at']! as String),
