@@ -62,6 +62,27 @@ void main() {
     await db.close();
   });
 
+  test('protection role round trips through sqlite', () async {
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
+    await VisDatabase.createSchemaForTesting(db);
+    final projects=SqliteProfessionalProjectRepository(db);
+    final circuits=SqliteProfessionalCircuitRepository(db);
+    final protections=SqliteProfessionalProtectionRepository(db);
+    final now=DateTime.utc(2026,10,2);
+    await projects.save(ProfessionalProject(id:'p-role',revision:1,name:'P',createdAt:now,updatedAt:now));
+    await circuits.save(ProfessionalCircuit(id:'c-role',projectId:'p-role',revision:1,name:'C',
+      createdAt:now,updatedAt:now));
+    await protections.save(ProfessionalProtection(id:'pr-role',projectId:'p-role',circuitId:'c-role',
+      revision:1,name:'Disjuntor',role:ProfessionalProtectionRole.overcurrent,
+      ratedCurrentA:20,createdAt:now,updatedAt:now));
+
+    final saved=await protections.getById('pr-role');
+    expect(saved!.role,ProfessionalProtectionRole.overcurrent);
+    expect(saved.ratedCurrentA,20);
+    await db.close();
+  });
+
   test('deleting circuit cascades its protections', () async {
     final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
     await db.execute('PRAGMA foreign_keys = ON');
