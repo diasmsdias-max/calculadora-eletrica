@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vis_electrica/core/professional/professional_simultaneity_estimator.dart';
+import 'package:calculadora_eletrica/core/professional/professional_simultaneity_estimator.dart';
 
 void main() {
   const estimator = ProfessionalSimultaneityEstimator();
