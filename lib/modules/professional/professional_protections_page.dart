@@ -77,9 +77,9 @@ class _ProtectionDialog extends StatefulWidget{
   @override State<_ProtectionDialog> createState()=>_ProtectionDialogState();
 }
 class _ProtectionDialogState extends State<_ProtectionDialog>{
-  final _key=GlobalKey<FormState>();late String? _circuitId;
+  final _key=GlobalKey<FormState>();late String? _circuitId;late ProfessionalProtectionRole? _role;
   late final TextEditingController _name,_type,_current,_poles,_curve,_breaking,_notes;
-  @override void initState(){super.initState();final p=widget.protection;_circuitId=p?.circuitId;
+  @override void initState(){super.initState();final p=widget.protection;_circuitId=p?.circuitId;_role=p?.role;
     _name=TextEditingController(text:p?.name??'');_type=TextEditingController(text:p?.deviceType??'');
     _current=TextEditingController(text:p?.ratedCurrentA?.toString()??'');_poles=TextEditingController(text:p?.poles?.toString()??'');
     _curve=TextEditingController(text:p?.tripCurve??'');_breaking=TextEditingController(text:p?.breakingCapacityKa?.toString()??'');
@@ -94,7 +94,7 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
   Future<void> _save()async{if(!_key.currentState!.validate())return;final now=DateTime.now().toUtc();final old=widget.protection;
     await widget.repository.save(ProfessionalProtection(id:old?.id??'protection-${now.microsecondsSinceEpoch.toRadixString(36)}',
       projectId:widget.projectId,circuitId:_circuitId!,revision:old==null?1:old.revision+1,name:_name.text,
-      deviceType:_type.text,ratedCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),
+      deviceType:_type.text,role:_role,ratedCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),
       validationStatus:_validation().status.name,validationCriterion:_validation().criterion??'',
       poles:_poles.text.trim().isEmpty?null:int.tryParse(_poles.text.trim()),tripCurve:_curve.text,
       breakingCapacityKa:_breaking.text.trim().isEmpty?null:_n(_breaking.text),notes:_notes.text,
@@ -110,11 +110,25 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
         validator:(v)=>v==null||v.trim().isEmpty?'Informe o nome da proteção.':null),
       const SizedBox(height:12),TextFormField(controller:_type,readOnly:widget.readOnly,
         decoration:_d('Tipo de dispositivo','Ex.: disjuntor, DR ou DPS')),
+      const SizedBox(height:12),DropdownButtonFormField<ProfessionalProtectionRole>(
+        initialValue:_role,decoration:_d('Função técnica','Selecione a função desta proteção'),
+        items:const [
+          DropdownMenuItem(value:ProfessionalProtectionRole.overcurrent,child:Text('Sobrecorrente')),
+          DropdownMenuItem(value:ProfessionalProtectionRole.residualCurrent,child:Text('Diferencial residual')),
+          DropdownMenuItem(value:ProfessionalProtectionRole.surge,child:Text('Proteção contra surtos')),
+          DropdownMenuItem(value:ProfessionalProtectionRole.other,child:Text('Outra função')),
+        ],
+        onChanged:widget.readOnly?null:(v)=>setState(()=>_role=v),
+        validator:(v)=>v==null?'Selecione a função técnica.':null),
+
       const SizedBox(height:12),
       if(widget.protection?.recommendedCurrentA!=null)
         _ValidationSummary(protection:widget.protection!),
       if(widget.protection?.recommendedCurrentA!=null)const SizedBox(height:12),
-      _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),aggregation:_aggregation()),
+      if(_role==ProfessionalProtectionRole.overcurrent)
+        _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),aggregation:_aggregation())
+      else
+        const Card(child:Padding(padding:EdgeInsets.all(12),child:Text('A validação Ib ≤ In ≤ Iz é aplicada somente à proteção de sobrecorrente.'))),
       const SizedBox(height:12),TextFormField(controller:_current,readOnly:widget.readOnly,
         onChanged:(_)=>setState((){}),
         keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:_d('Corrente adotada (A)','Informe o valor adotado pelo profissional'),
