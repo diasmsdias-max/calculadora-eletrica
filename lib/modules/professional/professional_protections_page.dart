@@ -48,7 +48,9 @@ class _State extends State<ProfessionalProtectionsPage>{
               final circuit=_circuits.where((c)=>c.id==p.circuitId).firstOrNull;
               return Card(child:ListTile(title:Text(p.name),subtitle:Text([
                 if(p.deviceType.isNotEmpty)p.deviceType,if(circuit!=null)circuit.name,
-                if(p.ratedCurrentA!=null)'${p.ratedCurrentA} A'].join(' • ')),
+                if(p.recommendedCurrentA!=null)'Recomendado: ${p.recommendedCurrentA} A',
+                if(p.ratedCurrentA!=null)'Adotado: ${p.ratedCurrentA} A',
+                if(p.validationStatus.isNotEmpty)p.validationStatus].join(' • ')),
                 trailing:const Icon(Icons.chevron_right),onTap:()=>_edit(p)));}))
       ]));
   }
@@ -88,8 +90,12 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
         validator:(v)=>v==null||v.trim().isEmpty?'Informe o nome da proteção.':null),
       const SizedBox(height:12),TextFormField(controller:_type,readOnly:widget.readOnly,
         decoration:_d('Tipo de dispositivo','Ex.: disjuntor, DR ou DPS')),
-      const SizedBox(height:12),TextFormField(controller:_current,readOnly:widget.readOnly,
-        keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:_d('Corrente nominal (A)','Informe quando definida'),
+      const SizedBox(height:12),
+      if(widget.protection?.recommendedCurrentA!=null)
+        _ValidationSummary(protection:widget.protection!),
+      if(widget.protection?.recommendedCurrentA!=null)const SizedBox(height:12),
+      TextFormField(controller:_current,readOnly:widget.readOnly,
+        keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:_d('Corrente adotada (A)','Informe o valor adotado pelo profissional'),
         validator:(v){if(v==null||v.trim().isEmpty)return null;final n=_n(v);return n==null||n<=0?'Informe uma corrente válida.':null;}),
       const SizedBox(height:12),TextFormField(controller:_poles,readOnly:widget.readOnly,keyboardType:TextInputType.number,
         decoration:_d('Número de polos','Informe de 1 a 4 quando definido'),
@@ -104,4 +110,41 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
     ])))),
     actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:Text(widget.readOnly?'Fechar':'Cancelar')),
       if(!widget.readOnly)FilledButton(onPressed:_save,child:const Text('Salvar'))]);
+}
+
+
+class _ValidationSummary extends StatelessWidget {
+  final ProfessionalProtection protection;
+  const _ValidationSummary({required this.protection});
+
+  @override
+  Widget build(BuildContext context) {
+    final recommended=protection.recommendedCurrentA;
+    if(recommended==null)return const SizedBox.shrink();
+    final status=protection.validationStatus.trim().isEmpty
+        ? 'Aguardando validação'
+        : protection.validationStatus;
+    return Card(
+      child:Padding(
+        padding:const EdgeInsets.all(12),
+        child:Column(
+          crossAxisAlignment:CrossAxisAlignment.start,
+          children:[
+            Text('Recomendação do VIS ELECTRICA',
+              style:Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height:6),
+            Text('Corrente recomendada: $recommended A'),
+            Text('Situação: $status'),
+            if(protection.validationCriterion.trim().isNotEmpty)
+              Text('Critério: ${protection.validationCriterion}'),
+            const SizedBox(height:6),
+            const Text(
+              'O valor recomendado orienta a decisão técnica. '
+              'O profissional pode adotar outro valor; divergências devem ser validadas.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
