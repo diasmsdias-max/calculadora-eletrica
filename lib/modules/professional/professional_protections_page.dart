@@ -165,7 +165,7 @@ class _LiveProtectionValidation extends StatelessWidget{
   const _LiveProtectionValidation({required this.result,required this.sizing});
   @override Widget build(BuildContext context){final ib=sizing?.designCurrentA,iz=sizing?.conductorAmpacityA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('Validação da proteção',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
-    Text('Critério: Ib ≤ In ≤ Iz'),Text('Ib: ${ib?.toStringAsFixed(2)??'não calculada'} A • Iz: ${iz?.toStringAsFixed(2)??'não informada'} A'),
+    const Text('Critério: Ib ≤ In ≤ Iz'),Text('Ib: ${ib?.toStringAsFixed(2)??'não calculada'} A • Iz: ${iz?.toStringAsFixed(2)??'não informada'} A'),
     const SizedBox(height:4),Text(result.title),Text(result.message),
     const SizedBox(height:6),const Text('A validação orienta a decisão técnica e não bloqueia a escolha do profissional.'),
   ])));}
