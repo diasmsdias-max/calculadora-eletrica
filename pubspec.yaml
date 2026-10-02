@@ -16,6 +16,7 @@ dependencies:
   package_info_plus: ^8.3.1
   pdf: ^3.11.3
   printing: ^5.14.2
+  flutter_pdfview: ^1.4.5
 dev_dependencies:
   flutter_test:
     sdk: flutter
