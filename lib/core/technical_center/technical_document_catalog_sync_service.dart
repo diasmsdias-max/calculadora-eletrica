@@ -39,6 +39,14 @@ class TechnicalDocumentCatalogSyncService {
       return remote;
     }
 
+    final remoteChecksum = remote.checksum.trim().toLowerCase();
+    final localChecksum = local.checksum.trim().toLowerCase();
+    if (remoteChecksum.isNotEmpty &&
+        localChecksum.isNotEmpty &&
+        remoteChecksum != localChecksum) {
+      return remote;
+    }
+
     return TechnicalDocument(
       id: remote.id,
       title: remote.title,
