@@ -51,6 +51,8 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
     try {
       await actions.syncCatalog();
       await _load();
+    } catch (_) {
+      _showError('Não foi possível sincronizar o catálogo. Verifique a conexão e tente novamente.');
     } finally {
       if(mounted)setState(()=>_busy=false);
     }
@@ -63,6 +65,8 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
     try {
       await actions.download(document);
       await _load();
+    } catch (_) {
+      _showError('Não foi possível baixar o documento. Verifique a conexão e tente novamente.');
     } finally {
       if(mounted)setState(()=>_busy=false);
     }
@@ -75,9 +79,16 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
     try {
       await actions.removeLocalCopy(document);
       await _load();
+    } catch (_) {
+      _showError('Não foi possível remover o download. Tente novamente.');
     } finally {
       if(mounted)setState(()=>_busy=false);
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget? _actions(BuildContext context, TechnicalDocument document) {
