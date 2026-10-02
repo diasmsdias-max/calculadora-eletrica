@@ -108,9 +108,9 @@ class _AutomaticCurrentSummary extends StatelessWidget{
   @override Widget build(BuildContext context){final ib=aggregation.designCurrentA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('Corrente de projeto (Ib)',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
     Text(ib==null?'Não calculada':'${ib.toStringAsFixed(2)} A — calculada automaticamente'),
-    const SizedBox(height:4),const Text('Origem: cargas vinculadas ao circuito. Não é necessário digitar Ib manualmente.'),
+    const SizedBox(height:4),const Text('Origem: cargas vinculadas ao circuito. O Ib considera o FS adotado em cada carga e não é digitado manualmente.'),
     const SizedBox(height:4),Text(aggregation.currentMessage),
-    if(aggregation.linkedLoadCount>0)Text('${aggregation.linkedLoadCount} carga(s) vinculada(s) • ${aggregation.totalPowerW.toStringAsFixed(0)} W'),
+    if(aggregation.linkedLoadCount>0)Text('${aggregation.linkedLoadCount} carga(s) vinculada(s) • ${aggregation.totalPowerW.toStringAsFixed(0)} W instalados'),
   ])));}
 }
 
