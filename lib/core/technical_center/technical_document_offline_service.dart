@@ -121,10 +121,37 @@ class TechnicalDocumentOfflineService {
   }
 
   Future<bool> validateLocalCopy(TechnicalDocument document) async {
-    final localPath = document.localPath;
-    return document.availability == TechnicalDocumentAvailability.downloaded &&
+    final normalized = document.normalized();
+    final localPath = normalized.localPath;
+    final valid =
+        normalized.availability == TechnicalDocumentAvailability.downloaded &&
         localPath != null &&
         localPath.isNotEmpty &&
         await files.exists(localPath);
+    if (valid) return true;
+
+    if (normalized.availability == TechnicalDocumentAvailability.downloaded) {
+      await repository.save(
+        TechnicalDocument(
+          id: normalized.id,
+          title: normalized.title,
+          category: normalized.category,
+          manufacturer: normalized.manufacturer,
+          equipmentType: normalized.equipmentType,
+          model: normalized.model,
+          description: normalized.description,
+          remotePath: normalized.remotePath,
+          fileName: normalized.fileName,
+          mimeType: normalized.mimeType,
+          checksum: normalized.checksum,
+          sizeBytes: normalized.sizeBytes,
+          availability: TechnicalDocumentAvailability.remoteOnly,
+          keepOffline: false,
+          publishedAt: normalized.publishedAt,
+          updatedAt: normalized.updatedAt,
+        ),
+      );
+    }
+    return false;
   }
 }
