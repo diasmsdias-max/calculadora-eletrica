@@ -10,13 +10,13 @@ void main() {
     expect(source.fetchCatalog, throwsArgumentError);
   });
 
-  test('rejects explicit non-HTTPS remote document path', () async {
+  test('rejects absolute remote document path outside configured host', () async {
     final source = HttpTechnicalDocumentSource(
       baseUri: Uri.parse('https://example.invalid/'),
     );
 
     expect(
-      () => source.download('http://example.invalid/manual.pdf'),
+      () => source.download('https://other.example/manual.pdf'),
       throwsArgumentError,
     );
   });
