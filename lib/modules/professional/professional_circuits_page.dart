@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/professional/professional_circuit.dart';
+import '../../core/professional/professional_circuit_aggregation.dart';
 import '../../core/professional/professional_circuit_repository.dart';
 import '../../core/professional/professional_load.dart';
 import '../../core/professional/professional_load_repository.dart';
@@ -29,6 +30,8 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
   bool _loading = true;
   final _search = TextEditingController();
   String _query = '';
+  Map<String, List<String>> _loadIdsByCircuit = const {};
+  static const _aggregator = ProfessionalCircuitAggregator();
 
   @override
   void initState() {
@@ -47,9 +50,15 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
       widget.repository.getByProject(widget.projectId),
       widget.loadsRepository.getByProject(widget.projectId),
     ]);
+    final circuits = values[0] as List<ProfessionalCircuit>;
+    final relations = <String, List<String>>{};
+    for (final circuit in circuits) {
+      relations[circuit.id] = await widget.repository.getLoadIds(circuit.id);
+    }
     if (!mounted) return;
     setState(() {
-      _circuits = values[0] as List<ProfessionalCircuit>;
+      _circuits = circuits;
+      _loadIdsByCircuit = relations;
       _loads = values[1] as List<ProfessionalLoad>;
       _loading = false;
     });
@@ -121,6 +130,13 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (_, i) {
                           final c = circuits[i];
+                          final loadIds = _loadIdsByCircuit[c.id] ?? const <String>[];
+                          final linkedLoads = _loads.where((l) => loadIds.contains(l.id));
+                          final aggregation = _aggregator.calculate(
+                            circuit: c,
+                            loads: linkedLoads,
+                          );
+                          final current = aggregation.designCurrentA;
                           return Card(
                             child: ListTile(
                               title: Text(c.name),
@@ -128,6 +144,11 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
                                 if (c.description.isNotEmpty) c.description,
                                 if (c.voltageV != null) '${c.voltageV} V',
                                 if (c.phases != null) '${c.phases} fase(s)',
+                                if (aggregation.linkedLoadCount > 0)
+                                  '${aggregation.totalPowerW.toStringAsFixed(0)} W',
+                                if (current != null)
+                                  'I calc.: ${current.toStringAsFixed(2)} A',
+                                if (current == null) aggregation.currentMessage,
                               ].join(' • ')),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => _edit(c),
