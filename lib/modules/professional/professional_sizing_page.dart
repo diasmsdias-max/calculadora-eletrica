@@ -36,7 +36,9 @@ class _State extends State<ProfessionalSizingPage>{
       const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('Cadastre circuitos antes de registrar dimensionamentos.'))):
       ListView.separated(padding:const EdgeInsets.all(16),itemCount:_circuits.length,
         separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){final c=_circuits[i],s=_for(c.id);
-          final details=<String>[if(s?.designCurrentA!=null)'${s!.designCurrentA} A',
+          final aggregation=_aggregation(c);
+          final details=<String>[
+            if(aggregation.designCurrentA!=null)'Ib ${aggregation.designCurrentA!.toStringAsFixed(2)} A',
             if(s?.conductorSectionMm2!=null)'${s!.conductorSectionMm2} mm²',
             if(s?.conductorAmpacityA!=null)'Iz ${s!.conductorAmpacityA} A',
             if(s?.voltageDropPercent!=null)'ΔV ${s!.voltageDropPercent}%'];
@@ -54,13 +56,12 @@ class _SizingDialog extends StatefulWidget{
   @override State<_SizingDialog> createState()=>_SizingDialogState();
 }
 class _SizingDialogState extends State<_SizingDialog>{
-  late final TextEditingController _section,_ampacity,_drop,_protection,_method,_criteria,_notes;
+  late final TextEditingController _section,_ampacity,_drop,_method,_criteria,_notes;
   final _key=GlobalKey<FormState>();
   @override void initState(){super.initState();final s=widget.sizing;
     _section=TextEditingController(text:s?.conductorSectionMm2?.toString()??'');
     _ampacity=TextEditingController(text:s?.conductorAmpacityA?.toString()??'');
     _drop=TextEditingController(text:s?.voltageDropPercent?.toString()??'');
-    _protection=TextEditingController(text:s?.protectionCurrentA?.toString()??'');
     _method=TextEditingController(text:s?.method??'');_criteria=TextEditingController(text:s?.criteria??'');
     _notes=TextEditingController(text:s?.notes??'');}
   double? _n(String v)=>double.tryParse(v.trim().replaceAll(',','.'));
@@ -73,7 +74,7 @@ class _SizingDialogState extends State<_SizingDialog>{
       conductorSectionMm2:_section.text.trim().isEmpty?null:_n(_section.text),
       conductorAmpacityA:_ampacity.text.trim().isEmpty?null:_n(_ampacity.text),
       voltageDropPercent:_drop.text.trim().isEmpty?null:_n(_drop.text),
-      protectionCurrentA:_protection.text.trim().isEmpty?null:_n(_protection.text),
+      protectionCurrentA:old?.protectionCurrentA,
       method:_method.text,criteria:_criteria.text,notes:_notes.text,
       createdAt:old?.createdAt??now,updatedAt:now));if(mounted)Navigator.pop(context,true);}
   @override Widget build(BuildContext context)=>AlertDialog(title:Text('Dimensionamento — ${widget.circuit.name}'),
@@ -89,9 +90,7 @@ class _SizingDialogState extends State<_SizingDialog>{
         keyboardType:const TextInputType.numberWithOptions(decimal:true),
         decoration:_d('Queda de tensão (%)','Informe o resultado quando calculado'),
         validator:(v){if(v==null||v.trim().isEmpty)return null;final n=_n(v);return n==null||n<0||n>100?'Informe um percentual entre 0 e 100.':null;}),
-      const SizedBox(height:12),TextFormField(controller:_protection,readOnly:widget.readOnly,
-        keyboardType:const TextInputType.numberWithOptions(decimal:true),
-        decoration:_d('Corrente da proteção (A)','Informe a proteção adotada'),validator:_positive),
+      const SizedBox(height:12),const _ProtectionSourceNotice(),
       const SizedBox(height:12),TextFormField(controller:_method,readOnly:widget.readOnly,
         decoration:_d('Método','Descreva o método de dimensionamento utilizado')),
       const SizedBox(height:12),TextFormField(controller:_criteria,readOnly:widget.readOnly,maxLines:3,
@@ -109,7 +108,18 @@ class _AutomaticCurrentSummary extends StatelessWidget{
   @override Widget build(BuildContext context){final ib=aggregation.designCurrentA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('Corrente de projeto (Ib)',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
     Text(ib==null?'Não calculada':'${ib.toStringAsFixed(2)} A — calculada automaticamente'),
+    const SizedBox(height:4),const Text('Origem: cargas vinculadas ao circuito. O Ib considera o FS adotado em cada carga e não é digitado manualmente.'),
     const SizedBox(height:4),Text(aggregation.currentMessage),
-    if(aggregation.linkedLoadCount>0)Text('${aggregation.linkedLoadCount} carga(s) vinculada(s) • ${aggregation.totalPowerW.toStringAsFixed(0)} W'),
+    if(aggregation.linkedLoadCount>0)Text('${aggregation.linkedLoadCount} carga(s) vinculada(s) • ${aggregation.totalPowerW.toStringAsFixed(0)} W instalados'),
   ])));}
+}
+
+
+class _ProtectionSourceNotice extends StatelessWidget{
+  const _ProtectionSourceNotice();
+  @override Widget build(BuildContext context)=>const Card(child:Padding(padding:EdgeInsets.all(12),child:Text(
+    'Proteção (In): definida no módulo Proteções. '
+    'Aqui ficam os dados de dimensionamento do circuito: Ib, seção do condutor, Iz e queda de tensão. '
+    'O VIS ELECTRICA cruza esses dados automaticamente na validação Ib ≤ In ≤ Iz.'
+  )));
 }

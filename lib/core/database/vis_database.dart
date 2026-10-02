@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 11;
+  static const schemaVersion = 13;
 
   Database? _database;
 
@@ -74,6 +74,12 @@ class VisDatabase {
     if (oldVersion < 11) {
       await _addProfessionalSizingAmpacityColumn(db);
     }
+    if (oldVersion < 12) {
+      await _addProfessionalLoadSimultaneityColumns(db);
+    }
+    if (oldVersion < 13) {
+      await _addProfessionalProtectionRoleColumn(db);
+    }
   }
 
   static Future<void> _createProfessionalProjectsTable(Database db) async {
@@ -110,6 +116,9 @@ class VisDatabase {
         power_w REAL NOT NULL DEFAULT 0,
         voltage_v REAL NOT NULL DEFAULT 0,
         power_factor REAL,
+        simultaneity_factor REAL,
+        simultaneity_source TEXT,
+        simultaneity_basis TEXT NOT NULL DEFAULT '',
         notes TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
@@ -195,6 +204,7 @@ class VisDatabase {
         revision INTEGER NOT NULL,
         name TEXT NOT NULL,
         device_type TEXT NOT NULL DEFAULT '',
+        protection_role TEXT,
         rated_current_a REAL,
         recommended_current_a REAL,
         validation_status TEXT,
@@ -266,6 +276,51 @@ class VisDatabase {
       await db.execute(
         'ALTER TABLE professional_sizing '
         'ADD COLUMN conductor_ampacity_a REAL',
+      );
+    }
+  }
+
+  static Future<void> _addProfessionalLoadSimultaneityColumns(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'professional_loads'",
+    );
+    if (tables.isEmpty) return;
+
+    final columns = await db.rawQuery('PRAGMA table_info(professional_loads)');
+    final names = columns.map((row) => row['name'] as String).toSet();
+    if (!names.contains('simultaneity_factor')) {
+      await db.execute(
+        'ALTER TABLE professional_loads ADD COLUMN simultaneity_factor REAL',
+      );
+    }
+    if (!names.contains('simultaneity_source')) {
+      await db.execute(
+        'ALTER TABLE professional_loads ADD COLUMN simultaneity_source TEXT',
+      );
+    }
+    if (!names.contains('simultaneity_basis')) {
+      await db.execute(
+        'ALTER TABLE professional_loads '
+        "ADD COLUMN simultaneity_basis TEXT NOT NULL DEFAULT ''",
+      );
+    }
+  }
+
+  static Future<void> _addProfessionalProtectionRoleColumn(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'professional_protections'",
+    );
+    if (tables.isEmpty) return;
+
+    final columns = await db.rawQuery(
+      'PRAGMA table_info(professional_protections)',
+    );
+    final names = columns.map((row) => row['name'] as String).toSet();
+    if (!names.contains('protection_role')) {
+      await db.execute(
+        'ALTER TABLE professional_protections ADD COLUMN protection_role TEXT',
       );
     }
   }

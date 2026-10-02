@@ -87,9 +87,11 @@ class VisProjectTransferService {
     final map=<String,String>{
       'contract_version':'contractVersion','project_id':'projectId','circuit_id':'circuitId',
       'power_w':'powerW','voltage_v':'voltageV','power_factor':'powerFactor',
+      'simultaneity_factor':'simultaneityFactor','simultaneity_source':'simultaneitySource',
+      'simultaneity_basis':'simultaneityBasis',
       'rated_current_a':'ratedCurrentA','recommended_current_a':'recommendedCurrentA',
       'validation_status':'validationStatus','validation_criterion':'validationCriterion',
-      'device_type':'deviceType','trip_curve':'tripCurve',
+      'device_type':'deviceType','protection_role':'role','trip_curve':'tripCurve',
       'breaking_capacity_ka':'breakingCapacityKa','design_current_a':'designCurrentA',
       'conductor_section_mm2':'conductorSectionMm2','conductor_ampacity_a':'conductorAmpacityA','voltage_drop_percent':'voltageDropPercent',
       'protection_current_a':'protectionCurrentA','created_at':'createdAt','updated_at':'updatedAt'
@@ -102,9 +104,11 @@ class VisProjectTransferService {
     final r=Map<String,Object?>.from(portable)..remove('contractVersion');
     final map=<String,String>{
       'projectId':'project_id','circuitId':'circuit_id','powerW':'power_w','voltageV':'voltage_v',
-      'powerFactor':'power_factor','ratedCurrentA':'rated_current_a',
+      'powerFactor':'power_factor','simultaneityFactor':'simultaneity_factor',
+      'simultaneitySource':'simultaneity_source','simultaneityBasis':'simultaneity_basis',
+      'ratedCurrentA':'rated_current_a',
       'recommendedCurrentA':'recommended_current_a','validationStatus':'validation_status',
-      'validationCriterion':'validation_criterion','deviceType':'device_type',
+      'validationCriterion':'validation_criterion','deviceType':'device_type','role':'protection_role',
       'tripCurve':'trip_curve','breakingCapacityKa':'breaking_capacity_ka','designCurrentA':'design_current_a',
       'conductorSectionMm2':'conductor_section_mm2','conductorAmpacityA':'conductor_ampacity_a','voltageDropPercent':'voltage_drop_percent',
       'protectionCurrentA':'protection_current_a','createdAt':'created_at','updatedAt':'updated_at'

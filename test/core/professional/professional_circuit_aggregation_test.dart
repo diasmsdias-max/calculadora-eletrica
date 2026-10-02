@@ -15,8 +15,10 @@ void main() {
 
   ProfessionalLoad load({
     String id='l1',double power=2200,double voltage=220,double? pf=1,int quantity=1,
+    double? fs=1,
   }) => ProfessionalLoad(id:id,projectId:'p1',revision:1,name:id,
     powerW:power,voltageV:voltage,powerFactor:pf,quantity:quantity,
+    simultaneityFactor:fs,
     createdAt:now,updatedAt:now);
 
   test('reports insufficient data when circuit has no loads',(){
@@ -30,6 +32,23 @@ void main() {
     final result=aggregator.calculate(circuit:circuit(),loads:[load(pf:null)]);
     expect(result.currentStatus,CircuitCalculationStatus.insufficientData);
     expect(result.designCurrentA,isNull);
+  });
+
+  test('reports insufficient data when a linked load has no FS',(){
+    final result=aggregator.calculate(
+      circuit:circuit(),loads:[load(fs:null)]);
+    expect(result.currentStatus,CircuitCalculationStatus.insufficientData);
+    expect(result.designCurrentA,isNull);
+    expect(result.currentMessage,contains('fator de simultaneidade'));
+  });
+
+  test('applies FS to demand current while preserving installed power',(){
+    final result=aggregator.calculate(
+      circuit:circuit(voltage:220,phases:1),
+      loads:[load(power:2200,voltage:220,pf:1,fs:0.5)]);
+    expect(result.currentStatus,CircuitCalculationStatus.calculated);
+    expect(result.totalPowerW,2200);
+    expect(result.designCurrentA,closeTo(5,0.0001));
   });
 
   test('rejects load voltage incompatible with circuit voltage',(){

@@ -77,24 +77,26 @@ class _ProtectionDialog extends StatefulWidget{
   @override State<_ProtectionDialog> createState()=>_ProtectionDialogState();
 }
 class _ProtectionDialogState extends State<_ProtectionDialog>{
-  final _key=GlobalKey<FormState>();late String? _circuitId;
+  final _key=GlobalKey<FormState>();late String? _circuitId;late ProfessionalProtectionRole? _role;
   late final TextEditingController _name,_type,_current,_poles,_curve,_breaking,_notes;
-  @override void initState(){super.initState();final p=widget.protection;_circuitId=p?.circuitId;
+  @override void initState(){super.initState();final p=widget.protection;_circuitId=p?.circuitId;_role=p?.role;
     _name=TextEditingController(text:p?.name??'');_type=TextEditingController(text:p?.deviceType??'');
     _current=TextEditingController(text:p?.ratedCurrentA?.toString()??'');_poles=TextEditingController(text:p?.poles?.toString()??'');
     _curve=TextEditingController(text:p?.tripCurve??'');_breaking=TextEditingController(text:p?.breakingCapacityKa?.toString()??'');
     _notes=TextEditingController(text:p?.notes??'');}
   double? _n(String v)=>double.tryParse(v.trim().replaceAll(',','.'));
   ProfessionalSizing? _sizingFor(String? circuitId){if(circuitId==null)return null;for(final s in widget.sizing){if(s.circuitId==circuitId)return s;}return null;}
-  double? _calculatedIb(){if(_circuitId==null)return null;ProfessionalCircuit? circuit;for(final c in widget.circuits){if(c.id==_circuitId)circuit=c;}if(circuit==null)return null;
-    final ids=widget.loadIdsByCircuit[_circuitId]?.toSet()??<String>{};return const ProfessionalCircuitAggregator().calculate(circuit:circuit,loads:widget.loads.where((l)=>ids.contains(l.id))).designCurrentA;}
+  ProfessionalCircuitAggregation? _aggregation(){if(_circuitId==null)return null;ProfessionalCircuit? circuit;for(final c in widget.circuits){if(c.id==_circuitId)circuit=c;}if(circuit==null)return null;
+    final ids=widget.loadIdsByCircuit[_circuitId]?.toSet()??<String>{};return const ProfessionalCircuitAggregator().calculate(circuit:circuit,loads:widget.loads.where((l)=>ids.contains(l.id)));}
+  double? _calculatedIb()=>_aggregation()?.designCurrentA;
   TechnicalValidationResult _validation(){final s=_sizingFor(_circuitId);return OvercurrentProtectionValidator.validate(designCurrentA:_calculatedIb(),adoptedProtectionCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),conductorAmpacityA:s?.conductorAmpacityA);}
   InputDecoration _d(String l,String h)=>InputDecoration(labelText:l,hintText:h,border:const OutlineInputBorder());
   Future<void> _save()async{if(!_key.currentState!.validate())return;final now=DateTime.now().toUtc();final old=widget.protection;
     await widget.repository.save(ProfessionalProtection(id:old?.id??'protection-${now.microsecondsSinceEpoch.toRadixString(36)}',
       projectId:widget.projectId,circuitId:_circuitId!,revision:old==null?1:old.revision+1,name:_name.text,
-      deviceType:_type.text,ratedCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),
-      validationStatus:_validation().status.name,validationCriterion:_validation().criterion??'',
+      deviceType:_type.text,role:_role,ratedCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),
+      validationStatus:_role==ProfessionalProtectionRole.overcurrent?_validation().status.name:'',
+      validationCriterion:_role==ProfessionalProtectionRole.overcurrent?_validation().criterion??'':'',
       poles:_poles.text.trim().isEmpty?null:int.tryParse(_poles.text.trim()),tripCurve:_curve.text,
       breakingCapacityKa:_breaking.text.trim().isEmpty?null:_n(_breaking.text),notes:_notes.text,
       createdAt:old?.createdAt??now,updatedAt:now));if(mounted)Navigator.of(context).pop(true);}
@@ -109,11 +111,25 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
         validator:(v)=>v==null||v.trim().isEmpty?'Informe o nome da proteção.':null),
       const SizedBox(height:12),TextFormField(controller:_type,readOnly:widget.readOnly,
         decoration:_d('Tipo de dispositivo','Ex.: disjuntor, DR ou DPS')),
+      const SizedBox(height:12),DropdownButtonFormField<ProfessionalProtectionRole>(
+        initialValue:_role,decoration:_d('Função técnica','Selecione a função desta proteção'),
+        items:const [
+          DropdownMenuItem(value:ProfessionalProtectionRole.overcurrent,child:Text('Sobrecorrente')),
+          DropdownMenuItem(value:ProfessionalProtectionRole.residualCurrent,child:Text('Diferencial residual')),
+          DropdownMenuItem(value:ProfessionalProtectionRole.surge,child:Text('Proteção contra surtos')),
+          DropdownMenuItem(value:ProfessionalProtectionRole.other,child:Text('Outra função')),
+        ],
+        onChanged:widget.readOnly?null:(v)=>setState(()=>_role=v),
+        validator:(v)=>v==null?'Selecione a função técnica.':null),
+
       const SizedBox(height:12),
       if(widget.protection?.recommendedCurrentA!=null)
         _ValidationSummary(protection:widget.protection!),
       if(widget.protection?.recommendedCurrentA!=null)const SizedBox(height:12),
-      _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),calculatedIb:_calculatedIb()),
+      if(_role==ProfessionalProtectionRole.overcurrent)
+        _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),aggregation:_aggregation())
+      else
+        const Card(child:Padding(padding:EdgeInsets.all(12),child:Text('A validação Ib ≤ In ≤ Iz é aplicada somente à proteção de sobrecorrente.'))),
       const SizedBox(height:12),TextFormField(controller:_current,readOnly:widget.readOnly,
         onChanged:(_)=>setState((){}),
         keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:_d('Corrente adotada (A)','Informe o valor adotado pelo profissional'),
@@ -172,11 +188,13 @@ class _ValidationSummary extends StatelessWidget {
 
 
 class _LiveProtectionValidation extends StatelessWidget{
-  final TechnicalValidationResult result;final ProfessionalSizing? sizing;final double? calculatedIb;
-  const _LiveProtectionValidation({required this.result,required this.sizing,required this.calculatedIb});
-  @override Widget build(BuildContext context){final ib=calculatedIb,iz=sizing?.conductorAmpacityA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+  final TechnicalValidationResult result;final ProfessionalSizing? sizing;final ProfessionalCircuitAggregation? aggregation;
+  const _LiveProtectionValidation({required this.result,required this.sizing,required this.aggregation});
+  @override Widget build(BuildContext context){final ib=aggregation?.designCurrentA,iz=sizing?.conductorAmpacityA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('Validação da proteção',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
-    const Text('Critério: Ib ≤ In ≤ Iz'),Text('Ib: ${ib?.toStringAsFixed(2)??'não calculada'} A • Iz: ${iz?.toStringAsFixed(2)??'não informada'} A'),
+    const Text('Critério: Ib ≤ In ≤ Iz'),
+    Text('Ib: ${ib?.toStringAsFixed(2)??'não calculada'} A • In: ${result.adoptedValue?.toStringAsFixed(2)??'não informada'} A • Iz: ${iz?.toStringAsFixed(2)??'não informada'} A'),
+    if(ib==null&&aggregation!=null)...[const SizedBox(height:4),Text('Ib pendente: ${aggregation!.currentMessage}')],
     const SizedBox(height:4),Text(result.title),Text(result.message),
     const SizedBox(height:6),const Text('A validação orienta a decisão técnica e não bloqueia a escolha do profissional.'),
   ])));}
