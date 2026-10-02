@@ -63,6 +63,7 @@ void main() {
         availability: TechnicalDocumentAvailability.downloaded,
         localPath: '/local/manual.pdf',
         keepOffline: true,
+        checksum: 'same-checksum',
         downloadedAt: null,
       ),
     );
@@ -75,7 +76,7 @@ void main() {
           category: TechnicalDocumentCategory.manufacturerManual,
           remotePath: 'docs/weg/cfw500.pdf',
           fileName: 'cfw500.pdf',
-          checksum: 'new-checksum',
+          checksum: 'same-checksum',
         ),
       ]),
     );
@@ -89,4 +90,42 @@ void main() {
     expect(saved?.localPath, '/local/manual.pdf');
     expect(saved?.keepOffline, isTrue);
   });
+
+  test('catalog checksum change invalidates stale offline copy', () async {
+    final repository = MemoryRepository();
+    await repository.save(
+      const TechnicalDocument(
+        id: 'weg-cfw500',
+        title: 'Manual antigo',
+        category: TechnicalDocumentCategory.manufacturerManual,
+        checksum: 'old-checksum',
+        availability: TechnicalDocumentAvailability.downloaded,
+        localPath: '/local/manual.pdf',
+        keepOffline: true,
+      ),
+    );
+    final service = TechnicalDocumentCatalogSyncService(
+      repository: repository,
+      source: CatalogSource([
+        const TechnicalDocument(
+          id: 'weg-cfw500',
+          title: 'Manual revisão nova',
+          category: TechnicalDocumentCategory.manufacturerManual,
+          remotePath: 'docs/weg/cfw500.pdf',
+          fileName: 'cfw500.pdf',
+          checksum: 'new-checksum',
+        ),
+      ]),
+    );
+
+    await service.sync();
+    final saved = await repository.getById('weg-cfw500');
+
+    expect(saved?.title, 'Manual revisão nova');
+    expect(saved?.checksum, 'new-checksum');
+    expect(saved?.availability, TechnicalDocumentAvailability.remoteOnly);
+    expect(saved?.localPath, isNull);
+    expect(saved?.keepOffline, isFalse);
+  });
+
 }
