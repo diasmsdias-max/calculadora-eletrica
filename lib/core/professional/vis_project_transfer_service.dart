@@ -87,7 +87,9 @@ class VisProjectTransferService {
     final map=<String,String>{
       'contract_version':'contractVersion','project_id':'projectId','circuit_id':'circuitId',
       'power_w':'powerW','voltage_v':'voltageV','power_factor':'powerFactor',
-      'rated_current_a':'ratedCurrentA','device_type':'deviceType','trip_curve':'tripCurve',
+      'rated_current_a':'ratedCurrentA','recommended_current_a':'recommendedCurrentA',
+      'validation_status':'validationStatus','validation_criterion':'validationCriterion',
+      'device_type':'deviceType','trip_curve':'tripCurve',
       'breaking_capacity_ka':'breakingCapacityKa','design_current_a':'designCurrentA',
       'conductor_section_mm2':'conductorSectionMm2','voltage_drop_percent':'voltageDropPercent',
       'protection_current_a':'protectionCurrentA','created_at':'createdAt','updated_at':'updatedAt'
@@ -100,7 +102,9 @@ class VisProjectTransferService {
     final r=Map<String,Object?>.from(portable)..remove('contractVersion');
     final map=<String,String>{
       'projectId':'project_id','circuitId':'circuit_id','powerW':'power_w','voltageV':'voltage_v',
-      'powerFactor':'power_factor','ratedCurrentA':'rated_current_a','deviceType':'device_type',
+      'powerFactor':'power_factor','ratedCurrentA':'rated_current_a',
+      'recommendedCurrentA':'recommended_current_a','validationStatus':'validation_status',
+      'validationCriterion':'validation_criterion','deviceType':'device_type',
       'tripCurve':'trip_curve','breakingCapacityKa':'breaking_capacity_ka','designCurrentA':'design_current_a',
       'conductorSectionMm2':'conductor_section_mm2','voltageDropPercent':'voltage_drop_percent',
       'protectionCurrentA':'protection_current_a','createdAt':'created_at','updatedAt':'updated_at'
