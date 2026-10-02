@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../core/technical_center/technical_center_actions.dart';
 import '../../core/technical_center/technical_document.dart';
 import '../../core/technical_center/technical_document_repository.dart';
 import 'technical_pdf_viewer_page.dart';
 
 class TechnicalCenterPage extends StatefulWidget {
   final TechnicalDocumentRepository repository;
-  const TechnicalCenterPage({super.key, required this.repository});
+  final TechnicalCenterActions? actions;
+  const TechnicalCenterPage({super.key, required this.repository, this.actions});
   @override State<TechnicalCenterPage> createState()=>_TechnicalCenterPageState();
 }
 
 class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
-  List<TechnicalDocument> _documents=const[]; String _query=''; TechnicalDocumentCategory? _category;
+  List<TechnicalDocument> _documents=const[]; String _query=''; TechnicalDocumentCategory? _category; bool _busy=false;
   @override void initState(){super.initState();_load();}
   Future<void> _load() async { final docs=await widget.repository.list(); if(mounted)setState(()=>_documents=docs); }
   List<TechnicalDocument> get _filtered {
@@ -22,7 +24,7 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
     }).toList();
   }
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('Central Técnica VIS')),
+    appBar:AppBar(title:const Text('Central Técnica VIS'),actions:[if(widget.actions!=null)IconButton(tooltip:'Sincronizar catálogo',onPressed:_busy?null:_sync,icon:const Icon(Icons.sync))]),
     body:ListView(padding:const EdgeInsets.all(16),children:[
       const Text('Documentação técnica para consulta rápida em campo. Baixe antes do atendimento o que precisar usar sem internet.'),
       const SizedBox(height:12),
@@ -42,6 +44,42 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
       ))),
     ]),
   );
+  Future<void> _sync() async {
+    final actions=widget.actions;
+    if(actions==null)return;
+    setState(()=>_busy=true);
+    try {
+      await actions.syncCatalog();
+      await _load();
+    } finally {
+      if(mounted)setState(()=>_busy=false);
+    }
+  }
+
+  Future<void> _download(TechnicalDocument document) async {
+    final actions=widget.actions;
+    if(actions==null)return;
+    setState(()=>_busy=true);
+    try {
+      await actions.download(document);
+      await _load();
+    } finally {
+      if(mounted)setState(()=>_busy=false);
+    }
+  }
+
+  Future<void> _remove(TechnicalDocument document) async {
+    final actions=widget.actions;
+    if(actions==null)return;
+    setState(()=>_busy=true);
+    try {
+      await actions.removeLocalCopy(document);
+      await _load();
+    } finally {
+      if(mounted)setState(()=>_busy=false);
+    }
+  }
+
   Widget? _actions(BuildContext context, TechnicalDocument document) {
     final isPdf = document.mimeType.toLowerCase() == 'application/pdf' ||
         document.fileName.toLowerCase().endsWith('.pdf');
@@ -67,6 +105,20 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
             },
           ),
         ],
+      );
+    }
+    if (widget.actions != null && !document.isAvailableOffline) {
+      return IconButton(
+        tooltip: 'Baixar para offline',
+        onPressed: _busy ? null : () => _download(document),
+        icon: const Icon(Icons.download_outlined),
+      );
+    }
+    if (widget.actions != null && document.isAvailableOffline) {
+      return IconButton(
+        tooltip: 'Remover download',
+        onPressed: _busy ? null : () => _remove(document),
+        icon: const Icon(Icons.delete_outline),
       );
     }
     return document.keepOffline ? const Icon(Icons.push_pin_outlined) : null;
