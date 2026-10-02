@@ -48,7 +48,9 @@ class ProfessionalCircuitTechnicalInputsBuilder {
       designCurrentA:designCurrent,
       conductorSectionMm2:section,
       conductorAmpacityA:conductorAmpacityA,
-      adoptedProtectionCurrentA:protection?.ratedCurrentA ?? sizing?.protectionCurrentA,
+      adoptedProtectionCurrentA:protection?.role==ProfessionalProtectionRole.overcurrent
+          ? protection?.ratedCurrentA
+          : sizing?.protectionCurrentA,
       sizingMethod:sizing?.method ?? '',
       sizingCriteria:sizing?.criteria ?? '',
       missingForProtectionRecommendation:List.unmodifiable(missing),
