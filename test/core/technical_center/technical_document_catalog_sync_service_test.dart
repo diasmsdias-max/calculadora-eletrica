@@ -91,6 +91,40 @@ void main() {
     expect(saved?.keepOffline, isTrue);
   });
 
+  test('checksum change requests cleanup of stale physical copy', () async {
+    final repository = MemoryRepository();
+    const stale = TechnicalDocument(
+      id: 'weg-cfw500',
+      title: 'Manual antigo',
+      category: TechnicalDocumentCategory.manufacturerManual,
+      checksum: 'old-checksum',
+      availability: TechnicalDocumentAvailability.downloaded,
+      localPath: '/local/manual.pdf',
+      keepOffline: true,
+    );
+    await repository.save(stale);
+    TechnicalDocument? invalidated;
+    final service = TechnicalDocumentCatalogSyncService(
+      repository: repository,
+      source: CatalogSource([
+        const TechnicalDocument(
+          id: 'weg-cfw500',
+          title: 'Manual revisão nova',
+          category: TechnicalDocumentCategory.manufacturerManual,
+          checksum: 'new-checksum',
+        ),
+      ]),
+      onInvalidatedOfflineCopy: (document) async {
+        invalidated = document;
+      },
+    );
+
+    await service.sync();
+
+    expect(invalidated?.id, 'weg-cfw500');
+    expect(invalidated?.localPath, '/local/manual.pdf');
+  });
+
   test('catalog checksum change invalidates stale offline copy', () async {
     final repository = MemoryRepository();
     await repository.save(
