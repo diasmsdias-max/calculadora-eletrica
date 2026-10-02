@@ -526,13 +526,13 @@ class _SimultaneityEstimateDialogState
                   ),
                   const RadioListTile<_EstimateMethod>(
                     value: _EstimateMethod.demand,
-                    title: const Text('Demanda simultânea conhecida'),
-                    subtitle: const Text('Informe a potência máxima simultânea estimada em W.'),
+                    title: Text('Demanda simultânea conhecida'),
+                    subtitle: Text('Informe a potência máxima simultânea estimada em W.'),
                   ),
                   const RadioListTile<_EstimateMethod>(
                     value: _EstimateMethod.noDiversity,
-                    title: const Text('Considerar 100% da carga'),
-                    subtitle: const Text('Opção conservadora, sem aplicar diversidade.'),
+                    title: Text('Considerar 100% da carga'),
+                    subtitle: Text('Opção conservadora, sem aplicar diversidade.'),
                   ),
                 ],
               ),
