@@ -104,6 +104,12 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
               );
             },
           ),
+          if (widget.actions != null)
+            IconButton(
+              tooltip: 'Remover download',
+              onPressed: _busy ? null : () => _remove(document),
+              icon: const Icon(Icons.delete_outline),
+            ),
         ],
       );
     }
