@@ -128,4 +128,45 @@ void main() {
     expect(saved?.keepOffline, isFalse);
   });
 
+
+  test('removes stale remote-only entries missing from catalog', () async {
+    final repository = MemoryRepository();
+    await repository.save(
+      const TechnicalDocument(
+        id: 'removed',
+        title: 'Manual removido',
+        category: TechnicalDocumentCategory.manufacturerManual,
+      ),
+    );
+    final service = TechnicalDocumentCatalogSyncService(
+      repository: repository,
+      source: CatalogSource(const []),
+    );
+
+    await service.sync();
+
+    expect(await repository.getById('removed'), isNull);
+  });
+
+  test('keeps downloaded entries even when removed from remote catalog', () async {
+    final repository = MemoryRepository();
+    await repository.save(
+      const TechnicalDocument(
+        id: 'offline',
+        title: 'Manual offline',
+        category: TechnicalDocumentCategory.manufacturerManual,
+        availability: TechnicalDocumentAvailability.downloaded,
+        localPath: '/local/manual.pdf',
+      ),
+    );
+    final service = TechnicalDocumentCatalogSyncService(
+      repository: repository,
+      source: CatalogSource(const []),
+    );
+
+    await service.sync();
+
+    expect(await repository.getById('offline'), isNotNull);
+  });
+
 }
