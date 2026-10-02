@@ -173,7 +173,9 @@ class _LoadDialogState extends State<_LoadDialog> {
   late final TextEditingController _power;
   late final TextEditingController _voltage;
   late final TextEditingController _powerFactor;
+  late final TextEditingController _simultaneity;
   late final TextEditingController _notes;
+  String? _simultaneitySource;
 
   @override
   void initState() {
@@ -193,6 +195,10 @@ class _LoadDialogState extends State<_LoadDialog> {
     _powerFactor = TextEditingController(
       text: load?.powerFactor?.toString() ?? '',
     );
+    _simultaneity = TextEditingController(
+      text: load?.simultaneityFactor?.toString() ?? '',
+    );
+    _simultaneitySource = load?.simultaneitySource;
     _notes = TextEditingController(text: load?.notes ?? '');
   }
 
@@ -215,6 +221,9 @@ class _LoadDialogState extends State<_LoadDialog> {
       powerFactor: _powerFactor.text.trim().isEmpty
           ? null
           : _number(_powerFactor.text),
+      simultaneityFactor: _number(_simultaneity.text),
+      simultaneitySource: _simultaneitySource ?? 'professional',
+      simultaneityBasis: current?.simultaneityBasis ?? '',
       notes: _notes.text,
       createdAt: current?.createdAt ?? now,
       updatedAt: now,
@@ -295,6 +304,43 @@ class _LoadDialogState extends State<_LoadDialog> {
                           : null;
                     },
                   ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _simultaneity,
+                    readOnly: widget.readOnly,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: _decoration(
+                      'Fator de simultaneidade (FS)',
+                      'Informe um valor maior que 0 e até 1',
+                    ),
+                    onChanged: widget.readOnly ? null : (_) => _simultaneitySource = 'professional',
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Informe o FS ou utilize Estimar FS.';
+                      }
+                      final value = _number(v);
+                      return value == null || value <= 0 || value > 1
+                          ? 'Use um valor maior que 0 e até 1.'
+                          : null;
+                    },
+                  ),
+                  if (!widget.readOnly)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Assistente Estimar FS: perguntas guiadas serão ativadas na próxima etapa.',
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.auto_awesome_outlined),
+                        label: const Text('Estimar FS'),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _notes,
