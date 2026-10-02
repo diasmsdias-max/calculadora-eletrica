@@ -34,6 +34,14 @@ class TechnicalCenterRuntime implements TechnicalCenterActions {
       catalog: TechnicalDocumentCatalogSyncService(
         repository: repository,
         source: source,
+        onInvalidatedOfflineCopy: (document) async {
+          final localPath = document.localPath;
+          if (localPath != null &&
+              localPath.isNotEmpty &&
+              await fileStore.exists(localPath)) {
+            await fileStore.delete(localPath);
+          }
+        },
       ),
       offline: TechnicalDocumentOfflineService(
         repository: repository,
