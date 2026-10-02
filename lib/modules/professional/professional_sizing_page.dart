@@ -4,6 +4,9 @@ import '../../core/professional/professional_circuit_repository.dart';
 import '../../core/professional/professional_circuit_aggregation.dart';
 import '../../core/professional/professional_load.dart';
 import '../../core/professional/professional_load_repository.dart';
+import '../../core/professional/professional_circuit_aggregation.dart';
+import '../../core/professional/professional_load.dart';
+import '../../core/professional/professional_load_repository.dart';
 import '../../core/professional/professional_sizing.dart';
 import '../../core/professional/professional_sizing_repository.dart';
 
@@ -13,7 +16,7 @@ class ProfessionalSizingPage extends StatefulWidget {
   final ProfessionalLoadRepository loadsRepository;
   final String projectId; final bool readOnly;
   const ProfessionalSizingPage({super.key,required this.repository,required this.circuitsRepository,
-    required this.loadsRepository,required this.projectId,required this.readOnly});
+    required this.loadsRepository,required this.loadsRepository,required this.projectId,required this.readOnly});
   @override State<ProfessionalSizingPage> createState()=>_State();
 }
 class _State extends State<ProfessionalSizingPage>{
@@ -28,7 +31,9 @@ class _State extends State<ProfessionalSizingPage>{
   ProfessionalCircuitAggregation _aggregation(ProfessionalCircuit c){final ids=_loadIdsByCircuit[c.id]?.toSet()??<String>{};
     return const ProfessionalCircuitAggregator().calculate(circuit:c,loads:_loads.where((l)=>ids.contains(l.id)));}
   ProfessionalSizing? _for(String id){for(final x in _items){if(x.circuitId==id)return x;}return null;}
-  Future<void> _edit(ProfessionalCircuit c)async{final ok=await showDialog<bool>(context:context,
+  ProfessionalCircuitAggregation _aggregation(ProfessionalCircuit c){final ids=_loadIdsByCircuit[c.id]??const<String>[];
+    return _aggregator.calculate(circuit:c,loads:_loads.where((load)=>ids.contains(load.id)).toList());}
+  Future<void> _edit(ProfessionalCircuit c)async{final aggregation=_aggregation(c);final ok=await showDialog<bool>(context:context,
     builder:(_)=>_SizingDialog(repository:widget.repository,projectId:widget.projectId,circuit:c,
       sizing:_for(c.id),aggregation:_aggregation(c),readOnly:widget.readOnly));if(ok==true)await _reload();}
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Dimensionamento')),
@@ -78,7 +83,9 @@ class _SizingDialogState extends State<_SizingDialog>{
       createdAt:old?.createdAt??now,updatedAt:now));if(mounted)Navigator.pop(context,true);}
   @override Widget build(BuildContext context)=>AlertDialog(title:Text('Dimensionamento — ${widget.circuit.name}'),
     content:SizedBox(width:600,child:Form(key:_key,child:SingleChildScrollView(child:Column(children:[
-      const Text('Registre dados calculados ou adotados. Campos vazios permanecem indefinidos.'),
+      Text(widget.calculatedDesignCurrentA==null
+        ? 'Ib não pôde ser calculada automaticamente: ${widget.calculationMessage}'
+        : 'Ib calculada automaticamente a partir das cargas vinculadas ao circuito.'),
       const SizedBox(height:16),_AutomaticCurrentSummary(aggregation:widget.aggregation),
       const SizedBox(height:12),TextFormField(controller:_section,readOnly:widget.readOnly,
         keyboardType:const TextInputType.numberWithOptions(decimal:true),
