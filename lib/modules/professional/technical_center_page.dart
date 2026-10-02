@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/technical_center/technical_document.dart';
 import '../../core/technical_center/technical_document_repository.dart';
+import 'technical_pdf_viewer_page.dart';
 
 class TechnicalCenterPage extends StatefulWidget {
   final TechnicalDocumentRepository repository;
@@ -37,10 +38,40 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
         leading:Icon(d.isAvailableOffline?Icons.offline_pin_outlined:Icons.cloud_outlined),
         title:Text(d.title),
         subtitle:Text([if(d.manufacturer.isNotEmpty)d.manufacturer,if(d.equipmentType.isNotEmpty)d.equipmentType,if(d.model.isNotEmpty)d.model,d.isAvailableOffline?'Disponível offline':'Disponível para download'].join(' • ')),
-        trailing:d.keepOffline?const Icon(Icons.push_pin_outlined):null,
+        trailing:_actions(context,d),
       ))),
     ]),
   );
+  Widget? _actions(BuildContext context, TechnicalDocument document) {
+    final isPdf = document.mimeType.toLowerCase() == 'application/pdf' ||
+        document.fileName.toLowerCase().endsWith('.pdf');
+    if (document.isAvailableOffline &&
+        isPdf &&
+        document.localPath != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (document.keepOffline) const Icon(Icons.push_pin_outlined),
+          IconButton(
+            tooltip: 'Abrir no VIS',
+            icon: const Icon(Icons.menu_book_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => TechnicalPdfViewerPage(
+                    title: document.title,
+                    localPath: document.localPath!,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      );
+    }
+    return document.keepOffline ? const Icon(Icons.push_pin_outlined) : null;
+  }
+
   String _label(TechnicalDocumentCategory c)=>switch(c){
     TechnicalDocumentCategory.manufacturerManual=>'Manuais',
     TechnicalDocumentCategory.controlPanel=>'Quadros de Comandos',
