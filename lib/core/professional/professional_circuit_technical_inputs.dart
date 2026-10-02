@@ -30,8 +30,8 @@ class ProfessionalCircuitTechnicalInputsBuilder {
   ProfessionalCircuitTechnicalInputs build({
     required ProfessionalCircuitAggregation aggregation,
     ProfessionalSizing? sizing,
-    double? conductorAmpacityA,
   }) {
+    final conductorAmpacityA=sizing?.conductorAmpacityA;
     final designCurrent=aggregation.designCurrentA;
     final section=sizing?.conductorSectionMm2;
     final missing=<String>[];
