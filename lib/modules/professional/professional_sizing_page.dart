@@ -29,6 +29,7 @@ class _State extends State<ProfessionalSizingPage>{
         separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){final c=_circuits[i],s=_for(c.id);
           final details=<String>[if(s?.designCurrentA!=null)'${s!.designCurrentA} A',
             if(s?.conductorSectionMm2!=null)'${s!.conductorSectionMm2} mm²',
+            if(s?.conductorAmpacityA!=null)'Iz ${s!.conductorAmpacityA} A',
             if(s?.voltageDropPercent!=null)'ΔV ${s!.voltageDropPercent}%'];
           return Card(child:ListTile(title:Text(c.name),
             subtitle:Text(s==null?'Dimensionamento ainda não registrado':
@@ -44,11 +45,12 @@ class _SizingDialog extends StatefulWidget{
   @override State<_SizingDialog> createState()=>_SizingDialogState();
 }
 class _SizingDialogState extends State<_SizingDialog>{
-  late final TextEditingController _design,_section,_drop,_protection,_method,_criteria,_notes;
+  late final TextEditingController _design,_section,_ampacity,_drop,_protection,_method,_criteria,_notes;
   final _key=GlobalKey<FormState>();
   @override void initState(){super.initState();final s=widget.sizing;
     _design=TextEditingController(text:s?.designCurrentA?.toString()??'');
     _section=TextEditingController(text:s?.conductorSectionMm2?.toString()??'');
+    _ampacity=TextEditingController(text:s?.conductorAmpacityA?.toString()??'');
     _drop=TextEditingController(text:s?.voltageDropPercent?.toString()??'');
     _protection=TextEditingController(text:s?.protectionCurrentA?.toString()??'');
     _method=TextEditingController(text:s?.method??'');_criteria=TextEditingController(text:s?.criteria??'');
@@ -61,6 +63,7 @@ class _SizingDialogState extends State<_SizingDialog>{
       projectId:widget.projectId,circuitId:widget.circuit.id,revision:old==null?1:old.revision+1,
       designCurrentA:_design.text.trim().isEmpty?null:_n(_design.text),
       conductorSectionMm2:_section.text.trim().isEmpty?null:_n(_section.text),
+      conductorAmpacityA:_ampacity.text.trim().isEmpty?null:_n(_ampacity.text),
       voltageDropPercent:_drop.text.trim().isEmpty?null:_n(_drop.text),
       protectionCurrentA:_protection.text.trim().isEmpty?null:_n(_protection.text),
       method:_method.text,criteria:_criteria.text,notes:_notes.text,
@@ -74,6 +77,9 @@ class _SizingDialogState extends State<_SizingDialog>{
       const SizedBox(height:12),TextFormField(controller:_section,readOnly:widget.readOnly,
         keyboardType:const TextInputType.numberWithOptions(decimal:true),
         decoration:_d('Seção do condutor (mm²)','Informe a seção adotada'),validator:_positive),
+      const SizedBox(height:12),TextFormField(controller:_ampacity,readOnly:widget.readOnly,
+        keyboardType:const TextInputType.numberWithOptions(decimal:true),
+        decoration:_d('Capacidade de condução Iz (A)','Informe a capacidade válida para as condições adotadas'),validator:_positive),
       const SizedBox(height:12),TextFormField(controller:_drop,readOnly:widget.readOnly,
         keyboardType:const TextInputType.numberWithOptions(decimal:true),
         decoration:_d('Queda de tensão (%)','Informe o resultado quando calculado'),
