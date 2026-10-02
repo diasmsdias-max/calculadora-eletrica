@@ -91,7 +91,7 @@ class VisProjectTransferService {
       'validation_status':'validationStatus','validation_criterion':'validationCriterion',
       'device_type':'deviceType','trip_curve':'tripCurve',
       'breaking_capacity_ka':'breakingCapacityKa','design_current_a':'designCurrentA',
-      'conductor_section_mm2':'conductorSectionMm2','voltage_drop_percent':'voltageDropPercent',
+      'conductor_section_mm2':'conductorSectionMm2','conductor_ampacity_a':'conductorAmpacityA','voltage_drop_percent':'voltageDropPercent',
       'protection_current_a':'protectionCurrentA','created_at':'createdAt','updated_at':'updatedAt'
     };
     for(final e in map.entries){if(r.containsKey(e.key)){r[e.value]=r.remove(e.key);}}
@@ -106,7 +106,7 @@ class VisProjectTransferService {
       'recommendedCurrentA':'recommended_current_a','validationStatus':'validation_status',
       'validationCriterion':'validation_criterion','deviceType':'device_type',
       'tripCurve':'trip_curve','breakingCapacityKa':'breaking_capacity_ka','designCurrentA':'design_current_a',
-      'conductorSectionMm2':'conductor_section_mm2','voltageDropPercent':'voltage_drop_percent',
+      'conductorSectionMm2':'conductor_section_mm2','conductorAmpacityA':'conductor_ampacity_a','voltageDropPercent':'voltage_drop_percent',
       'protectionCurrentA':'protection_current_a','createdAt':'created_at','updatedAt':'updated_at'
     };
     for(final e in map.entries){if(r.containsKey(e.key)){r[e.value]=r.remove(e.key);}}
