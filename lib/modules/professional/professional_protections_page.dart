@@ -95,7 +95,8 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
     await widget.repository.save(ProfessionalProtection(id:old?.id??'protection-${now.microsecondsSinceEpoch.toRadixString(36)}',
       projectId:widget.projectId,circuitId:_circuitId!,revision:old==null?1:old.revision+1,name:_name.text,
       deviceType:_type.text,role:_role,ratedCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),
-      validationStatus:_validation().status.name,validationCriterion:_validation().criterion??'',
+      validationStatus:_role==ProfessionalProtectionRole.overcurrent?_validation().status.name:'',
+      validationCriterion:_role==ProfessionalProtectionRole.overcurrent?_validation().criterion??'':'',
       poles:_poles.text.trim().isEmpty?null:int.tryParse(_poles.text.trim()),tripCurve:_curve.text,
       breakingCapacityKa:_breaking.text.trim().isEmpty?null:_n(_breaking.text),notes:_notes.text,
       createdAt:old?.createdAt??now,updatedAt:now));if(mounted)Navigator.of(context).pop(true);}
