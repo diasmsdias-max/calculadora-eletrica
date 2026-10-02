@@ -39,7 +39,7 @@ class SqliteProfessionalProtectionRepository implements ProfessionalProtectionRe
     }
     final row={'id':p.id,'project_id':p.projectId,'circuit_id':p.circuitId,
       'contract_version':ProfessionalProtection.contractVersion,'revision':p.revision,'name':p.name,
-      'device_type':p.deviceType,'rated_current_a':p.ratedCurrentA,
+      'device_type':p.deviceType,'protection_role':p.role?.name,'rated_current_a':p.ratedCurrentA,
       'recommended_current_a':p.recommendedCurrentA,'validation_status':p.validationStatus,
       'validation_criterion':p.validationCriterion,'poles':p.poles,
       'trip_curve':p.tripCurve,'breaking_capacity_ka':p.breakingCapacityKa,'notes':p.notes,
@@ -51,9 +51,12 @@ class SqliteProfessionalProtectionRepository implements ProfessionalProtectionRe
   @override
   Future<void> delete(String id)=>database.delete('professional_protections',where:'id = ?',whereArgs:[id]);
 
+  ProfessionalProtectionRole? _role(String? value){if(value==null||value.isEmpty)return null;for(final role in ProfessionalProtectionRole.values){if(role.name==value)return role;}return null;}
+
   ProfessionalProtection _fromRow(Map<String,Object?> r)=>ProfessionalProtection(
     id:r['id']! as String,projectId:r['project_id']! as String,circuitId:r['circuit_id']! as String,
     revision:r['revision']! as int,name:r['name']! as String,deviceType:r['device_type'] as String? ?? '',
+    role:_role(r['protection_role'] as String?),
     ratedCurrentA:(r['rated_current_a'] as num?)?.toDouble(),
     recommendedCurrentA:(r['recommended_current_a'] as num?)?.toDouble(),
     validationStatus:r['validation_status'] as String? ?? '',
