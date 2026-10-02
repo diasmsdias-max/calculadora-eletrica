@@ -14,6 +14,8 @@ abstract class TechnicalDocumentFileStore {
 
   Future<bool> exists(String localPath);
 
+  Future<List<int>> read(String localPath);
+
   Future<void> delete(String localPath);
 }
 
@@ -123,11 +125,15 @@ class TechnicalDocumentOfflineService {
   Future<bool> validateLocalCopy(TechnicalDocument document) async {
     final normalized = document.normalized();
     final localPath = normalized.localPath;
-    final valid =
+    var valid =
         normalized.availability == TechnicalDocumentAvailability.downloaded &&
         localPath != null &&
         localPath.isNotEmpty &&
         await files.exists(localPath);
+    if (valid && normalized.checksum.isNotEmpty) {
+      final bytes = await files.read(localPath);
+      valid = checksum(bytes).toLowerCase() == normalized.checksum.toLowerCase();
+    }
     if (valid) return true;
 
     if (normalized.availability == TechnicalDocumentAvailability.downloaded) {
