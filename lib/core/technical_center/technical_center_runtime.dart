@@ -58,4 +58,8 @@ class TechnicalCenterRuntime implements TechnicalCenterActions {
   @override
   Future<TechnicalDocument> removeLocalCopy(TechnicalDocument document) =>
       offline.removeLocalCopy(document);
+
+  @override
+  Future<bool> validateLocalCopy(TechnicalDocument document) =>
+      offline.validateLocalCopy(document);
 }
