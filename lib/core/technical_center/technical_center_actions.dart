@@ -9,4 +9,6 @@ abstract class TechnicalCenterActions {
   });
 
   Future<TechnicalDocument> removeLocalCopy(TechnicalDocument document);
+
+  Future<bool> validateLocalCopy(TechnicalDocument document);
 }
