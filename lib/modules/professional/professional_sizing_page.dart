@@ -1,27 +1,36 @@
 import 'package:flutter/material.dart';
 import '../../core/professional/professional_circuit.dart';
 import '../../core/professional/professional_circuit_repository.dart';
+import '../../core/professional/professional_circuit_aggregation.dart';
+import '../../core/professional/professional_load.dart';
+import '../../core/professional/professional_load_repository.dart';
 import '../../core/professional/professional_sizing.dart';
 import '../../core/professional/professional_sizing_repository.dart';
 
 class ProfessionalSizingPage extends StatefulWidget {
   final ProfessionalSizingRepository repository;
   final ProfessionalCircuitRepository circuitsRepository;
+  final ProfessionalLoadRepository loadsRepository;
   final String projectId; final bool readOnly;
   const ProfessionalSizingPage({super.key,required this.repository,required this.circuitsRepository,
-    required this.projectId,required this.readOnly});
+    required this.loadsRepository,required this.projectId,required this.readOnly});
   @override State<ProfessionalSizingPage> createState()=>_State();
 }
 class _State extends State<ProfessionalSizingPage>{
-  List<ProfessionalSizing> _items=const[];List<ProfessionalCircuit> _circuits=const[];bool _loading=true;
+  List<ProfessionalSizing> _items=const[];List<ProfessionalCircuit> _circuits=const[];
+  List<ProfessionalLoad> _loads=const[];final Map<String,List<String>> _loadIdsByCircuit={};bool _loading=true;
   @override void initState(){super.initState();_reload();}
   Future<void> _reload()async{final v=await Future.wait([widget.repository.getByProject(widget.projectId),
-    widget.circuitsRepository.getByProject(widget.projectId)]);if(!mounted)return;
-    setState((){_items=v[0] as List<ProfessionalSizing>;_circuits=v[1] as List<ProfessionalCircuit>;_loading=false;});}
+    widget.circuitsRepository.getByProject(widget.projectId),widget.loadsRepository.getByProject(widget.projectId)]);
+    final circuits=v[1] as List<ProfessionalCircuit>;final links=await Future.wait(circuits.map((c)=>widget.circuitsRepository.getLoadIds(c.id)));
+    if(!mounted)return;setState((){_items=v[0] as List<ProfessionalSizing>;_circuits=circuits;_loads=v[2] as List<ProfessionalLoad>;
+      _loadIdsByCircuit.clear();for(var i=0;i<circuits.length;i++){_loadIdsByCircuit[circuits[i].id]=links[i];}_loading=false;});}
+  ProfessionalCircuitAggregation _aggregation(ProfessionalCircuit c){final ids=_loadIdsByCircuit[c.id]?.toSet()??<String>{};
+    return const ProfessionalCircuitAggregator().calculate(circuit:c,loads:_loads.where((l)=>ids.contains(l.id)));}
   ProfessionalSizing? _for(String id){for(final x in _items){if(x.circuitId==id)return x;}return null;}
   Future<void> _edit(ProfessionalCircuit c)async{final ok=await showDialog<bool>(context:context,
     builder:(_)=>_SizingDialog(repository:widget.repository,projectId:widget.projectId,circuit:c,
-      sizing:_for(c.id),readOnly:widget.readOnly));if(ok==true)await _reload();}
+      sizing:_for(c.id),aggregation:_aggregation(c),readOnly:widget.readOnly));if(ok==true)await _reload();}
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Dimensionamento')),
     body:_loading?const Center(child:CircularProgressIndicator()):_circuits.isEmpty?
       const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('Cadastre circuitos antes de registrar dimensionamentos.'))):
@@ -39,16 +48,15 @@ class _State extends State<ProfessionalSizingPage>{
 }
 class _SizingDialog extends StatefulWidget{
   final ProfessionalSizingRepository repository;final String projectId;final ProfessionalCircuit circuit;
-  final ProfessionalSizing? sizing;final bool readOnly;
+  final ProfessionalSizing? sizing;final ProfessionalCircuitAggregation aggregation;final bool readOnly;
   const _SizingDialog({required this.repository,required this.projectId,required this.circuit,
-    required this.sizing,required this.readOnly});
+    required this.sizing,required this.aggregation,required this.readOnly});
   @override State<_SizingDialog> createState()=>_SizingDialogState();
 }
 class _SizingDialogState extends State<_SizingDialog>{
-  late final TextEditingController _design,_section,_ampacity,_drop,_protection,_method,_criteria,_notes;
+  late final TextEditingController _section,_ampacity,_drop,_protection,_method,_criteria,_notes;
   final _key=GlobalKey<FormState>();
   @override void initState(){super.initState();final s=widget.sizing;
-    _design=TextEditingController(text:s?.designCurrentA?.toString()??'');
     _section=TextEditingController(text:s?.conductorSectionMm2?.toString()??'');
     _ampacity=TextEditingController(text:s?.conductorAmpacityA?.toString()??'');
     _drop=TextEditingController(text:s?.voltageDropPercent?.toString()??'');
@@ -61,7 +69,7 @@ class _SizingDialogState extends State<_SizingDialog>{
   Future<void> _save()async{if(!_key.currentState!.validate())return;final now=DateTime.now().toUtc(),old=widget.sizing;
     await widget.repository.save(ProfessionalSizing(id:old?.id??'sizing-${now.microsecondsSinceEpoch.toRadixString(36)}',
       projectId:widget.projectId,circuitId:widget.circuit.id,revision:old==null?1:old.revision+1,
-      designCurrentA:_design.text.trim().isEmpty?null:_n(_design.text),
+      designCurrentA:widget.aggregation.designCurrentA,
       conductorSectionMm2:_section.text.trim().isEmpty?null:_n(_section.text),
       conductorAmpacityA:_ampacity.text.trim().isEmpty?null:_n(_ampacity.text),
       voltageDropPercent:_drop.text.trim().isEmpty?null:_n(_drop.text),
@@ -71,9 +79,7 @@ class _SizingDialogState extends State<_SizingDialog>{
   @override Widget build(BuildContext context)=>AlertDialog(title:Text('Dimensionamento — ${widget.circuit.name}'),
     content:SizedBox(width:600,child:Form(key:_key,child:SingleChildScrollView(child:Column(children:[
       const Text('Registre dados calculados ou adotados. Campos vazios permanecem indefinidos.'),
-      const SizedBox(height:16),TextFormField(controller:_design,readOnly:widget.readOnly,
-        keyboardType:const TextInputType.numberWithOptions(decimal:true),
-        decoration:_d('Corrente de projeto (A)','Informe o resultado quando calculado'),validator:_positive),
+      const SizedBox(height:16),_AutomaticCurrentSummary(aggregation:widget.aggregation),
       const SizedBox(height:12),TextFormField(controller:_section,readOnly:widget.readOnly,
         keyboardType:const TextInputType.numberWithOptions(decimal:true),
         decoration:_d('Seção do condutor (mm²)','Informe a seção adotada'),validator:_positive),
@@ -96,4 +102,15 @@ class _SizingDialogState extends State<_SizingDialog>{
     ])))),
     actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:Text(widget.readOnly?'Fechar':'Cancelar')),
       if(!widget.readOnly)FilledButton(onPressed:_save,child:const Text('Salvar'))]);
+}
+
+
+class _AutomaticCurrentSummary extends StatelessWidget{
+  final ProfessionalCircuitAggregation aggregation;const _AutomaticCurrentSummary({required this.aggregation});
+  @override Widget build(BuildContext context){final ib=aggregation.designCurrentA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+    Text('Corrente de projeto (Ib)',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
+    Text(ib==null?'Não calculada':'${ib.toStringAsFixed(2)} A — calculada automaticamente'),
+    const SizedBox(height:4),Text(aggregation.currentMessage),
+    if(aggregation.linkedLoadCount>0)Text('${aggregation.linkedLoadCount} carga(s) vinculada(s) • ${aggregation.totalPowerW.toStringAsFixed(0)} W'),
+  ])));}
 }
