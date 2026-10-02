@@ -202,6 +202,19 @@ class _LoadDialogState extends State<_LoadDialog> {
     _notes = TextEditingController(text: load?.notes ?? '');
   }
 
+  @override
+  void dispose() {
+    _name.dispose();
+    _category.dispose();
+    _quantity.dispose();
+    _power.dispose();
+    _voltage.dispose();
+    _powerFactor.dispose();
+    _simultaneity.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
   double? _number(String value) =>
       double.tryParse(value.trim().replaceAll(',', '.'));
 
