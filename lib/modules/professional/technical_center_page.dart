@@ -58,12 +58,12 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
     }
   }
 
-  Future<void> _download(TechnicalDocument document) async {
+  Future<void> _download(TechnicalDocument document, {bool keepOffline = false}) async {
     final actions=widget.actions;
     if(actions==null)return;
     setState(()=>_busy=true);
     try {
-      await actions.download(document);
+      await actions.download(document, keepOffline: keepOffline);
       await _load();
     } catch (_) {
       _showError('Não foi possível baixar o documento. Verifique a conexão e tente novamente.');
@@ -125,10 +125,22 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
       );
     }
     if (widget.actions != null && !document.isAvailableOffline) {
-      return IconButton(
-        tooltip: 'Baixar para offline',
-        onPressed: _busy ? null : () => _download(document),
-        icon: const Icon(Icons.download_outlined),
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Baixar para offline',
+            onPressed: _busy ? null : () => _download(document),
+            icon: const Icon(Icons.download_outlined),
+          ),
+          IconButton(
+            tooltip: 'Baixar e manter offline',
+            onPressed: _busy
+                ? null
+                : () => _download(document, keepOffline: true),
+            icon: const Icon(Icons.push_pin_outlined),
+          ),
+        ],
       );
     }
     if (widget.actions != null && document.isAvailableOffline) {
