@@ -87,6 +87,8 @@ class VisProjectTransferService {
     final map=<String,String>{
       'contract_version':'contractVersion','project_id':'projectId','circuit_id':'circuitId',
       'power_w':'powerW','voltage_v':'voltageV','power_factor':'powerFactor',
+      'simultaneity_factor':'simultaneityFactor','simultaneity_source':'simultaneitySource',
+      'simultaneity_basis':'simultaneityBasis',
       'rated_current_a':'ratedCurrentA','recommended_current_a':'recommendedCurrentA',
       'validation_status':'validationStatus','validation_criterion':'validationCriterion',
       'device_type':'deviceType','trip_curve':'tripCurve',
@@ -102,7 +104,9 @@ class VisProjectTransferService {
     final r=Map<String,Object?>.from(portable)..remove('contractVersion');
     final map=<String,String>{
       'projectId':'project_id','circuitId':'circuit_id','powerW':'power_w','voltageV':'voltage_v',
-      'powerFactor':'power_factor','ratedCurrentA':'rated_current_a',
+      'powerFactor':'power_factor','simultaneityFactor':'simultaneity_factor',
+      'simultaneitySource':'simultaneity_source','simultaneityBasis':'simultaneity_basis',
+      'ratedCurrentA':'rated_current_a',
       'recommendedCurrentA':'recommended_current_a','validationStatus':'validation_status',
       'validationCriterion':'validation_criterion','deviceType':'device_type',
       'tripCurve':'trip_curve','breakingCapacityKa':'breaking_capacity_ka','designCurrentA':'design_current_a',
