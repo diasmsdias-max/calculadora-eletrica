@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 12;
+  static const schemaVersion = 13;
 
   Database? _database;
 
@@ -76,6 +76,9 @@ class VisDatabase {
     }
     if (oldVersion < 12) {
       await _addProfessionalLoadSimultaneityColumns(db);
+    }
+    if (oldVersion < 13) {
+      await _addProfessionalProtectionRoleColumn(db);
     }
   }
 
@@ -201,6 +204,7 @@ class VisDatabase {
         revision INTEGER NOT NULL,
         name TEXT NOT NULL,
         device_type TEXT NOT NULL DEFAULT '',
+        protection_role TEXT,
         rated_current_a REAL,
         recommended_current_a REAL,
         validation_status TEXT,
@@ -299,6 +303,24 @@ class VisDatabase {
       await db.execute(
         'ALTER TABLE professional_loads '
         "ADD COLUMN simultaneity_basis TEXT NOT NULL DEFAULT ''",
+      );
+    }
+  }
+
+  static Future<void> _addProfessionalProtectionRoleColumn(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'professional_protections'",
+    );
+    if (tables.isEmpty) return;
+
+    final columns = await db.rawQuery(
+      'PRAGMA table_info(professional_protections)',
+    );
+    final names = columns.map((row) => row['name'] as String).toSet();
+    if (!names.contains('protection_role')) {
+      await db.execute(
+        'ALTER TABLE professional_protections ADD COLUMN protection_role TEXT',
       );
     }
   }
