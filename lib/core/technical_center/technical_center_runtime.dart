@@ -27,7 +27,7 @@ class TechnicalCenterRuntime implements TechnicalCenterActions {
   }) async {
     final databaseRoot = await getDatabasesPath();
     final fileStore = LocalTechnicalDocumentFileStore(
-      baseDirectory: Directory(p.join(databaseRoot, 'technical_center')),
+      Directory(p.join(databaseRoot, 'technical_center')),
     );
     final source = HttpTechnicalDocumentSource(baseUri: baseUri);
     return TechnicalCenterRuntime(
