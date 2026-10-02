@@ -86,8 +86,9 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
     _notes=TextEditingController(text:p?.notes??'');}
   double? _n(String v)=>double.tryParse(v.trim().replaceAll(',','.'));
   ProfessionalSizing? _sizingFor(String? circuitId){if(circuitId==null)return null;for(final s in widget.sizing){if(s.circuitId==circuitId)return s;}return null;}
-  double? _calculatedIb(){if(_circuitId==null)return null;ProfessionalCircuit? circuit;for(final c in widget.circuits){if(c.id==_circuitId)circuit=c;}if(circuit==null)return null;
-    final ids=widget.loadIdsByCircuit[_circuitId]?.toSet()??<String>{};return const ProfessionalCircuitAggregator().calculate(circuit:circuit,loads:widget.loads.where((l)=>ids.contains(l.id))).designCurrentA;}
+  ProfessionalCircuitAggregation? _aggregation(){if(_circuitId==null)return null;ProfessionalCircuit? circuit;for(final c in widget.circuits){if(c.id==_circuitId)circuit=c;}if(circuit==null)return null;
+    final ids=widget.loadIdsByCircuit[_circuitId]?.toSet()??<String>{};return const ProfessionalCircuitAggregator().calculate(circuit:circuit,loads:widget.loads.where((l)=>ids.contains(l.id)));}
+  double? _calculatedIb()=>_aggregation()?.designCurrentA;
   TechnicalValidationResult _validation(){final s=_sizingFor(_circuitId);return OvercurrentProtectionValidator.validate(designCurrentA:_calculatedIb(),adoptedProtectionCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),conductorAmpacityA:s?.conductorAmpacityA);}
   InputDecoration _d(String l,String h)=>InputDecoration(labelText:l,hintText:h,border:const OutlineInputBorder());
   Future<void> _save()async{if(!_key.currentState!.validate())return;final now=DateTime.now().toUtc();final old=widget.protection;
@@ -113,7 +114,7 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
       if(widget.protection?.recommendedCurrentA!=null)
         _ValidationSummary(protection:widget.protection!),
       if(widget.protection?.recommendedCurrentA!=null)const SizedBox(height:12),
-      _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),calculatedIb:_calculatedIb()),
+      _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),aggregation:_aggregation()),
       const SizedBox(height:12),TextFormField(controller:_current,readOnly:widget.readOnly,
         onChanged:(_)=>setState((){}),
         keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:_d('Corrente adotada (A)','Informe o valor adotado pelo profissional'),
@@ -172,12 +173,13 @@ class _ValidationSummary extends StatelessWidget {
 
 
 class _LiveProtectionValidation extends StatelessWidget{
-  final TechnicalValidationResult result;final ProfessionalSizing? sizing;final double? calculatedIb;
-  const _LiveProtectionValidation({required this.result,required this.sizing,required this.calculatedIb});
-  @override Widget build(BuildContext context){final ib=calculatedIb,iz=sizing?.conductorAmpacityA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+  final TechnicalValidationResult result;final ProfessionalSizing? sizing;final ProfessionalCircuitAggregation? aggregation;
+  const _LiveProtectionValidation({required this.result,required this.sizing,required this.aggregation});
+  @override Widget build(BuildContext context){final ib=aggregation?.designCurrentA,iz=sizing?.conductorAmpacityA;return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('Validação da proteção',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
     const Text('Critério: Ib ≤ In ≤ Iz'),
     Text('Ib: ${ib?.toStringAsFixed(2)??'não calculada'} A • In: ${result.adoptedValue?.toStringAsFixed(2)??'não informada'} A • Iz: ${iz?.toStringAsFixed(2)??'não informada'} A'),
+    if(ib==null&&aggregation!=null)...[const SizedBox(height:4),Text('Ib pendente: ${aggregation!.currentMessage}')],
     const SizedBox(height:4),Text(result.title),Text(result.message),
     const SizedBox(height:6),const Text('A validação orienta a decisão técnica e não bloqueia a escolha do profissional.'),
   ])));}
