@@ -83,6 +83,37 @@ void main() {
     await db.close();
   });
 
+  test('changing overcurrent protection to DR clears overcurrent validation metadata', () async {
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
+    await VisDatabase.createSchemaForTesting(db);
+    final projects=SqliteProfessionalProjectRepository(db);
+    final circuits=SqliteProfessionalCircuitRepository(db);
+    final protections=SqliteProfessionalProtectionRepository(db);
+    final now=DateTime.utc(2026,10,2);
+    await projects.save(ProfessionalProject(id:'p-change',revision:1,name:'P',createdAt:now,updatedAt:now));
+    await circuits.save(ProfessionalCircuit(id:'c-change',projectId:'p-change',revision:1,name:'C',
+      createdAt:now,updatedAt:now));
+    await protections.save(ProfessionalProtection(
+      id:'pr-change',projectId:'p-change',circuitId:'c-change',revision:1,name:'Proteção',
+      role:ProfessionalProtectionRole.overcurrent,ratedCurrentA:20,
+      validationStatus:'valid',validationCriterion:'Ib ≤ In ≤ Iz',
+      createdAt:now,updatedAt:now,
+    ));
+    await protections.save(ProfessionalProtection(
+      id:'pr-change',projectId:'p-change',circuitId:'c-change',revision:2,name:'Proteção',
+      role:ProfessionalProtectionRole.residualCurrent,ratedCurrentA:30,
+      validationStatus:'',validationCriterion:'',
+      createdAt:now,updatedAt:now.add(const Duration(minutes:1)),
+    ));
+
+    final saved=await protections.getById('pr-change');
+    expect(saved!.role,ProfessionalProtectionRole.residualCurrent);
+    expect(saved.validationStatus,isEmpty);
+    expect(saved.validationCriterion,isEmpty);
+    await db.close();
+  });
+
   test('deleting circuit cascades its protections', () async {
     final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
     await db.execute('PRAGMA foreign_keys = ON');
