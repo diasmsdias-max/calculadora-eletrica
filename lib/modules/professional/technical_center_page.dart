@@ -14,7 +14,17 @@ class TechnicalCenterPage extends StatefulWidget {
 class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
   List<TechnicalDocument> _documents=const[]; String _query=''; TechnicalDocumentCategory? _category; bool _busy=false;
   @override void initState(){super.initState();_load();}
-  Future<void> _load() async { final docs=await widget.repository.list(); if(mounted)setState(()=>_documents=docs); }
+  Future<void> _load() async {
+    var docs=await widget.repository.list();
+    final actions=widget.actions;
+    if(actions!=null){
+      for(final document in docs.where((d)=>d.isAvailableOffline)){
+        await actions.validateLocalCopy(document);
+      }
+      docs=await widget.repository.list();
+    }
+    if(mounted)setState(()=>_documents=docs);
+  }
   List<TechnicalDocument> get _filtered {
     final q=_query.trim().toLowerCase();
     return _documents.where((d){
