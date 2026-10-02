@@ -42,11 +42,12 @@ class HttpTechnicalDocumentSource
 
   Uri _resolve(String path) {
     final candidate = Uri.parse(path);
-    if (candidate.hasScheme) {
-      if (candidate.scheme != 'https') {
-        throw ArgumentError.value(path, 'path', 'Only HTTPS is allowed.');
-      }
-      return candidate;
+    if (candidate.hasScheme || candidate.hasAuthority) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'Technical document paths must be relative to the VIS server.',
+      );
     }
     return baseUri.resolve(path);
   }
