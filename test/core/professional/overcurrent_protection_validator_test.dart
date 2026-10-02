@@ -12,6 +12,24 @@ void main() {
     expect(result.status, TechnicalValidationStatus.insufficientData);
   });
 
+  test('requires Ib when In and Iz are present', () {
+    final result = OvercurrentProtectionValidator.validate(
+      designCurrentA: null,
+      adoptedProtectionCurrentA: 20,
+      conductorAmpacityA: 24,
+    );
+    expect(result.status, TechnicalValidationStatus.insufficientData);
+  });
+
+  test('requires In when Ib and Iz are present', () {
+    final result = OvercurrentProtectionValidator.validate(
+      designCurrentA: 18,
+      adoptedProtectionCurrentA: null,
+      conductorAmpacityA: 24,
+    );
+    expect(result.status, TechnicalValidationStatus.insufficientData);
+  });
+
   test('rejects In below Ib', () {
     final result = OvercurrentProtectionValidator.validate(
       designCurrentA: 18,
