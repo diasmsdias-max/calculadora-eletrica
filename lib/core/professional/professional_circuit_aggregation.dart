@@ -39,7 +39,7 @@ class ProfessionalCircuitAggregator {
     final quantity=list.fold<int>(0,(sum,load)=>sum+load.quantity);
 
     if(list.isEmpty) {
-      return ProfessionalCircuitAggregation(
+      return const ProfessionalCircuitAggregation(
         totalPowerW:0,linkedLoadCount:0,totalQuantity:0,designCurrentA:null,
         currentStatus:CircuitCalculationStatus.insufficientData,
         currentMessage:'Vincule ao menos uma carga ao circuito.',
