@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/licensing/license_provider.dart';
 import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
+import '../../core/database/v2_persistence_factory.dart';
 import 'professional_profile_page.dart';
 import 'professional_projects_page.dart';
+import 'technical_center_page.dart';
 
 class ProfessionalLandingPage extends StatefulWidget {
   const ProfessionalLandingPage({super.key});
@@ -95,6 +97,23 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
                   icon: const Icon(Icons.folder_copy_outlined),
                   label: const Text('Projetos Elétricos'),
                 ),
+                const SizedBox(height: 8),
+                if (license.hasProfessional)
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final persistence = await V2PersistenceFactory.defaults().initialize();
+                      if (!context.mounted) return;
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TechnicalCenterPage(
+                            repository: persistence.technicalDocuments,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.menu_book_outlined),
+                    label: const Text('Central Técnica VIS'),
+                  ),
                 const SizedBox(height: 8),
                 if (!license.hasProfessional)
                   const Text(
