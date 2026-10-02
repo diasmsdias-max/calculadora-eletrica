@@ -21,6 +21,36 @@ class MemoryRepo implements TechnicalDocumentRepository {
   Future<void> delete(String id) async {
     map.remove(id);
   }
+
+  test('missing downloaded file is reconciled to remote only', () async {
+    final repo = MemoryRepo();
+    final store = Store();
+    final service = TechnicalDocumentOfflineService(
+      repository: repo,
+      remote: Remote([1]),
+      files: store,
+      checksum: (_) => 'ok',
+    );
+    const document = TechnicalDocument(
+      id: 'd1',
+      title: 'Manual',
+      category: TechnicalDocumentCategory.technicalReference,
+      remotePath: 'manual.pdf',
+      fileName: 'manual.pdf',
+      availability: TechnicalDocumentAvailability.downloaded,
+      localPath: '/technical/d1/manual.pdf',
+      keepOffline: true,
+    );
+    await repo.save(document);
+
+    expect(await service.validateLocalCopy(document), isFalse);
+
+    final reconciled = await repo.getById('d1');
+    expect(reconciled?.availability, TechnicalDocumentAvailability.remoteOnly);
+    expect(reconciled?.localPath, isNull);
+    expect(reconciled?.keepOffline, isFalse);
+  });
+
 }
 
 class Remote implements TechnicalDocumentRemoteSource {
