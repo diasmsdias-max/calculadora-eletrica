@@ -20,4 +20,20 @@ void main() {
       throwsArgumentError,
     );
   });
+
+  test('rejects paths that escape configured VIS server root', () async {
+    final source = HttpTechnicalDocumentSource(
+      baseUri: Uri.parse('https://example.invalid/vis/'),
+    );
+
+    expect(
+      () => source.download('../manual.pdf'),
+      throwsArgumentError,
+    );
+    expect(
+      () => source.download('/manual.pdf'),
+      throwsArgumentError,
+    );
+  });
+
 }
