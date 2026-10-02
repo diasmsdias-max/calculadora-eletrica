@@ -508,40 +508,34 @@ class _SimultaneityEstimateDialogState
               'Carga instalada considerada: ${installed.toStringAsFixed(1)} W. '
               'Escolha como deseja estimar a simultaneidade.',
             ),
-            RadioListTile<_EstimateMethod>(
-              value: _EstimateMethod.quantity,
+            RadioGroup<_EstimateMethod>(
               groupValue: _method,
-              onChanged: (v) => setState(() {
-                _method = v!;
+              onChanged: (value) => setState(() {
+                _method = value ?? _method;
                 _value.clear();
                 _error = null;
               }),
-              title: const Text('Quantidade simultânea'),
-              subtitle: Text(
-                'Informe quantas das ${widget.quantity} unidades podem operar ao mesmo tempo.',
+              child: Column(
+                children: [
+                  RadioListTile<_EstimateMethod>(
+                    value: _EstimateMethod.quantity,
+                    title: const Text('Quantidade simultânea'),
+                    subtitle: Text(
+                      'Informe quantas das ${widget.quantity} unidades podem operar ao mesmo tempo.',
+                    ),
+                  ),
+                  RadioListTile<_EstimateMethod>(
+                    value: _EstimateMethod.demand,
+                    title: const Text('Demanda simultânea conhecida'),
+                    subtitle: const Text('Informe a potência máxima simultânea estimada em W.'),
+                  ),
+                  RadioListTile<_EstimateMethod>(
+                    value: _EstimateMethod.noDiversity,
+                    title: const Text('Considerar 100% da carga'),
+                    subtitle: const Text('Opção conservadora, sem aplicar diversidade.'),
+                  ),
+                ],
               ),
-            ),
-            RadioListTile<_EstimateMethod>(
-              value: _EstimateMethod.demand,
-              groupValue: _method,
-              onChanged: (v) => setState(() {
-                _method = v!;
-                _value.clear();
-                _error = null;
-              }),
-              title: const Text('Demanda simultânea conhecida'),
-              subtitle: const Text('Informe a potência máxima simultânea estimada em W.'),
-            ),
-            RadioListTile<_EstimateMethod>(
-              value: _EstimateMethod.noDiversity,
-              groupValue: _method,
-              onChanged: (v) => setState(() {
-                _method = v!;
-                _value.clear();
-                _error = null;
-              }),
-              title: const Text('Considerar 100% da carga'),
-              subtitle: const Text('Opção conservadora, sem aplicar diversidade.'),
             ),
             if (_method != _EstimateMethod.noDiversity)
               TextField(
