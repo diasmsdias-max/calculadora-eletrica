@@ -15,9 +15,9 @@ void main() {
       criteria:'Critério informado',createdAt:now,updatedAt:now,
     );
 
-  ProfessionalProtection protection({double? current=25}) => ProfessionalProtection(
+  ProfessionalProtection protection({double? current=25,ProfessionalProtectionRole? role=ProfessionalProtectionRole.overcurrent}) => ProfessionalProtection(
     id:'pr1',projectId:'p1',circuitId:'c1',revision:1,name:'QF1',
-    ratedCurrentA:current,createdAt:now,updatedAt:now,
+    role:role,ratedCurrentA:current,createdAt:now,updatedAt:now,
   );
 
   const aggregation=ProfessionalCircuitAggregation(
@@ -58,6 +58,29 @@ void main() {
       protection:protection(current:25),
     );
     expect(result.adoptedProtectionCurrentA,25);
+  });
+
+  test('technical inputs ignore residual-current device as source of In',(){
+    const builder=ProfessionalCircuitTechnicalInputsBuilder();
+    final result=builder.build(
+      aggregation:aggregation,
+      sizing:sizing(protection:20),
+      protection:protection(
+        current:30,
+        role:ProfessionalProtectionRole.residualCurrent,
+      ),
+    );
+    expect(result.adoptedProtectionCurrentA,20);
+  });
+
+  test('unclassified legacy protection does not override legacy In',(){
+    const builder=ProfessionalCircuitTechnicalInputsBuilder();
+    final result=builder.build(
+      aggregation:aggregation,
+      sizing:sizing(protection:20),
+      protection:protection(current:30,role:null),
+    );
+    expect(result.adoptedProtectionCurrentA,20);
   });
 
   test('technical inputs keep legacy sizing protection as fallback',(){
