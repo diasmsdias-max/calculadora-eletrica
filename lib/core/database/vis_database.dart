@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 10;
+  static const schemaVersion = 11;
 
   Database? _database;
 
@@ -70,6 +70,9 @@ class VisDatabase {
     }
     if (oldVersion < 10) {
       await _addProfessionalProtectionValidationColumns(db);
+    }
+    if (oldVersion < 11) {
+      await _addProfessionalSizingAmpacityColumn(db);
     }
   }
 
@@ -250,6 +253,23 @@ class VisDatabase {
     }
   }
 
+  static Future<void> _addProfessionalSizingAmpacityColumn(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'professional_sizing'",
+    );
+    if (tables.isEmpty) return;
+
+    final columns = await db.rawQuery('PRAGMA table_info(professional_sizing)');
+    final names = columns.map((row) => row['name'] as String).toSet();
+    if (!names.contains('conductor_ampacity_a')) {
+      await db.execute(
+        'ALTER TABLE professional_sizing '
+        'ADD COLUMN conductor_ampacity_a REAL',
+      );
+    }
+  }
+
   static Future<void> _createProfessionalSizingTable(Database db) async {
     await db.execute('''
       CREATE TABLE professional_sizing (
@@ -260,6 +280,7 @@ class VisDatabase {
         revision INTEGER NOT NULL,
         design_current_a REAL,
         conductor_section_mm2 REAL,
+        conductor_ampacity_a REAL,
         voltage_drop_percent REAL,
         protection_current_a REAL,
         method TEXT NOT NULL DEFAULT '',
