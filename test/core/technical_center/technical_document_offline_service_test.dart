@@ -34,6 +34,7 @@ class Remote implements TechnicalDocumentRemoteSource {
 
 class Store implements TechnicalDocumentFileStore {
   final paths = <String>{};
+  final contents = <String, List<int>>{};
 
   @override
   Future<String> write({
@@ -43,6 +44,7 @@ class Store implements TechnicalDocumentFileStore {
   }) async {
     final path = '/technical/$documentId/$fileName';
     paths.add(path);
+    contents[path] = List<int>.from(bytes);
     return path;
   }
 
@@ -50,8 +52,12 @@ class Store implements TechnicalDocumentFileStore {
   Future<bool> exists(String path) async => paths.contains(path);
 
   @override
+  Future<List<int>> read(String path) async => contents[path] ?? const [];
+
+  @override
   Future<void> delete(String path) async {
     paths.remove(path);
+    contents.remove(path);
   }
 }
 
@@ -157,6 +163,34 @@ void main() {
     expect(reconciled?.availability, TechnicalDocumentAvailability.remoteOnly);
     expect(reconciled?.localPath, isNull);
     expect(reconciled?.keepOffline, isFalse);
+  });
+
+
+  test('corrupted offline file is reconciled to remote only', () async {
+    final repo = MemoryRepo();
+    final store = Store();
+    final service = TechnicalDocumentOfflineService(
+      repository: repo,
+      remote: Remote([1, 2, 3]),
+      files: store,
+      checksum: (bytes) => bytes.join('-'),
+    );
+    const document = TechnicalDocument(
+      id: 'd1',
+      title: 'Manual',
+      category: TechnicalDocumentCategory.technicalReference,
+      remotePath: 'manual.pdf',
+      fileName: 'manual.pdf',
+      checksum: '1-2-3',
+    );
+    final downloaded = await service.download(document);
+    store.contents[downloaded.localPath!] = [9, 9, 9];
+
+    expect(await service.validateLocalCopy(downloaded), isFalse);
+
+    final reconciled = await repo.getById('d1');
+    expect(reconciled?.availability, TechnicalDocumentAvailability.remoteOnly);
+    expect(reconciled?.localPath, isNull);
   });
 
 }
