@@ -212,6 +212,7 @@ class _ProfessionalProjectDashboardPageState
                   builder: (_) => ProfessionalSizingPage(
                     repository: persistence.professionalSizing,
                     circuitsRepository: persistence.professionalCircuits,
+                    loadsRepository: persistence.professionalLoads,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
