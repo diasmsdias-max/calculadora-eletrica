@@ -89,6 +89,8 @@ class VisProjectTransferService {
       'power_w':'powerW','voltage_v':'voltageV','power_factor':'powerFactor',
       'simultaneity_factor':'simultaneityFactor','simultaneity_source':'simultaneitySource',
       'simultaneity_basis':'simultaneityBasis',
+      'simultaneity_factor':'simultaneityFactor','simultaneity_source':'simultaneitySource',
+      'simultaneity_basis':'simultaneityBasis',
       'rated_current_a':'ratedCurrentA','recommended_current_a':'recommendedCurrentA',
       'validation_status':'validationStatus','validation_criterion':'validationCriterion',
       'device_type':'deviceType','trip_curve':'tripCurve',
