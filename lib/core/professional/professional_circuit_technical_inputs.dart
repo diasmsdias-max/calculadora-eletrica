@@ -1,5 +1,6 @@
 import 'professional_circuit_aggregation.dart';
 import 'professional_sizing.dart';
+import 'professional_protection.dart';
 
 class ProfessionalCircuitTechnicalInputs {
   final double? designCurrentA;
@@ -30,6 +31,7 @@ class ProfessionalCircuitTechnicalInputsBuilder {
   ProfessionalCircuitTechnicalInputs build({
     required ProfessionalCircuitAggregation aggregation,
     ProfessionalSizing? sizing,
+    ProfessionalProtection? protection,
   }) {
     final conductorAmpacityA=sizing?.conductorAmpacityA;
     final designCurrent=aggregation.designCurrentA;
@@ -46,7 +48,7 @@ class ProfessionalCircuitTechnicalInputsBuilder {
       designCurrentA:designCurrent,
       conductorSectionMm2:section,
       conductorAmpacityA:conductorAmpacityA,
-      adoptedProtectionCurrentA:sizing?.protectionCurrentA,
+      adoptedProtectionCurrentA:protection?.ratedCurrentA ?? sizing?.protectionCurrentA,
       sizingMethod:sizing?.method ?? '',
       sizingCriteria:sizing?.criteria ?? '',
       missingForProtectionRecommendation:List.unmodifiable(missing),
