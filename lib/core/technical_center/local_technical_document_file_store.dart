@@ -31,6 +31,9 @@ class LocalTechnicalDocumentFileStore implements TechnicalDocumentFileStore {
   Future<bool> exists(String localPath) => File(localPath).exists();
 
   @override
+  Future<List<int>> read(String localPath) => File(localPath).readAsBytes();
+
+  @override
   Future<void> delete(String localPath) async {
     final file = File(localPath);
     if (await file.exists()) {
