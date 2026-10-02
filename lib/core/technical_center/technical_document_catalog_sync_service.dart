@@ -21,12 +21,20 @@ class TechnicalDocumentCatalogSyncService {
     };
 
     final synced = <TechnicalDocument>[];
+    final remoteIds = <String>{};
     for (final remoteDocument in remoteDocuments) {
       final remote = remoteDocument.normalized();
+      remoteIds.add(remote.id);
       final local = localDocuments[remote.id];
       final merged = _mergeRemoteWithLocal(remote, local);
       await repository.save(merged);
       synced.add(merged);
+    }
+
+    for (final local in localDocuments.values) {
+      if (!remoteIds.contains(local.id) && !local.isAvailableOffline) {
+        await repository.delete(local.id);
+      }
     }
     return synced;
   }
