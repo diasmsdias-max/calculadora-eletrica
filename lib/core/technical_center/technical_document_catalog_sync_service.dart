@@ -8,10 +8,13 @@ abstract class TechnicalDocumentCatalogSource {
 class TechnicalDocumentCatalogSyncService {
   final TechnicalDocumentRepository repository;
   final TechnicalDocumentCatalogSource source;
+  final Future<void> Function(TechnicalDocument document)?
+      onInvalidatedOfflineCopy;
 
   const TechnicalDocumentCatalogSyncService({
     required this.repository,
     required this.source,
+    this.onInvalidatedOfflineCopy,
   });
 
   Future<List<TechnicalDocument>> sync() async {
@@ -26,6 +29,9 @@ class TechnicalDocumentCatalogSyncService {
       final remote = remoteDocument.normalized();
       remoteIds.add(remote.id);
       final local = localDocuments[remote.id];
+      if (_checksumChanged(remote, local) && local != null) {
+        await onInvalidatedOfflineCopy?.call(local);
+      }
       final merged = _mergeRemoteWithLocal(remote, local);
       await repository.save(merged);
       synced.add(merged);
@@ -39,6 +45,18 @@ class TechnicalDocumentCatalogSyncService {
     return synced;
   }
 
+  bool _checksumChanged(
+    TechnicalDocument remote,
+    TechnicalDocument? local,
+  ) {
+    if (local == null || !local.isAvailableOffline) return false;
+    final remoteChecksum = remote.checksum.trim().toLowerCase();
+    final localChecksum = local.checksum.trim().toLowerCase();
+    return remoteChecksum.isNotEmpty &&
+        localChecksum.isNotEmpty &&
+        remoteChecksum != localChecksum;
+  }
+
   TechnicalDocument _mergeRemoteWithLocal(
     TechnicalDocument remote,
     TechnicalDocument? local,
@@ -47,11 +65,7 @@ class TechnicalDocumentCatalogSyncService {
       return remote;
     }
 
-    final remoteChecksum = remote.checksum.trim().toLowerCase();
-    final localChecksum = local.checksum.trim().toLowerCase();
-    if (remoteChecksum.isNotEmpty &&
-        localChecksum.isNotEmpty &&
-        remoteChecksum != localChecksum) {
+    if (_checksumChanged(remote, local)) {
       return remote;
     }
 
