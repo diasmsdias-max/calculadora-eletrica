@@ -4,6 +4,8 @@ import '../../core/licensing/license_provider.dart';
 import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
 import '../../core/database/v2_persistence_factory.dart';
+import '../../core/technical_center/technical_center_config.dart';
+import '../../core/technical_center/technical_center_runtime.dart';
 import 'professional_profile_page.dart';
 import 'professional_projects_page.dart';
 import 'technical_center_page.dart';
@@ -103,10 +105,19 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
                     onPressed: () async {
                       final persistence = await V2PersistenceFactory.defaults().initialize();
                       if (!context.mounted) return;
+                      final baseUri = TechnicalCenterConfig.baseUri;
+                      final runtime = baseUri == null
+                          ? null
+                          : await TechnicalCenterRuntime.create(
+                              repository: persistence.technicalDocuments,
+                              baseUri: baseUri,
+                            );
+                      if (!context.mounted) return;
                       await Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => TechnicalCenterPage(
                             repository: persistence.technicalDocuments,
+                            actions: runtime,
                           ),
                         ),
                       );
