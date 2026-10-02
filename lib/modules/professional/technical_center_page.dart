@@ -39,7 +39,16 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
       ..._filtered.map((d)=>Card(child:ListTile(
         leading:Icon(d.isAvailableOffline?Icons.offline_pin_outlined:Icons.cloud_outlined),
         title:Text(d.title),
-        subtitle:Text([if(d.manufacturer.isNotEmpty)d.manufacturer,if(d.equipmentType.isNotEmpty)d.equipmentType,if(d.model.isNotEmpty)d.model,d.isAvailableOffline?'Disponível offline':'Disponível para download'].join(' • ')),
+        subtitle:Text([
+          if(d.manufacturer.isNotEmpty)d.manufacturer,
+          if(d.equipmentType.isNotEmpty)d.equipmentType,
+          if(d.model.isNotEmpty)d.model,
+          _formatLabel(d),
+          if(d.sizeBytes!=null)_formatSize(d.sizeBytes!),
+          d.isAvailableOffline
+              ? (d.keepOffline?'Mantido offline':'Disponível offline')
+              : 'Disponível para download',
+        ].join(' • ')),
         trailing:_actions(context,d),
       ))),
     ]),
@@ -151,6 +160,23 @@ class _TechnicalCenterPageState extends State<TechnicalCenterPage> {
       );
     }
     return document.keepOffline ? const Icon(Icons.push_pin_outlined) : null;
+  }
+
+  String _formatLabel(TechnicalDocument document) {
+    final fileName=document.fileName.toLowerCase();
+    final mime=document.mimeType.toLowerCase();
+    if(mime=='application/pdf'||fileName.endsWith('.pdf'))return 'PDF';
+    final dot=fileName.lastIndexOf('.');
+    if(dot>=0&&dot<fileName.length-1)return fileName.substring(dot+1).toUpperCase();
+    return 'Arquivo';
+  }
+
+  String _formatSize(int bytes) {
+    if(bytes<1024)return '${bytes} B';
+    final kb=bytes/1024;
+    if(kb<1024)return '${kb.toStringAsFixed(kb<10?1:0)} KB';
+    final mb=kb/1024;
+    return '${mb.toStringAsFixed(mb<10?1:0)} MB';
   }
 
   String _label(TechnicalDocumentCategory c)=>switch(c){
