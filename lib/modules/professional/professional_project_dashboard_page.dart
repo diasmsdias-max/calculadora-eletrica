@@ -174,6 +174,9 @@ class _ProfessionalProjectDashboardPageState
                   builder: (_) => ProfessionalBoardsPage(
                     repository: persistence.professionalBoards,
                     circuitsRepository: persistence.professionalCircuits,
+                    loadsRepository: persistence.professionalLoads,
+                    sizingRepository: persistence.professionalSizing,
+                    protectionsRepository: persistence.professionalProtections,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
