@@ -7,6 +7,7 @@ import '../../core/professional/professional_load_repository.dart';
 import '../../core/professional/professional_sizing.dart';
 import '../../core/professional/professional_sizing_repository.dart';
 import '../../core/professional/professional_conductor_recommender.dart';
+import '../../core/professional/professional_calculation_freshness.dart';
 import '../../core/calculations/quick_ampacity_reference.dart';
 
 class ProfessionalSizingPage extends StatefulWidget {
@@ -30,6 +31,9 @@ class _State extends State<ProfessionalSizingPage>{
   ProfessionalCircuitAggregation _aggregation(ProfessionalCircuit c){final ids=_loadIdsByCircuit[c.id]?.toSet()??<String>{};
     return const ProfessionalCircuitAggregator().calculate(circuit:c,loads:_loads.where((l)=>ids.contains(l.id)));}
   ProfessionalSizing? _for(String id){for(final x in _items){if(x.circuitId==id)return x;}return null;}
+  bool _needsReview(ProfessionalCircuit c,ProfessionalSizing s){final ids=_loadIdsByCircuit[c.id]?.toSet()??<String>{};
+    return ProfessionalCalculationFreshness.sizingNeedsReview(
+      sizing:s,circuit:c,linkedLoads:_loads.where((l)=>ids.contains(l.id)));}
   Future<void> _edit(ProfessionalCircuit c)async{final ok=await showDialog<bool>(context:context,
     builder:(_)=>_SizingDialog(repository:widget.repository,projectId:widget.projectId,circuit:c,
       sizing:_for(c.id),aggregation:_aggregation(c),readOnly:widget.readOnly));if(ok==true)await _reload();}
@@ -39,7 +43,9 @@ class _State extends State<ProfessionalSizingPage>{
       ListView.separated(padding:const EdgeInsets.all(16),itemCount:_circuits.length,
         separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){final c=_circuits[i],s=_for(c.id);
           final aggregation=_aggregation(c);
+          final needsReview=s!=null&&_needsReview(c,s);
           final details=<String>[
+            if(needsReview)'Revisar cálculo',
             if(aggregation.designCurrentA!=null)'Ib ${aggregation.designCurrentA!.toStringAsFixed(2)} A',
             if(s?.conductorSectionMm2!=null)'${s!.conductorSectionMm2} mm²',
             if(s?.conductorAmpacityA!=null)'Iz ${s!.conductorAmpacityA} A',
@@ -47,7 +53,7 @@ class _State extends State<ProfessionalSizingPage>{
           return Card(child:ListTile(title:Text(c.name),
             subtitle:Text(s==null?'Dimensionamento ainda não registrado':
               details.isEmpty?'Registro técnico sem valores calculados':details.join(' • ')),
-            leading:Icon(s==null?Icons.calculate_outlined:Icons.check_circle_outline),
+            leading:Icon(s==null?Icons.calculate_outlined:needsReview?Icons.warning_amber_outlined:Icons.check_circle_outline),
             trailing:const Icon(Icons.chevron_right),onTap:()=>_edit(c)));}));
 }
 class _SizingDialog extends StatefulWidget{
