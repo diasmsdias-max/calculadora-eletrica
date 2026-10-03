@@ -17,6 +17,7 @@ class ProfessionalBoardsPage extends StatefulWidget {
 class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
   List<ProfessionalBoard> _boards=const[]; List<ProfessionalCircuit> _circuits=const[];
   Map<String,String> _boardByCircuitId=const{};
+  Map<String,int> _circuitCountByBoardId=const{};
   final _search=TextEditingController(); String _query=''; bool _loading=true;
   @override void initState(){super.initState();_reload();}
   @override void dispose(){_search.dispose();super.dispose();}
@@ -25,13 +26,17 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
       widget.circuitsRepository.getByProject(widget.projectId)]);
     final boards=v[0] as List<ProfessionalBoard>;
     final ownership=<String,String>{};
+    final counts=<String,int>{};
     for(final board in boards){
-      for(final circuitId in await widget.repository.getCircuitIds(board.id)){
+      final circuitIds=await widget.repository.getCircuitIds(board.id);
+      counts[board.id]=circuitIds.length;
+      for(final circuitId in circuitIds){
         ownership[circuitId]=board.id;
       }
     }
     if(!mounted)return; setState((){_boards=boards;
-      _circuits=v[1] as List<ProfessionalCircuit>;_boardByCircuitId=ownership;_loading=false;});
+      _circuits=v[1] as List<ProfessionalCircuit>;_boardByCircuitId=ownership;
+      _circuitCountByBoardId=counts;_loading=false;});
   }
   Future<void> _edit([ProfessionalBoard? board]) async {
     if(widget.readOnly&&board==null)return;
@@ -61,8 +66,12 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
           items.isEmpty?const Center(child:Text('Nenhum quadro encontrado para esta busca.')):
           ListView.separated(padding:const EdgeInsets.fromLTRB(16,8,16,96),itemCount:items.length,
             separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
-              final b=items[i]; return Card(child:ListTile(title:Text(b.name),
-                subtitle:b.location.isEmpty?null:Text(b.location),trailing:const Icon(Icons.chevron_right),
+              final b=items[i]; final count=_circuitCountByBoardId[b.id]??0;
+              return Card(child:ListTile(title:Text(b.name),
+                subtitle:Text([
+                  if(b.location.isNotEmpty)b.location,
+                  count==0?'Sem circuitos vinculados':'$count circuito(s)',
+                ].join(' • ')),trailing:const Icon(Icons.chevron_right),
                 onTap:()=>_edit(b)));}))
       ]));
   }
