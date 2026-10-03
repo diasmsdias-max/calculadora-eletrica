@@ -13,6 +13,9 @@ import '../../core/professional/professional_circuit_technical_state.dart';
 import '../../core/professional/professional_board_readiness.dart';
 import '../../core/professional/professional_board_material_consolidator.dart';
 import '../../core/professional/professional_material_repository.dart';
+import '../../core/professional/professional_memorial_repository.dart';
+import 'professional_materials_page.dart';
+import 'professional_memorial_page.dart';
 
 class ProfessionalBoardsPage extends StatefulWidget {
   final ProfessionalBoardRepository repository;
@@ -21,11 +24,12 @@ class ProfessionalBoardsPage extends StatefulWidget {
   final ProfessionalSizingRepository sizingRepository;
   final ProfessionalProtectionRepository protectionsRepository;
   final ProfessionalMaterialRepository materialsRepository;
+  final ProfessionalMemorialRepository memorialRepository;
   final String projectId;
   final bool readOnly;
   const ProfessionalBoardsPage({super.key, required this.repository, required this.circuitsRepository,
     required this.loadsRepository,required this.sizingRepository,required this.protectionsRepository,
-    required this.materialsRepository,required this.projectId, required this.readOnly});
+    required this.materialsRepository,required this.memorialRepository,required this.projectId, required this.readOnly});
   @override State<ProfessionalBoardsPage> createState()=>_ProfessionalBoardsPageState();
 }
 
@@ -156,10 +160,18 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
                 trailing:PopupMenuButton<String>(onSelected:(value)async{
                   if(value=='edit')await _edit(b);
                   if(value=='toggle'&&readiness!=null)await _setClosed(b,readiness);
+                  if(value=='materials')await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMaterialsPage(
+                    repository:widget.materialsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                  if(value=='memorial')await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMemorialPage(
+                    repository:widget.memorialRepository,boardsRepository:widget.repository,circuitsRepository:widget.circuitsRepository,
+                    loadsRepository:widget.loadsRepository,sizingRepository:widget.sizingRepository,
+                    protectionsRepository:widget.protectionsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
                 },itemBuilder:(_)=>[
                   PopupMenuItem(value:'edit',child:Text(b.isClosed?'Visualizar quadro':'Editar quadro')),
                   if(!widget.readOnly&&readiness!=null)PopupMenuItem(value:'toggle',
                     child:Text(b.isClosed?'Reabrir quadro':'Fechar quadro')),
+                  if(b.isClosed)const PopupMenuItem(value:'materials',child:Text('Materiais')),
+                  if(b.isClosed)const PopupMenuItem(value:'memorial',child:Text('Memorial')),
                 ]),
                 onTap:()=>_edit(b)));});}))
       ]));
