@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 14;
+  static const schemaVersion = 15;
 
   Database? _database;
 
@@ -82,6 +82,9 @@ class VisDatabase {
     }
     if (oldVersion < 14) {
       await _createTechnicalDocumentsTable(db);
+    }
+    if (oldVersion < 15) {
+      await _enforceSingleCircuitPerLoad(db);
     }
   }
 
@@ -158,12 +161,37 @@ class VisDatabase {
     await db.execute('''
       CREATE TABLE professional_circuit_loads (
         circuit_id TEXT NOT NULL,
-        load_id TEXT NOT NULL,
+        load_id TEXT NOT NULL UNIQUE,
         PRIMARY KEY (circuit_id, load_id),
         FOREIGN KEY (circuit_id) REFERENCES professional_circuits(id) ON DELETE CASCADE,
         FOREIGN KEY (load_id) REFERENCES professional_loads(id) ON DELETE CASCADE
       )
     ''');
+  }
+
+  static Future<void> _enforceSingleCircuitPerLoad(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'professional_circuit_loads'",
+    );
+    if (tables.isEmpty) return;
+
+    // Legacy builds allowed one load to be linked to more than one circuit.
+    // Keep the oldest deterministic relation and remove only duplicates before
+    // enforcing the domain rule at database level.
+    await db.execute('''
+      DELETE FROM professional_circuit_loads
+      WHERE rowid NOT IN (
+        SELECT MIN(rowid)
+        FROM professional_circuit_loads
+        GROUP BY load_id
+      )
+    ''');
+    await db.execute(
+      'CREATE UNIQUE INDEX IF NOT EXISTS '
+      'idx_professional_circuit_loads_load_id '
+      'ON professional_circuit_loads(load_id)',
+    );
   }
 
   static Future<void> _createProfessionalBoardsTables(Database db) async {
