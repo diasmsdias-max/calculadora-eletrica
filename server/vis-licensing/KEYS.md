@@ -3,22 +3,18 @@
 A chave privada de licenciamento **não entra no Git**.
 
 ## Gerar chave Ed25519 no Windows
-No diretório local do servidor:
+No diretório raiz do repositório, usando somente o Node.js 20+:
 
 ```powershell
-New-Item -ItemType Directory -Force .local-secrets | Out-Null
-openssl genpkey -algorithm ED25519 -out .local-secrets/vis-license-ed25519.pem
-$env:VIS_LICENSE_PRIVATE_KEY_FILE = (Resolve-Path .local-secrets/vis-license-ed25519.pem)
-$env:VIS_LICENSE_KEY_ID = "vis-license-signing-1"
-npm start
+node .\server\vis-licensing\tools\generate-dev-signing-key.js
 ```
 
-Se `openssl` não estiver disponível, gere uma chave Ed25519 por uma ferramenta criptográfica confiável instalada no ambiente. Não use geradores online.
+O script recusa substituir uma chave existente. `--force` existe apenas para uma rotação deliberada, que invalida a chave pública configurada nos APKs anteriores.
 
 O servidor falha ao iniciar se `VIS_LICENSE_PRIVATE_KEY_FILE` não estiver definido ou se a chave não for Ed25519.
 
 ## Chave pública
-Com o servidor iniciado:
+Com o servidor iniciado pelo procedimento físico:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8787/api/v1/licensing/public-key

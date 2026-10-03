@@ -4,7 +4,7 @@ Servidor executável de desenvolvimento da EP25. Usa Node.js 20+ sem dependênci
 
 ## Pré-requisitos
 
-A assinatura Ed25519 é obrigatória. Gere e configure a chave conforme `KEYS.md`.
+A assinatura Ed25519 é obrigatória. Gere e configure a chave conforme `KEYS.md`. O servidor não possui dependências npm; `node` 20+ é suficiente.
 
 Por padrão o processo escuta somente `127.0.0.1:8787`. Para desenvolvimento no próprio PC, o painel BOECKER pode ser aberto em:
 
@@ -12,13 +12,13 @@ Por padrão o processo escuta somente `127.0.0.1:8787`. Para desenvolvimento no 
 
 A API pública do Android deve ser publicada por HTTPS/reverse proxy. Não configure o APK para o HTTP interno.
 
-## Executar
+## Executar manualmente somente em loopback
 
 ```powershell
 cd server/vis-licensing
 $env:VIS_LICENSE_PRIVATE_KEY_FILE = (Resolve-Path .local-secrets/vis-license-ed25519.pem)
 $env:VIS_LICENSE_KEY_ID = "vis-license-signing-1"
-npm start
+node src/server.js
 ```
 
 Health:
@@ -36,6 +36,8 @@ O painel administrativo gerencia clientes, licenças e dispositivos. Em loopback
 Se `VIS_LICENSE_HOST` for alterado para um endereço que exponha diretamente este processo fora do loopback, `VIS_LICENSE_ADMIN_TOKEN` passa a ser obrigatório e as rotas `/admin/*` e `/admin-ui/*` exigem o cabeçalho `X-VIS-Admin-Token`.
 
 Para o teste com Android, a configuração preferida é manter o Node em loopback e publicar **somente** `/api/v1/licensing/` por meio do servidor HTTPS/reverse proxy já usado pelo VIS. O painel administrativo deve continuar local. Não exponha `/admin/*` nem `/admin-ui/*` no proxy.
+
+O procedimento reproduzível para Windows está em `docs/EP25_PHYSICAL_ACTIVATION_TEST.md`. Os scripts `Start-Ep25LocalServer.ps1` e `Stop-Ep25LocalServer.ps1` mantêm a API/painel em `127.0.0.1:8787` e publicam somente a API do aplicativo em HTTPS na porta 8444.
 
 ## Teste rápido do licenciamento
 
