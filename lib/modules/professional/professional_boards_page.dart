@@ -66,13 +66,50 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
     }
     return const ProfessionalBoardReadinessEvaluator().evaluate(states);
   }
+  Future<void> _setClosed(ProfessionalBoard board,ProfessionalBoardReadiness readiness)async{
+    if(widget.readOnly)return;
+    if(!board.isClosed){
+      final confirmed=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
+        title:const Text('Fechar quadro?'),
+        content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text(readiness.isReady?'Todos os circuitos vinculados estão tecnicamente prontos.':
+            'Este quadro ainda possui pendências ou itens que precisam de revisão.'),
+          if(readiness.issues.isNotEmpty)...[const SizedBox(height:12),...readiness.issues.map((e)=>Padding(
+            padding:const EdgeInsets.only(bottom:4),child:Text('• $e')))],
+          const SizedBox(height:12),const Text('Após fechar, reabra o quadro antes de alterar seus dados ou vínculos.')
+        ])),
+        actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('Cancelar')),
+          FilledButton(onPressed:()=>Navigator.pop(context,true),
+            child:Text(readiness.isReady?'Fechar quadro':'Fechar mesmo assim'))]));
+      if(confirmed!=true||!mounted)return;
+      final now=DateTime.now().toUtc();
+      await widget.repository.save(ProfessionalBoard(id:board.id,projectId:board.projectId,
+        revision:board.revision+1,name:board.name,description:board.description,location:board.location,
+        notes:board.notes,status:ProfessionalBoardStatus.closed,closedAt:now,
+        createdAt:board.createdAt,updatedAt:now));
+    }else{
+      final confirmed=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
+        title:const Text('Reabrir quadro?'),
+        content:const Text('O quadro voltará a aceitar alterações em seus dados e vínculos de circuitos.'),
+        actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('Cancelar')),
+          FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('Reabrir quadro'))]));
+      if(confirmed!=true||!mounted)return;
+      final now=DateTime.now().toUtc();
+      await widget.repository.save(ProfessionalBoard(id:board.id,projectId:board.projectId,
+        revision:board.revision+1,name:board.name,description:board.description,location:board.location,
+        notes:board.notes,status:ProfessionalBoardStatus.open,closedAt:null,
+        createdAt:board.createdAt,updatedAt:now));
+    }
+    await _reload();
+  }
   Future<void> _edit([ProfessionalBoard? board]) async {
     if(widget.readOnly&&board==null)return;
     final selected=board==null?<String>[]:await widget.repository.getCircuitIds(board.id);
     if(!mounted)return;
     final saved=await showDialog<bool>(context:context,builder:(_)=>_BoardDialog(
       repository:widget.repository,projectId:widget.projectId,board:board,
-      circuits:_circuits,selectedCircuitIds:selected,boardByCircuitId:_boardByCircuitId,readOnly:widget.readOnly));
+      circuits:_circuits,selectedCircuitIds:selected,boardByCircuitId:_boardByCircuitId,
+      readOnly:widget.readOnly||(board?.isClosed??false)));
     if(saved==true)await _reload();
   }
   @override Widget build(BuildContext context){
@@ -104,10 +141,19 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
               return Card(child:ListTile(title:Text(b.name),
                 subtitle:Text([
                   if(b.location.isNotEmpty)b.location,
+                  b.isClosed?'Fechado':'Aberto',
                   count==0?'Sem circuitos vinculados':'$count circuito(s)',readinessText,
                 ].join(' • ')),leading:Icon(readiness?.isReady==true?Icons.check_circle_outline:
                   readiness?.status==ProfessionalBoardReadinessStatus.reviewRequired?Icons.warning_amber_outlined:Icons.pending_outlined),
-                trailing:const Icon(Icons.chevron_right),onTap:()=>_edit(b)));});}))
+                trailing:PopupMenuButton<String>(onSelected:(value)async{
+                  if(value=='edit')await _edit(b);
+                  if(value=='toggle'&&readiness!=null)await _setClosed(b,readiness);
+                },itemBuilder:(_)=>[
+                  PopupMenuItem(value:'edit',child:Text(b.isClosed?'Visualizar quadro':'Editar quadro')),
+                  if(!widget.readOnly&&readiness!=null)PopupMenuItem(value:'toggle',
+                    child:Text(b.isClosed?'Reabrir quadro':'Fechar quadro')),
+                ]),
+                onTap:()=>_edit(b)));});}))
       ]));
   }
 }
