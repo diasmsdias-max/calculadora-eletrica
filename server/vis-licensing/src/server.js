@@ -130,6 +130,7 @@ async function createCustomer(req, res) {
   const customer = {
     id: randomUUID(), name: body.name.trim(), companyName: body.companyName?.trim() || null,
     phone: body.phone?.trim() || null, email: body.email?.trim() || null,
+    taxId: body.taxId?.trim() || null, notes: body.notes?.trim() || null,
     status: 'ACTIVE', createdAt: new Date().toISOString(),
   };
   state.customers.set(customer.id, customer);
