@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 15;
+  static const schemaVersion = 16;
 
   Database? _database;
 
@@ -86,6 +86,9 @@ class VisDatabase {
     if (oldVersion < 15) {
       await _enforceSingleCircuitPerLoad(db);
     }
+    if (oldVersion < 16) {
+      await _addProfessionalBoardClosureColumns(db);
+    }
   }
 
   static Future<void> _createProfessionalProjectsTable(Database db) async {
@@ -99,6 +102,8 @@ class VisDatabase {
         address TEXT NOT NULL DEFAULT '',
         responsible TEXT NOT NULL DEFAULT '',
         notes TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        closed_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -192,6 +197,19 @@ class VisDatabase {
       'idx_professional_circuit_loads_load_id '
       'ON professional_circuit_loads(load_id)',
     );
+  }
+
+  static Future<void> _addProfessionalBoardClosureColumns(Database db) async {
+    final tables=await db.rawQuery("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'professional_boards'");
+    if(tables.isEmpty)return;
+    final columns=await db.rawQuery('PRAGMA table_info(professional_boards)');
+    final names=columns.map((row)=>row['name'] as String).toSet();
+    if(!names.contains('status')){
+      await db.execute("ALTER TABLE professional_boards ADD COLUMN status TEXT NOT NULL DEFAULT 'open'");
+    }
+    if(!names.contains('closed_at')){
+      await db.execute('ALTER TABLE professional_boards ADD COLUMN closed_at TEXT');
+    }
   }
 
   static Future<void> _createProfessionalBoardsTables(Database db) async {
