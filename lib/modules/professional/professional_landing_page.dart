@@ -207,6 +207,10 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
         'LICENSE_INACTIVE' => 'Esta licença está inativa.',
         'LICENSE_EXPIRED' => 'Esta licença está expirada.',
         'DEVICE_LIMIT_REACHED' => 'Limite de dispositivos atingido.',
+        'NETWORK_ERROR' => 'Servidor de licenciamento indisponível. Verifique a conexão e tente novamente.',
+        'TLS_ERROR' => 'Não foi possível validar a conexão segura com o servidor.',
+        'CREDENTIAL_INVALID' => 'A autorização recebida não pôde ser validada.',
+        'INVALID_RESPONSE' || 'SERVER_ERROR' => 'O servidor de licenciamento retornou uma resposta inválida.',
         _ => 'Não foi possível concluir a ativação. Verifique a conexão e tente novamente.',
       };
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));

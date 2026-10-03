@@ -35,7 +35,9 @@ class VisLicenseProvider implements LicenseProvider {
         credential: credential,
         installationId: installationId,
       );
-      if (verified == null) return const LicenseState(status: LicenseStatus.inactive);
+      if (verified == null) {
+        return const LicenseState(status: LicenseStatus.inactive);
+      }
       if (!verified.isOfflineValid) {
         return const LicenseState(status: LicenseStatus.validationRequired);
       }
@@ -94,7 +96,7 @@ class VisLicenseProvider implements LicenseProvider {
   ) async {
     final rawCredential = response['credential'];
     if (rawCredential is! Map) {
-      return const LicenseState(status: LicenseStatus.inactive);
+      throw const VisLicenseApiException('CREDENTIAL_INVALID');
     }
     final credential = Map<String, dynamic>.from(rawCredential);
     final verified = await verifier.verify(
@@ -102,7 +104,7 @@ class VisLicenseProvider implements LicenseProvider {
       installationId: installationId,
     );
     if (verified == null || !verified.isOfflineValid) {
-      return const LicenseState(status: LicenseStatus.inactive);
+      throw const VisLicenseApiException('CREDENTIAL_INVALID');
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_credentialKey, jsonEncode(credential));

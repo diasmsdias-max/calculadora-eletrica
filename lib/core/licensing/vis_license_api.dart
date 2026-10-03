@@ -1,10 +1,18 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 class VisLicenseApi {
   final Uri baseUri;
+  final Duration timeout;
+  final HttpClient Function() clientFactory;
 
-  VisLicenseApi(Uri baseUri) : baseUri = _validatedBaseUri(baseUri);
+  VisLicenseApi(
+    Uri baseUri, {
+    this.timeout = const Duration(seconds: 20),
+    HttpClient Function()? clientFactory,
+  })  : baseUri = _validatedBaseUri(baseUri),
+        clientFactory = clientFactory ?? HttpClient.new;
 
   static Uri _validatedBaseUri(Uri uri) {
     if (uri.scheme != 'https' ||
@@ -29,7 +37,7 @@ class VisLicenseApi {
       throw const VisLicenseApiException('INVALID_ENDPOINT');
     }
 
-    final client = HttpClient();
+    final client = clientFactory()..connectionTimeout = timeout;
     try {
       final uri = baseUri.resolve(endpoint);
       if (uri.scheme != baseUri.scheme ||
@@ -39,13 +47,13 @@ class VisLicenseApi {
         throw const VisLicenseApiException('INVALID_ENDPOINT');
       }
 
-      final request = await client.postUrl(uri);
+      final request = await client.postUrl(uri).timeout(timeout);
       request.headers.contentType = ContentType.json;
       request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
       request.write(jsonEncode(body));
 
-      final response = await request.close();
-      final raw = await utf8.decoder.bind(response).join();
+      final response = await request.close().timeout(timeout);
+      final raw = await utf8.decoder.bind(response).join().timeout(timeout);
 
       Map<String, dynamic> decoded;
       try {
@@ -71,6 +79,8 @@ class VisLicenseApi {
     } on HandshakeException {
       throw const VisLicenseApiException('TLS_ERROR');
     } on HttpException {
+      throw const VisLicenseApiException('NETWORK_ERROR');
+    } on TimeoutException {
       throw const VisLicenseApiException('NETWORK_ERROR');
     } finally {
       client.close(force: true);
