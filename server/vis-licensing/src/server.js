@@ -205,9 +205,39 @@ async function activate(req, res) {
   });
 }
 
+function serveStatic(res, fileName, contentType) {
+  const publicRoot = path.join(__dirname, '..', 'public');
+  const filePath = path.join(publicRoot, fileName);
+  const data = fs.readFileSync(filePath);
+  res.writeHead(200, {
+    'content-type': contentType,
+    'content-length': data.length,
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(data);
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const path = new URL(req.url, 'http://localhost').pathname;
+    if (req.method === 'GET' && (path === '/admin-ui' || path === '/admin-ui/')) {
+      return serveStatic(res, 'index.html', 'text/html; charset=utf-8');
+    }
+    if (req.method === 'GET' && path === '/admin-ui/styles.css') {
+      return serveStatic(res, 'styles.css', 'text/css; charset=utf-8');
+    }
+    if (req.method === 'GET' && path === '/admin/dashboard') {
+      const activeDevices = [...state.installations.values()].filter((item) => item.status === 'ACTIVE').length;
+      return json(res, 200, {
+        contractVersion: 1,
+        counts: {
+          customers: state.customers.size,
+          licenses: state.licensesByHash.size,
+          activeDevices,
+        },
+      });
+    }
     if (req.method === 'GET' && path === '/health') {
       return json(res, 200, { status: 'ok', service: 'vis-licensing', contractVersion: 1 });
     }
