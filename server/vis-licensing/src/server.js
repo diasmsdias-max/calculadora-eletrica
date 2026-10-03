@@ -13,6 +13,11 @@ const host = process.env.VIS_LICENSE_HOST || '127.0.0.1';
 const signingKeyPath = process.env.VIS_LICENSE_PRIVATE_KEY_FILE || '';
 const signingKeyId = process.env.VIS_LICENSE_KEY_ID || 'vis-license-signing-1';
 const dataFile = process.env.VIS_LICENSE_DATA_FILE || path.join(__dirname, '..', '.local-data', 'licensing-v1.json');
+const adminToken = process.env.VIS_LICENSE_ADMIN_TOKEN || '';
+
+if (host !== '127.0.0.1' && host !== '::1' && !adminToken) {
+  throw new Error('VIS_LICENSE_ADMIN_TOKEN é obrigatório ao expor o servidor fora do loopback.');
+}
 
 if (!signingKeyPath) {
   throw new Error('VIS_LICENSE_PRIVATE_KEY_FILE é obrigatório. A chave privada deve ficar fora do repositório.');
@@ -365,6 +370,13 @@ function serveStatic(res, fileName, contentType) {
 const server = http.createServer(async (req, res) => {
   try {
     const path = new URL(req.url, 'http://localhost').pathname;
+    const isAdminPath = path === '/admin-ui' || path.startsWith('/admin-ui/') || path === '/admin' || path.startsWith('/admin/');
+    if (isAdminPath && adminToken) {
+      const supplied = req.headers['x-vis-admin-token'];
+      if (typeof supplied !== 'string' || supplied !== adminToken) {
+        return error(res, 401, 'ADMIN_AUTH_REQUIRED', 'Autenticação administrativa obrigatória.');
+      }
+    }
     if (req.method === 'GET' && (path === '/admin-ui' || path === '/admin-ui/')) {
       return serveStatic(res, 'index.html', 'text/html; charset=utf-8');
     }
