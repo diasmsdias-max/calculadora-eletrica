@@ -57,6 +57,24 @@ void main() {
     await db.close();
   });
 
+  test('board persists closed and reopened state',() async{
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath);await db.execute('PRAGMA foreign_keys = ON');
+    await VisDatabase.createSchemaForTesting(db);
+    final projects=SqliteProfessionalProjectRepository(db);final boards=SqliteProfessionalBoardRepository(db);
+    final t=DateTime.utc(2026,10,1);final closed=DateTime.utc(2026,10,2);
+    await projects.save(ProfessionalProject(id:'p',revision:1,name:'P',createdAt:t,updatedAt:t));
+    await boards.save(ProfessionalBoard(id:'b',projectId:'p',revision:2,name:'QD1',
+      status:ProfessionalBoardStatus.closed,closedAt:closed,createdAt:t,updatedAt:closed));
+    var board=await boards.getById('b');
+    expect(board!.isClosed,isTrue);expect(board.closedAt,closed);
+    final reopened=DateTime.utc(2026,10,3);
+    await boards.save(ProfessionalBoard(id:'b',projectId:'p',revision:3,name:'QD1',
+      status:ProfessionalBoardStatus.open,createdAt:t,updatedAt:reopened));
+    board=await boards.getById('b');
+    expect(board!.isClosed,isFalse);expect(board.closedAt,isNull);expect(board.revision,3);
+    await db.close();
+  });
+
   test('deleting board removes assignment but preserves circuit', () async {
     final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
     await db.execute('PRAGMA foreign_keys = ON');
