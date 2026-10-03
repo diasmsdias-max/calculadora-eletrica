@@ -5,11 +5,14 @@ const {
   randomUUID, randomBytes, createHash, createPrivateKey, createPublicKey, sign,
 } = require('node:crypto');
 const fs = require('node:fs');
+const path = require('node:path');
+const { JsonStore } = require('./store');
 
 const port = Number(process.env.VIS_LICENSE_PORT || 8787);
 const host = process.env.VIS_LICENSE_HOST || '127.0.0.1';
 const signingKeyPath = process.env.VIS_LICENSE_PRIVATE_KEY_FILE || '';
 const signingKeyId = process.env.VIS_LICENSE_KEY_ID || 'vis-license-signing-1';
+const dataFile = process.env.VIS_LICENSE_DATA_FILE || path.join(__dirname, '..', '.local-data', 'licensing-v1.json');
 
 if (!signingKeyPath) {
   throw new Error('VIS_LICENSE_PRIVATE_KEY_FILE é obrigatório. A chave privada deve ficar fora do repositório.');
@@ -20,24 +23,39 @@ if (privateKey.asymmetricKeyType !== 'ed25519') {
 }
 const publicKeyPem = createPublicKey(privateKey).export({ type: 'spki', format: 'pem' });
 
+const store = new JsonStore(dataFile);
+const persisted = store.load();
 const state = {
-  customers: new Map(),
-  plans: new Map(),
-  licensesByHash: new Map(),
-  installations: new Map(),
-  audit: [],
+  customers: new Map(persisted.customers.map((item) => [item.id, item])),
+  plans: new Map(persisted.plans.map((item) => [item.code, item])),
+  licensesByHash: new Map(persisted.licenses.map((item) => [item.activationKeyHash, item])),
+  installations: new Map(persisted.installations.map((item) => [item.storageKey, item])),
+  audit: persisted.audit,
 };
 
-const professionalPlan = {
-  id: randomUUID(),
-  code: 'professional',
-  name: 'VIS ELECTRICA Profissional',
-  defaultMaxDevices: 1,
-  offlineDays: 7,
-  permissions: ['professional'],
-  status: 'ACTIVE',
-};
-state.plans.set(professionalPlan.code, professionalPlan);
+if (!state.plans.has('professional')) {
+  state.plans.set('professional', {
+    id: randomUUID(),
+    code: 'professional',
+    name: 'VIS ELECTRICA Profissional',
+    defaultMaxDevices: 1,
+    offlineDays: 7,
+    permissions: ['professional'],
+    status: 'ACTIVE',
+  });
+  persist();
+}
+
+function persist() {
+  store.save({
+    schemaVersion: 1,
+    customers: [...state.customers.values()],
+    plans: [...state.plans.values()],
+    licenses: [...state.licensesByHash.values()],
+    installations: [...state.installations.entries()].map(([storageKey, item]) => ({ ...item, storageKey })),
+    audit: state.audit,
+  });
+}
 
 function sha256(value) {
   return createHash('sha256').update(value, 'utf8').digest('hex');
@@ -92,6 +110,7 @@ function generateActivationKey() {
 }
 function audit(action, data = {}) {
   state.audit.push({ id: randomUUID(), occurredAt: new Date().toISOString(), action, ...data });
+  persist();
 }
 
 async function createCustomer(req, res) {
@@ -105,6 +124,7 @@ async function createCustomer(req, res) {
     status: 'ACTIVE', createdAt: new Date().toISOString(),
   };
   state.customers.set(customer.id, customer);
+  persist();
   audit('CUSTOMER_CREATED', { customerId: customer.id });
   return json(res, 201, { contractVersion: 1, customer });
 }
@@ -127,6 +147,7 @@ async function createLicense(req, res) {
     permissions: plan.permissions, createdAt: now.toISOString(),
   };
   state.licensesByHash.set(license.activationKeyHash, license);
+  persist();
   audit('LICENSE_CREATED', { customerId: customer.id, licenseId: license.id });
   return json(res, 201, {
     contractVersion: 1,
@@ -161,9 +182,11 @@ async function activate(req, res) {
       activatedAt: new Date().toISOString(), lastSeenAt: new Date().toISOString(),
     };
     state.installations.set(key, installation);
+    persist();
     audit('INSTALLATION_ACTIVATED', { licenseId: license.id, installationId: installation.id });
   } else {
     installation.lastSeenAt = new Date().toISOString();
+    persist();
   }
 
   const plan = state.plans.get(license.planCode);
