@@ -177,6 +177,7 @@ class _ProfessionalProjectDashboardPageState
                     loadsRepository: persistence.professionalLoads,
                     sizingRepository: persistence.professionalSizing,
                     protectionsRepository: persistence.professionalProtections,
+                    materialsRepository: persistence.professionalMaterials,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
