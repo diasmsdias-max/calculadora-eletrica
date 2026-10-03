@@ -3,19 +3,33 @@ import '../../core/professional/professional_board.dart';
 import '../../core/professional/professional_board_repository.dart';
 import '../../core/professional/professional_circuit.dart';
 import '../../core/professional/professional_circuit_repository.dart';
+import '../../core/professional/professional_load.dart';
+import '../../core/professional/professional_load_repository.dart';
+import '../../core/professional/professional_sizing.dart';
+import '../../core/professional/professional_sizing_repository.dart';
+import '../../core/professional/professional_protection.dart';
+import '../../core/professional/professional_protection_repository.dart';
+import '../../core/professional/professional_circuit_technical_state.dart';
+import '../../core/professional/professional_board_readiness.dart';
 
 class ProfessionalBoardsPage extends StatefulWidget {
   final ProfessionalBoardRepository repository;
   final ProfessionalCircuitRepository circuitsRepository;
+  final ProfessionalLoadRepository loadsRepository;
+  final ProfessionalSizingRepository sizingRepository;
+  final ProfessionalProtectionRepository protectionsRepository;
   final String projectId;
   final bool readOnly;
   const ProfessionalBoardsPage({super.key, required this.repository, required this.circuitsRepository,
+    required this.loadsRepository,required this.sizingRepository,required this.protectionsRepository,
     required this.projectId, required this.readOnly});
   @override State<ProfessionalBoardsPage> createState()=>_ProfessionalBoardsPageState();
 }
 
 class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
   List<ProfessionalBoard> _boards=const[]; List<ProfessionalCircuit> _circuits=const[];
+  List<ProfessionalLoad> _loads=const[];List<ProfessionalSizing> _sizing=const[];
+  List<ProfessionalProtection> _protections=const[];
   Map<String,String> _boardByCircuitId=const{};
   Map<String,int> _circuitCountByBoardId=const{};
   final _search=TextEditingController(); String _query=''; bool _loading=true;
@@ -23,7 +37,8 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
   @override void dispose(){_search.dispose();super.dispose();}
   Future<void> _reload() async {
     final v=await Future.wait([widget.repository.getByProject(widget.projectId),
-      widget.circuitsRepository.getByProject(widget.projectId)]);
+      widget.circuitsRepository.getByProject(widget.projectId),widget.loadsRepository.getByProject(widget.projectId),
+      widget.sizingRepository.getByProject(widget.projectId),widget.protectionsRepository.getByProject(widget.projectId)]);
     final boards=v[0] as List<ProfessionalBoard>;
     final ownership=<String,String>{};
     final counts=<String,int>{};
@@ -35,8 +50,21 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
       }
     }
     if(!mounted)return; setState((){_boards=boards;
-      _circuits=v[1] as List<ProfessionalCircuit>;_boardByCircuitId=ownership;
+      _circuits=v[1] as List<ProfessionalCircuit>;_loads=v[2] as List<ProfessionalLoad>;
+      _sizing=v[3] as List<ProfessionalSizing>;_protections=v[4] as List<ProfessionalProtection>;_boardByCircuitId=ownership;
       _circuitCountByBoardId=counts;_loading=false;});
+  }
+  Future<ProfessionalBoardReadiness> _readiness(ProfessionalBoard board)async{
+    final circuitIds=(await widget.repository.getCircuitIds(board.id)).toSet();
+    final states=<ProfessionalCircuitTechnicalState>[];
+    for(final circuit in _circuits.where((c)=>circuitIds.contains(c.id))){
+      final loadIds=(await widget.circuitsRepository.getLoadIds(circuit.id)).toSet();
+      ProfessionalSizing? sizing;for(final x in _sizing){if(x.circuitId==circuit.id)sizing=x;}
+      states.add(const ProfessionalCircuitTechnicalStateEvaluator().evaluate(
+        circuit:circuit,linkedLoads:_loads.where((l)=>loadIds.contains(l.id)),sizing:sizing,
+        protections:_protections.where((p)=>p.circuitId==circuit.id)));
+    }
+    return const ProfessionalBoardReadinessEvaluator().evaluate(states);
   }
   Future<void> _edit([ProfessionalBoard? board]) async {
     if(widget.readOnly&&board==null)return;
@@ -67,12 +95,19 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
           ListView.separated(padding:const EdgeInsets.fromLTRB(16,8,16,96),itemCount:items.length,
             separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
               final b=items[i]; final count=_circuitCountByBoardId[b.id]??0;
+              return FutureBuilder<ProfessionalBoardReadiness>(future:_readiness(b),builder:(context,snapshot){
+                final readiness=snapshot.data;
+                final readinessText=readiness==null?'Verificando...':switch(readiness.status){
+                  ProfessionalBoardReadinessStatus.ready=>'Pronto para fechar',
+                  ProfessionalBoardReadinessStatus.pending=>'Pendente',
+                  ProfessionalBoardReadinessStatus.reviewRequired=>'Revisão necessária'};
               return Card(child:ListTile(title:Text(b.name),
                 subtitle:Text([
                   if(b.location.isNotEmpty)b.location,
-                  count==0?'Sem circuitos vinculados':'$count circuito(s)',
-                ].join(' • ')),trailing:const Icon(Icons.chevron_right),
-                onTap:()=>_edit(b)));}))
+                  count==0?'Sem circuitos vinculados':'$count circuito(s)',readinessText,
+                ].join(' • ')),leading:Icon(readiness?.isReady==true?Icons.check_circle_outline:
+                  readiness?.status==ProfessionalBoardReadinessStatus.reviewRequired?Icons.warning_amber_outlined:Icons.pending_outlined),
+                trailing:const Icon(Icons.chevron_right),onTap:()=>_edit(b)));});}))
       ]));
   }
 }
