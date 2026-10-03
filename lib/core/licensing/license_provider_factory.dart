@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'license_provider.dart';
-import 'license_state.dart';
 import 'vis_credential_verifier.dart';
 import 'vis_license_api.dart';
 import 'vis_license_config.dart';
