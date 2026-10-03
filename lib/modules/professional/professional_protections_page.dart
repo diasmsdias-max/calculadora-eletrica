@@ -9,6 +9,7 @@ import '../../core/professional/professional_protection_repository.dart';
 import '../../core/professional/professional_sizing.dart';
 import '../../core/professional/professional_sizing_repository.dart';
 import '../../core/professional/overcurrent_protection_validator.dart';
+import '../../core/professional/overcurrent_protection_recommender.dart';
 import '../../core/professional/technical_validation.dart';
 
 class ProfessionalProtectionsPage extends StatefulWidget {
@@ -89,6 +90,10 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
   ProfessionalCircuitAggregation? _aggregation(){if(_circuitId==null)return null;ProfessionalCircuit? circuit;for(final c in widget.circuits){if(c.id==_circuitId)circuit=c;}if(circuit==null)return null;
     final ids=widget.loadIdsByCircuit[_circuitId]?.toSet()??<String>{};return const ProfessionalCircuitAggregator().calculate(circuit:circuit,loads:widget.loads.where((l)=>ids.contains(l.id)));}
   double? _calculatedIb()=>_aggregation()?.designCurrentA;
+  OvercurrentProtectionRecommendation _recommendation()=>const OvercurrentProtectionRecommender().recommend(
+    designCurrentA:_calculatedIb(),conductorAmpacityA:_sizingFor(_circuitId)?.conductorAmpacityA);
+  void _acceptRecommendation(){final value=_recommendation().recommendedCurrentA;if(value==null)return;
+    setState(()=>_current.text=value.toString());}
   TechnicalValidationResult _validation(){final s=_sizingFor(_circuitId);return OvercurrentProtectionValidator.validate(designCurrentA:_calculatedIb(),adoptedProtectionCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),conductorAmpacityA:s?.conductorAmpacityA);}
   InputDecoration _d(String l,String h)=>InputDecoration(labelText:l,hintText:h,border:const OutlineInputBorder());
   Future<void> _save()async{if(!_key.currentState!.validate())return;final now=DateTime.now().toUtc();final old=widget.protection;
@@ -128,9 +133,11 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
       if(widget.protection?.recommendedCurrentA!=null)
         _ValidationSummary(protection:widget.protection!),
       if(widget.protection?.recommendedCurrentA!=null)const SizedBox(height:12),
-      if(_role==ProfessionalProtectionRole.overcurrent)
+      if(_role==ProfessionalProtectionRole.overcurrent)...[
+        _LiveProtectionRecommendation(result:_recommendation(),readOnly:widget.readOnly,onAccept:_acceptRecommendation),
+        const SizedBox(height:12),
         _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),aggregation:_aggregation())
-      else
+      ] else
         const Card(child:Padding(padding:EdgeInsets.all(12),child:Text('A validação Ib ≤ In ≤ Iz é aplicada somente à proteção de sobrecorrente.'))),
       const SizedBox(height:12),TextFormField(controller:_current,readOnly:widget.readOnly,
         onChanged:(_)=>setState((){}),
@@ -188,6 +195,21 @@ class _ValidationSummary extends StatelessWidget {
   }
 }
 
+
+
+
+class _LiveProtectionRecommendation extends StatelessWidget{
+  final OvercurrentProtectionRecommendation result;final bool readOnly;final VoidCallback onAccept;
+  const _LiveProtectionRecommendation({required this.result,required this.readOnly,required this.onAccept});
+  @override Widget build(BuildContext context)=>Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(
+    crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Text('Recomendação do VIS',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
+      if(result.recommendedCurrentA!=null)Text('In recomendada: ${result.recommendedCurrentA} A'),
+      Text(result.message),const SizedBox(height:4),Text(result.criterion),
+      if(result.hasRecommendation&&!readOnly)...[const SizedBox(height:8),
+        FilledButton.tonal(onPressed:onAccept,child:const Text('Aceitar recomendação'))],
+    ])));
+}
 
 class _LiveProtectionValidation extends StatelessWidget{
   final TechnicalValidationResult result;final ProfessionalSizing? sizing;final ProfessionalCircuitAggregation? aggregation;
