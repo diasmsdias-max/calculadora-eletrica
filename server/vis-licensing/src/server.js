@@ -157,6 +157,61 @@ async function createLicense(req, res) {
     activationKey,
   });
 }
+function publicLicense(license) {
+  const activeDevices = [...state.installations.values()]
+    .filter((item) => item.licenseId === license.id && item.status === 'ACTIVE').length;
+  const customer = state.customers.get(license.customerId);
+  return {
+    id: license.id,
+    customerId: license.customerId,
+    customerName: customer?.name || 'Cliente',
+    companyName: customer?.companyName || null,
+    planCode: license.planCode,
+    status: license.status,
+    validUntil: license.validUntil,
+    maxDevices: license.maxDevices,
+    activeDevices,
+    activationKeyHint: license.activationKeyHint,
+  };
+}
+
+function publicInstallation(item) {
+  const license = [...state.licensesByHash.values()].find((value) => value.id === item.licenseId);
+  const customer = license ? state.customers.get(license.customerId) : null;
+  return {
+    id: item.id,
+    licenseId: item.licenseId,
+    customerName: customer?.name || 'Cliente',
+    installationIdHint: item.installationIdHint,
+    status: item.status,
+    activatedAt: item.activatedAt,
+    lastSeenAt: item.lastSeenAt,
+    deactivatedAt: item.deactivatedAt || null,
+  };
+}
+
+async function deactivateInstallation(req, res, installationId) {
+  const body = await readJson(req);
+  const entry = [...state.installations.entries()]
+    .find(([, item]) => item.id === installationId);
+  if (!entry) return error(res, 404, 'INSTALLATION_NOT_FOUND', 'Dispositivo não encontrado.');
+  const [storageKey, installation] = entry;
+  if (installation.status !== 'ACTIVE') {
+    return json(res, 200, { contractVersion: 1, installation: publicInstallation(installation) });
+  }
+  installation.status = 'DEACTIVATED';
+  installation.deactivatedAt = new Date().toISOString();
+  installation.lastSeenAt = installation.deactivatedAt;
+  state.installations.set(storageKey, installation);
+  persist();
+  audit('INSTALLATION_DEACTIVATED', {
+    licenseId: installation.licenseId,
+    installationId: installation.id,
+    reason: typeof body.reason === 'string' ? body.reason.slice(0, 160) : 'ADMIN_TRANSFER',
+  });
+  return json(res, 200, { contractVersion: 1, installation: publicInstallation(installation) });
+}
+
 async function activate(req, res) {
   const body = await readJson(req);
   if (body.contractVersion !== 1 || !body.activationKey || !body.installationId) {
@@ -249,7 +304,23 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { contractVersion: 1, customers: [...state.customers.values()] });
     }
     if (req.method === 'POST' && path === '/admin/customers') return await createCustomer(req, res);
+    if (req.method === 'GET' && path === '/admin/licenses') {
+      return json(res, 200, {
+        contractVersion: 1,
+        licenses: [...state.licensesByHash.values()].map(publicLicense),
+      });
+    }
     if (req.method === 'POST' && path === '/admin/licenses') return await createLicense(req, res);
+    if (req.method === 'GET' && path === '/admin/installations') {
+      return json(res, 200, {
+        contractVersion: 1,
+        installations: [...state.installations.values()].map(publicInstallation),
+      });
+    }
+    const deactivateMatch = path.match(/^\/admin\/installations\/([^/]+)\/deactivate$/);
+    if (req.method === 'POST' && deactivateMatch) {
+      return await deactivateInstallation(req, res, decodeURIComponent(deactivateMatch[1]));
+    }
     if (req.method === 'POST' && path === '/api/v1/licensing/activate') return await activate(req, res);
     return error(res, 404, 'NOT_FOUND', 'Rota não encontrada.');
   } catch (e) {
