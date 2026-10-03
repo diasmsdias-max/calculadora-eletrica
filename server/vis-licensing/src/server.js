@@ -260,6 +260,91 @@ async function activate(req, res) {
   });
 }
 
+function findLicenseById(id) {
+  return [...state.licensesByHash.values()].find((item) => item.id === id);
+}
+function findInstallation(licenseId, rawInstallationId) {
+  const installationHash = sha256(rawInstallationId);
+  return state.installations.get(licenseId + ':' + installationHash);
+}
+function ensureActiveLicense(res, license) {
+  if (!license) { error(res, 404, 'LICENSE_INACTIVE', 'Licença não encontrada.'); return false; }
+  if (license.status !== 'ACTIVE') { error(res, 403, 'LICENSE_INACTIVE', 'Licença inativa.'); return false; }
+  if (new Date(license.validUntil) <= new Date()) { error(res, 403, 'LICENSE_EXPIRED', 'Licença expirada.'); return false; }
+  return true;
+}
+function licenseSessionResponse(license, installation) {
+  const plan = state.plans.get(license.planCode);
+  const offlineValidUntil = new Date(Math.min(
+    Date.now() + plan.offlineDays * 86400000,
+    new Date(license.validUntil).getTime(),
+  ));
+  const activeDevices = [...state.installations.values()]
+    .filter((item) => item.licenseId === license.id && item.status === 'ACTIVE').length;
+  return {
+    contractVersion: 1,
+    status: 'ACTIVE',
+    license: {
+      licenseId: license.id, plan: license.planCode, permissions: license.permissions,
+      commercialValidUntil: license.validUntil, maxDevices: license.maxDevices, activeDevices,
+    },
+    installation: { id: installation.id, offlineValidUntil: offlineValidUntil.toISOString() },
+    credential: issueCredential({ license, installation, plan, offlineValidUntil }),
+    serverTime: new Date().toISOString(),
+  };
+}
+async function validateOrRefresh(req, res, operation) {
+  const body = await readJson(req);
+  if (body.contractVersion !== 1 || !body.licenseId || !body.installationId) {
+    return error(res, 400, 'INVALID_REQUEST', 'Dados de licença ou instalação inválidos.');
+  }
+  const license = findLicenseById(body.licenseId);
+  if (!ensureActiveLicense(res, license)) return;
+  const installation = findInstallation(license.id, body.installationId);
+  if (!installation || installation.status !== 'ACTIVE') {
+    return error(res, 403, 'INSTALLATION_INACTIVE', 'Instalação inativa ou não autorizada.');
+  }
+  installation.lastSeenAt = new Date().toISOString();
+  persist();
+  audit(operation === 'refresh' ? 'LICENSE_REFRESHED' : 'LICENSE_VALIDATED', {
+    licenseId: license.id, installationId: installation.id,
+  });
+  return json(res, 200, licenseSessionResponse(license, installation));
+}
+async function deactivateSelf(req, res) {
+  const body = await readJson(req);
+  if (body.contractVersion !== 1 || !body.licenseId || !body.installationId) {
+    return error(res, 400, 'INVALID_REQUEST', 'Dados de licença ou instalação inválidos.');
+  }
+  const license = findLicenseById(body.licenseId);
+  if (!license) return error(res, 404, 'LICENSE_INACTIVE', 'Licença não encontrada.');
+  const installationHash = sha256(body.installationId);
+  const storageKey = license.id + ':' + installationHash;
+  const installation = state.installations.get(storageKey);
+  if (!installation || installation.status !== 'ACTIVE') {
+    return error(res, 403, 'INSTALLATION_INACTIVE', 'Instalação inativa ou não autorizada.');
+  }
+  installation.status = 'DEACTIVATED';
+  installation.deactivatedAt = new Date().toISOString();
+  installation.lastSeenAt = installation.deactivatedAt;
+  state.installations.set(storageKey, installation);
+  persist();
+  audit('INSTALLATION_SELF_DEACTIVATED', { licenseId: license.id, installationId: installation.id });
+  return json(res, 200, { contractVersion: 1, status: 'DEACTIVATED', serverTime: new Date().toISOString() });
+}
+async function setLicenseStatus(req, res, licenseId) {
+  const body = await readJson(req);
+  const license = findLicenseById(licenseId);
+  if (!license) return error(res, 404, 'LICENSE_NOT_FOUND', 'Licença não encontrada.');
+  const allowed = new Set(['ACTIVE', 'SUSPENDED', 'REVOKED']);
+  if (!allowed.has(body.status)) return error(res, 400, 'INVALID_REQUEST', 'Status de licença inválido.');
+  license.status = body.status;
+  license.updatedAt = new Date().toISOString();
+  persist();
+  audit('LICENSE_STATUS_CHANGED', { licenseId: license.id, status: license.status });
+  return json(res, 200, { contractVersion: 1, license: publicLicense(license) });
+}
+
 function serveStatic(res, fileName, contentType) {
   const publicRoot = path.join(__dirname, '..', 'public');
   const filePath = path.join(publicRoot, fileName);
@@ -321,7 +406,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && deactivateMatch) {
       return await deactivateInstallation(req, res, decodeURIComponent(deactivateMatch[1]));
     }
+    const licenseStatusMatch = path.match(/^\/admin\/licenses\/([^/]+)\/status$/);
+    if (req.method === 'POST' && licenseStatusMatch) {
+      return await setLicenseStatus(req, res, decodeURIComponent(licenseStatusMatch[1]));
+    }
     if (req.method === 'POST' && path === '/api/v1/licensing/activate') return await activate(req, res);
+    if (req.method === 'POST' && path === '/api/v1/licensing/validate') return await validateOrRefresh(req, res, 'validate');
+    if (req.method === 'POST' && path === '/api/v1/licensing/refresh') return await validateOrRefresh(req, res, 'refresh');
+    if (req.method === 'POST' && path === '/api/v1/licensing/deactivate') return await deactivateSelf(req, res);
     return error(res, 404, 'NOT_FOUND', 'Rota não encontrada.');
   } catch (e) {
     if (e instanceof SyntaxError) return error(res, 400, 'INVALID_REQUEST', 'JSON inválido.');
