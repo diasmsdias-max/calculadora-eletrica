@@ -35,7 +35,7 @@ Regras:
 4. Caso contrário, contar instalações ACTIVE.
 5. Se `activeDevices >= maxDevices`, responder `DEVICE_LIMIT_REACHED`.
 6. Registrar ativação e auditoria.
-7. Emitir credencial assinada vinculada à licença e ao `installationId`.
+7. Emitir credencial assinada vinculada à licença e ao hash SHA-256 do `installationId`. O identificador bruto não entra na credencial assinada.
 
 Sucesso:
 ```json
@@ -81,7 +81,7 @@ Antes da assinatura, o payload canônico contém no mínimo:
   "contractVersion": 1,
   "credentialFormat": "VIS-LIC-1",
   "licenseId": "lic_...",
-  "installationId": "...",
+  "installationIdHash": "<sha256-hex>",
   "plan": "professional",
   "permissions": ["professional"],
   "issuedAt": "2026-10-03T00:00:00Z",
@@ -126,7 +126,7 @@ Valor inicial: 7 dias. O servidor define `offlineValidUntil`; o APK não pode es
 
 Ao ficar offline, o app valida localmente:
 1. assinatura;
-2. `installationId` correspondente à instalação local;
+2. `installationIdHash` correspondente ao SHA-256 da instalação local;
 3. formato/versão suportados;
 4. `offlineValidUntil`;
 5. validade comercial presente na credencial;
