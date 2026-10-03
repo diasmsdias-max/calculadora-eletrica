@@ -78,6 +78,10 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
         circuit: circuit,
         availableLoads: _loads,
         selectedLoadIds: selected,
+        loadOwnerById: {
+          for (final entry in _loadIdsByCircuit.entries)
+            for (final loadId in entry.value) loadId: entry.key,
+        },
         readOnly: widget.readOnly,
       ),
     );
@@ -169,6 +173,7 @@ class _CircuitDialog extends StatefulWidget {
   final ProfessionalCircuit? circuit;
   final List<ProfessionalLoad> availableLoads;
   final List<String> selectedLoadIds;
+  final Map<String, String> loadOwnerById;
   final bool readOnly;
 
   const _CircuitDialog({
@@ -177,6 +182,7 @@ class _CircuitDialog extends StatefulWidget {
     required this.circuit,
     required this.availableLoads,
     required this.selectedLoadIds,
+    required this.loadOwnerById,
     required this.readOnly,
   });
 
@@ -283,16 +289,23 @@ class _CircuitDialogState extends State<_CircuitDialog> {
                   child: Text('Cadastre cargas no projeto para vinculá-las ao circuito.'),
                 )
               else
-                ...widget.availableLoads.map((load) => CheckboxListTile(
-                  value: _selected.contains(load.id),
-                  onChanged: widget.readOnly ? null : (checked) => setState(() {
-                    if (checked == true) { _selected.add(load.id); } else { _selected.remove(load.id); }
-                  }),
-                  title: Text(load.name),
-                  subtitle: load.category.isEmpty ? null : Text(load.category),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                )),
+                ...widget.availableLoads.map((load) {
+                  final owner = widget.loadOwnerById[load.id];
+                  final linkedElsewhere = owner != null && owner != widget.circuit?.id;
+                  return CheckboxListTile(
+                    value: _selected.contains(load.id),
+                    onChanged: widget.readOnly || linkedElsewhere ? null : (checked) => setState(() {
+                      if (checked == true) { _selected.add(load.id); } else { _selected.remove(load.id); }
+                    }),
+                    title: Text(load.name),
+                    subtitle: Text([
+                      if (load.category.isNotEmpty) load.category,
+                      if (linkedElsewhere) 'Já vinculada a outro circuito',
+                    ].join(' • ')),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  );
+                }),
               const SizedBox(height: 12),
               TextFormField(controller: _notes, readOnly: widget.readOnly, maxLines: 3,
                 decoration: _d('Observações', 'Informações complementares do circuito')),
