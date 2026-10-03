@@ -178,6 +178,7 @@ class _ProfessionalProjectDashboardPageState
                     sizingRepository: persistence.professionalSizing,
                     protectionsRepository: persistence.professionalProtections,
                     materialsRepository: persistence.professionalMaterials,
+                    memorialRepository: persistence.professionalMemorials,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
