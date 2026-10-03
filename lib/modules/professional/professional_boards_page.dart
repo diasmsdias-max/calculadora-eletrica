@@ -11,6 +11,8 @@ import '../../core/professional/professional_protection.dart';
 import '../../core/professional/professional_protection_repository.dart';
 import '../../core/professional/professional_circuit_technical_state.dart';
 import '../../core/professional/professional_board_readiness.dart';
+import '../../core/professional/professional_board_material_consolidator.dart';
+import '../../core/professional/professional_material_repository.dart';
 
 class ProfessionalBoardsPage extends StatefulWidget {
   final ProfessionalBoardRepository repository;
@@ -18,11 +20,12 @@ class ProfessionalBoardsPage extends StatefulWidget {
   final ProfessionalLoadRepository loadsRepository;
   final ProfessionalSizingRepository sizingRepository;
   final ProfessionalProtectionRepository protectionsRepository;
+  final ProfessionalMaterialRepository materialsRepository;
   final String projectId;
   final bool readOnly;
   const ProfessionalBoardsPage({super.key, required this.repository, required this.circuitsRepository,
     required this.loadsRepository,required this.sizingRepository,required this.protectionsRepository,
-    required this.projectId, required this.readOnly});
+    required this.materialsRepository,required this.projectId, required this.readOnly});
   @override State<ProfessionalBoardsPage> createState()=>_ProfessionalBoardsPageState();
 }
 
@@ -83,6 +86,11 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
             child:Text(readiness.isReady?'Fechar quadro':'Fechar mesmo assim'))]));
       if(confirmed!=true||!mounted)return;
       final now=DateTime.now().toUtc();
+      final circuitIds=await widget.repository.getCircuitIds(board.id);
+      final generated=const ProfessionalBoardMaterialConsolidator().build(
+        projectId:board.projectId,boardId:board.id,circuitIds:circuitIds,
+        protections:_protections,generatedAt:now);
+      await widget.materialsRepository.replaceGeneratedForBoard(board.projectId,board.id,generated);
       await widget.repository.save(ProfessionalBoard(id:board.id,projectId:board.projectId,
         revision:board.revision+1,name:board.name,description:board.description,location:board.location,
         notes:board.notes,status:ProfessionalBoardStatus.closed,closedAt:now,
