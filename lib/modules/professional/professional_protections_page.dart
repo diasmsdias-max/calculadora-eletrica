@@ -11,6 +11,7 @@ import '../../core/professional/professional_sizing_repository.dart';
 import '../../core/professional/overcurrent_protection_validator.dart';
 import '../../core/professional/overcurrent_protection_recommender.dart';
 import '../../core/professional/technical_validation.dart';
+import '../../core/professional/professional_calculation_freshness.dart';
 
 class ProfessionalProtectionsPage extends StatefulWidget {
   final ProfessionalProtectionRepository repository;
@@ -33,6 +34,14 @@ class _State extends State<ProfessionalProtectionsPage>{
     final circuits=v[1] as List<ProfessionalCircuit>;final links=await Future.wait(circuits.map((c)=>widget.circuitsRepository.getLoadIds(c.id)));
     if(!mounted)return;setState((){_items=v[0] as List<ProfessionalProtection>;_circuits=circuits;_sizing=v[2] as List<ProfessionalSizing>;_loads=v[3] as List<ProfessionalLoad>;
       _loadIdsByCircuit.clear();for(var i=0;i<circuits.length;i++){_loadIdsByCircuit[circuits[i].id]=links[i];}_loading=false;});}
+  bool _needsReview(ProfessionalProtection p){
+    ProfessionalCircuit? circuit;for(final c in _circuits){if(c.id==p.circuitId)circuit=c;}
+    if(circuit==null)return true;
+    ProfessionalSizing? sizing;for(final x in _sizing){if(x.circuitId==p.circuitId)sizing=x;}
+    final ids=_loadIdsByCircuit[p.circuitId]?.toSet()??<String>{};
+    return ProfessionalCalculationFreshness.protectionNeedsReview(
+      protection:p,circuit:circuit,linkedLoads:_loads.where((l)=>ids.contains(l.id)),sizing:sizing);
+  }
   Future<void> _edit([ProfessionalProtection? p])async{
     if(widget.readOnly&&p==null)return;
     final ok=await showDialog<bool>(context:context,builder:(_)=>_ProtectionDialog(repository:widget.repository,
@@ -60,11 +69,14 @@ class _State extends State<ProfessionalProtectionsPage>{
           ListView.separated(padding:const EdgeInsets.fromLTRB(16,8,16,96),itemCount:list.length,
             separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){final p=list[i];
               final circuit=_circuits.where((c)=>c.id==p.circuitId).firstOrNull;
+              final needsReview=_needsReview(p);
               return Card(child:ListTile(title:Text(p.name),subtitle:Text([
+                if(needsReview)'Revisar proteção',
                 if(p.deviceType.isNotEmpty)p.deviceType,if(circuit!=null)circuit.name,
                 if(p.recommendedCurrentA!=null)'Recomendado: ${p.recommendedCurrentA} A',
                 if(p.ratedCurrentA!=null)'Adotado: ${p.ratedCurrentA} A',
                 if(p.validationStatus.isNotEmpty)p.validationStatus].join(' • ')),
+                leading:Icon(needsReview?Icons.warning_amber_outlined:Icons.shield_outlined),
                 trailing:const Icon(Icons.chevron_right),onTap:()=>_edit(p)));}))
       ]));
   }
