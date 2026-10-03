@@ -21,7 +21,11 @@ const privateKey = createPrivateKey(fs.readFileSync(signingKeyPath));
 if (privateKey.asymmetricKeyType !== 'ed25519') {
   throw new Error('A chave de licenciamento deve ser Ed25519.');
 }
-const publicKeyPem = createPublicKey(privateKey).export({ type: 'spki', format: 'pem' });
+const publicKey = createPublicKey(privateKey);
+const publicKeyPem = publicKey.export({ type: 'spki', format: 'pem' });
+const publicKeyDer = publicKey.export({ type: 'spki', format: 'der' });
+// Ed25519 SPKI DER termina nos 32 bytes da chave pública (RFC 8410).
+const publicKeyRawBase64 = Buffer.from(publicKeyDer).subarray(-32).toString('base64');
 
 const store = new JsonStore(dataFile);
 const persisted = store.load();
@@ -382,7 +386,13 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { status: 'ok', service: 'vis-licensing', contractVersion: 1 });
     }
     if (req.method === 'GET' && path === '/api/v1/licensing/public-key') {
-      return json(res, 200, { contractVersion: 1, keyId: signingKeyId, algorithm: 'Ed25519', publicKeyPem });
+      return json(res, 200, {
+        contractVersion: 1,
+        keyId: signingKeyId,
+        algorithm: 'Ed25519',
+        publicKeyPem,
+        publicKeyRawBase64,
+      });
     }
     // /admin permanece bootstrap local sem exposição de rede.
     if (req.method === 'GET' && path === '/admin/customers') {
