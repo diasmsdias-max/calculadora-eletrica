@@ -342,6 +342,38 @@ async function deactivateSelf(req, res) {
   audit('INSTALLATION_SELF_DEACTIVATED', { licenseId: license.id, installationId: installation.id });
   return json(res, 200, { contractVersion: 1, status: 'DEACTIVATED', serverTime: new Date().toISOString() });
 }
+async function updateLicense(req, res, licenseId) {
+  const body = await readJson(req);
+  const license = findLicenseById(licenseId);
+  if (!license) return error(res, 404, 'LICENSE_NOT_FOUND', 'Licença não encontrada.');
+  if (body.validUntil !== undefined) {
+    const validUntil = new Date(body.validUntil);
+    if (Number.isNaN(validUntil.getTime()) || validUntil <= new Date()) {
+      return error(res, 400, 'INVALID_REQUEST', 'Validade da licença inválida.');
+    }
+    license.validUntil = validUntil.toISOString();
+  }
+  if (body.maxDevices !== undefined) {
+    if (!Number.isInteger(body.maxDevices) || body.maxDevices < 1 || body.maxDevices > 100) {
+      return error(res, 400, 'INVALID_REQUEST', 'Limite de dispositivos inválido.');
+    }
+    const activeDevices = [...state.installations.values()]
+      .filter((item) => item.licenseId === license.id && item.status === 'ACTIVE').length;
+    if (body.maxDevices < activeDevices) {
+      return error(res, 409, 'DEVICE_LIMIT_BELOW_ACTIVE', 'Desative dispositivos antes de reduzir o limite.');
+    }
+    license.maxDevices = body.maxDevices;
+  }
+  license.updatedAt = new Date().toISOString();
+  persist();
+  audit('LICENSE_UPDATED', {
+    licenseId: license.id,
+    validUntil: license.validUntil,
+    maxDevices: license.maxDevices,
+  });
+  return json(res, 200, { contractVersion: 1, license: publicLicense(license) });
+}
+
 async function setLicenseStatus(req, res, licenseId) {
   const body = await readJson(req);
   const license = findLicenseById(licenseId);
@@ -428,6 +460,10 @@ const server = http.createServer(async (req, res) => {
     const deactivateMatch = path.match(/^\/admin\/installations\/([^/]+)\/deactivate$/);
     if (req.method === 'POST' && deactivateMatch) {
       return await deactivateInstallation(req, res, decodeURIComponent(deactivateMatch[1]));
+    }
+    const licenseUpdateMatch = path.match(/^\/admin\/licenses\/([^/]+)$/);
+    if (req.method === 'PATCH' && licenseUpdateMatch) {
+      return await updateLicense(req, res, decodeURIComponent(licenseUpdateMatch[1]));
     }
     const licenseStatusMatch = path.match(/^\/admin\/licenses\/([^/]+)\/status$/);
     if (req.method === 'POST' && licenseStatusMatch) {
