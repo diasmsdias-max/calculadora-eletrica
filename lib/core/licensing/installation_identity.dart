@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class InstallationIdentity {
+  const InstallationIdentity();
   static const _key = 'vis_license_installation_id';
 
   Future<String> getOrCreate() async {
