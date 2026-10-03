@@ -102,8 +102,6 @@ class VisDatabase {
         address TEXT NOT NULL DEFAULT '',
         responsible TEXT NOT NULL DEFAULT '',
         notes TEXT NOT NULL DEFAULT '',
-        status TEXT NOT NULL DEFAULT 'open',
-        closed_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -223,6 +221,8 @@ class VisDatabase {
         description TEXT NOT NULL DEFAULT '',
         location TEXT NOT NULL DEFAULT '',
         notes TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        closed_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (project_id) REFERENCES professional_projects(id) ON DELETE CASCADE
