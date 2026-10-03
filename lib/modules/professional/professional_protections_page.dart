@@ -101,7 +101,9 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
       breakingCapacityKa:_breaking.text.trim().isEmpty?null:_n(_breaking.text),notes:_notes.text,
       createdAt:old?.createdAt??now,updatedAt:now));if(mounted)Navigator.of(context).pop(true);}
   @override Widget build(BuildContext context)=>AlertDialog(title:Text(widget.protection==null?'Nova proteção':widget.protection!.name),
-    content:SizedBox(width:560,child:Form(key:_key,child:SingleChildScrollView(child:Column(children:[
+    content:SizedBox(width:560,child:Form(key:_key,child:SingleChildScrollView(
+      keyboardDismissBehavior:ScrollViewKeyboardDismissBehavior.onDrag,
+      child:Column(children:[
       DropdownButtonFormField<String>(initialValue:_circuitId,decoration:_d('Circuito','Selecione o circuito protegido'),
         items:widget.circuits.map((c)=>DropdownMenuItem(value:c.id,child:Text(c.name))).toList(),
         onChanged:widget.readOnly?null:(v)=>setState(()=>_circuitId=v),
