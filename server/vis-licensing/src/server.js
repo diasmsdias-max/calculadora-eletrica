@@ -245,6 +245,9 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { contractVersion: 1, keyId: signingKeyId, algorithm: 'Ed25519', publicKeyPem });
     }
     // /admin permanece bootstrap local sem exposição de rede.
+    if (req.method === 'GET' && path === '/admin/customers') {
+      return json(res, 200, { contractVersion: 1, customers: [...state.customers.values()] });
+    }
     if (req.method === 'POST' && path === '/admin/customers') return await createCustomer(req, res);
     if (req.method === 'POST' && path === '/admin/licenses') return await createLicense(req, res);
     if (req.method === 'POST' && path === '/api/v1/licensing/activate') return await activate(req, res);
