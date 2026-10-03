@@ -16,14 +16,22 @@ class ProfessionalBoardsPage extends StatefulWidget {
 
 class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
   List<ProfessionalBoard> _boards=const[]; List<ProfessionalCircuit> _circuits=const[];
+  Map<String,String> _boardByCircuitId=const{};
   final _search=TextEditingController(); String _query=''; bool _loading=true;
   @override void initState(){super.initState();_reload();}
   @override void dispose(){_search.dispose();super.dispose();}
   Future<void> _reload() async {
     final v=await Future.wait([widget.repository.getByProject(widget.projectId),
       widget.circuitsRepository.getByProject(widget.projectId)]);
-    if(!mounted)return; setState((){_boards=v[0] as List<ProfessionalBoard>;
-      _circuits=v[1] as List<ProfessionalCircuit>;_loading=false;});
+    final boards=v[0] as List<ProfessionalBoard>;
+    final ownership=<String,String>{};
+    for(final board in boards){
+      for(final circuitId in await widget.repository.getCircuitIds(board.id)){
+        ownership[circuitId]=board.id;
+      }
+    }
+    if(!mounted)return; setState((){_boards=boards;
+      _circuits=v[1] as List<ProfessionalCircuit>;_boardByCircuitId=ownership;_loading=false;});
   }
   Future<void> _edit([ProfessionalBoard? board]) async {
     if(widget.readOnly&&board==null)return;
@@ -31,7 +39,7 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
     if(!mounted)return;
     final saved=await showDialog<bool>(context:context,builder:(_)=>_BoardDialog(
       repository:widget.repository,projectId:widget.projectId,board:board,
-      circuits:_circuits,selectedCircuitIds:selected,readOnly:widget.readOnly));
+      circuits:_circuits,selectedCircuitIds:selected,boardByCircuitId:_boardByCircuitId,readOnly:widget.readOnly));
     if(saved==true)await _reload();
   }
   @override Widget build(BuildContext context){
@@ -62,9 +70,10 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
 
 class _BoardDialog extends StatefulWidget {
   final ProfessionalBoardRepository repository; final String projectId; final ProfessionalBoard? board;
-  final List<ProfessionalCircuit> circuits; final List<String> selectedCircuitIds; final bool readOnly;
+  final List<ProfessionalCircuit> circuits; final List<String> selectedCircuitIds;
+  final Map<String,String> boardByCircuitId; final bool readOnly;
   const _BoardDialog({required this.repository,required this.projectId,required this.board,
-    required this.circuits,required this.selectedCircuitIds,required this.readOnly});
+    required this.circuits,required this.selectedCircuitIds,required this.boardByCircuitId,required this.readOnly});
   @override State<_BoardDialog> createState()=>_BoardDialogState();
 }
 class _BoardDialogState extends State<_BoardDialog>{
@@ -95,10 +104,17 @@ class _BoardDialogState extends State<_BoardDialog>{
         const SizedBox(height:16),Text('Circuitos do quadro',style:Theme.of(context).textTheme.titleMedium),
         if(widget.circuits.isEmpty)const Padding(padding:EdgeInsets.only(top:8),
           child:Text('Cadastre circuitos no projeto para vinculá-los ao quadro.'))
-        else ...widget.circuits.map((c)=>CheckboxListTile(value:_selected.contains(c.id),
-          onChanged:widget.readOnly?null:(v)=>setState((){if(v==true){_selected.add(c.id);}else{_selected.remove(c.id);}}),
-          title:Text(c.name),subtitle:c.description.isEmpty?null:Text(c.description),
-          controlAffinity:ListTileControlAffinity.leading,contentPadding:EdgeInsets.zero)),
+        else ...widget.circuits.map((c){
+          final owner=widget.boardByCircuitId[c.id];
+          final linkedElsewhere=owner!=null&&owner!=widget.board?.id;
+          return CheckboxListTile(value:_selected.contains(c.id),
+            onChanged:widget.readOnly||linkedElsewhere?null:(v)=>setState((){if(v==true){_selected.add(c.id);}else{_selected.remove(c.id);}}),
+            title:Text(c.name),subtitle:Text([
+              if(c.description.isNotEmpty)c.description,
+              if(linkedElsewhere)'Já vinculado a outro quadro',
+            ].join(' • ')),
+            controlAffinity:ListTileControlAffinity.leading,contentPadding:EdgeInsets.zero);
+        }),
         const SizedBox(height:12),TextFormField(controller:_notes,readOnly:widget.readOnly,maxLines:3,
           decoration:_d('Observações','Informações complementares do quadro'))
       ])))),
