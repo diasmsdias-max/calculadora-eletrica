@@ -16,7 +16,7 @@ class VisLicenseProvider implements LicenseProvider {
   final VisCredentialVerifier verifier;
   final InstallationIdentity identity;
 
-  const VisLicenseProvider({
+  VisLicenseProvider({
     required this.api,
     required this.verifier,
     InstallationIdentity? identity,
