@@ -19,8 +19,8 @@ class VisLicenseProvider implements LicenseProvider {
   const VisLicenseProvider({
     required this.api,
     required this.verifier,
-    this.identity = const InstallationIdentity(),
-  });
+    InstallationIdentity? identity,
+  }) : identity = identity ?? const InstallationIdentity();
 
   @override
   Future<LicenseState> currentState() async {
