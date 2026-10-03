@@ -255,6 +255,11 @@ class _ProfessionalProjectDashboardPageState
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfessionalMemorialPage(
                     repository: persistence.professionalMemorials,
+                    boardsRepository: persistence.professionalBoards,
+                    circuitsRepository: persistence.professionalCircuits,
+                    loadsRepository: persistence.professionalLoads,
+                    sizingRepository: persistence.professionalSizing,
+                    protectionsRepository: persistence.professionalProtections,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
