@@ -42,6 +42,9 @@ class ProfessionalCircuitTechnicalStateEvaluator {
       issues.add('Proteção de sobrecorrente ainda não definida.');
     } else if (!overcurrent.any((p) => (p.ratedCurrentA ?? 0) > 0)) {
       issues.add('Proteção de sobrecorrente sem corrente nominal (In) válida.');
+    } else if (overcurrent.any((p) => p.validationStatus == 'nonCompliant')) {
+      issues.add('Proteção de sobrecorrente fora do critério Ib ≤ In ≤ Iz.');
+      reviewRequired = true;
     }
 
     if (sizing != null &&
