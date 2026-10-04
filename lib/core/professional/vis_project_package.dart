@@ -124,6 +124,9 @@ class VisProjectPackage {
 
     for (final entry in circuitLoadIds.entries) {
       if (!circuitIds.contains(entry.key)) throw const FormatException('Relation references unknown circuit.');
+      if (entry.value.toSet().length != entry.value.length) {
+        throw const FormatException('Duplicate circuit-load relation.');
+      }
       for (final id in entry.value) {
         if (!loadIds.contains(id)) throw const FormatException('Relation references unknown load.');
       }
@@ -131,6 +134,9 @@ class VisProjectPackage {
     final assignedCircuits = <String>{};
     for (final entry in boardCircuitIds.entries) {
       if (!boardIds.contains(entry.key)) throw const FormatException('Relation references unknown board.');
+      if (entry.value.toSet().length != entry.value.length) {
+        throw const FormatException('Duplicate board-circuit relation.');
+      }
       for (final id in entry.value) {
         if (!circuitIds.contains(id)) throw const FormatException('Relation references unknown circuit.');
         if (!assignedCircuits.add(id)) throw const FormatException('Circuit assigned to more than one board.');
