@@ -21,6 +21,7 @@ import '../professional/professional_memorial_repository.dart';
 import '../professional/sqlite_professional_memorial_repository.dart';
 import '../technical_center/technical_document_repository.dart';
 import '../technical_center/sqlite_technical_document_repository.dart';
+import '../professional/vis_project_transfer_service.dart';
 
 class V2Persistence {
   final ProjectRepository projects;
@@ -34,6 +35,7 @@ class V2Persistence {
   final ProfessionalMaterialRepository professionalMaterials;
   final ProfessionalMemorialRepository professionalMemorials;
   final TechnicalDocumentRepository technicalDocuments;
+  final VisProjectTransferService projectTransfer;
 
   const V2Persistence({
     required this.projects,
@@ -47,6 +49,7 @@ class V2Persistence {
     required this.professionalMaterials,
     required this.professionalMemorials,
     required this.technicalDocuments,
+    required this.projectTransfer,
   });
 }
 
@@ -91,6 +94,7 @@ class V2PersistenceFactory {
       professionalMaterials: SqliteProfessionalMaterialRepository(db),
       professionalMemorials: SqliteProfessionalMemorialRepository(db),
       technicalDocuments: SqliteTechnicalDocumentRepository(db),
+      projectTransfer: VisProjectTransferService(db),
     );
   }
 }
