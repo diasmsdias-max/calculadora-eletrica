@@ -102,4 +102,22 @@ void main() {
     expect(materials.map((row)=>row['id']).toList(),['manual']);
   });
 
+  test('rejects empty board identity before database changes',() async {
+    final service=ProfessionalBoardClosureService(db);
+    final invalid=ProfessionalBoard(
+      id:'',projectId:'p',revision:1,name:'Q',createdAt:t,updatedAt:t);
+
+    expect(
+      () => service.closeBoard(board:invalid,generatedMaterials:const[],closedAt:t),
+      throwsArgumentError,
+    );
+    expect(
+      () => service.reopenBoard(board:invalid,reopenedAt:t),
+      throwsArgumentError,
+    );
+
+    final persisted=(await db.query('professional_boards',where:'id = ?',whereArgs:['b'])).single;
+    expect(persisted['status'],'open');
+  });
+
 }
