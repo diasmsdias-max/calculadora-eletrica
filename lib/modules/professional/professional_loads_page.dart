@@ -21,7 +21,6 @@ class ProfessionalLoadsPage extends StatefulWidget {
     required this.circuitsRepository,
     required this.boardsRepository,
     required this.readOnly,
-    this.readOnlyMessage,
   });
 
   @override
