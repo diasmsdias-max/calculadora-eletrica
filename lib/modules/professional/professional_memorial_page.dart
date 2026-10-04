@@ -33,6 +33,7 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
   ProfessionalMemorial? _current;
   bool _loading = true;
   bool _saving = false;
+  bool _boardMissing = false;
 
   @override
   void initState() { super.initState(); _load(); }
@@ -47,7 +48,11 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
     if (widget.boardId != null) {
       final boards = await widget.boardsRepository.getByProject(widget.projectId);
       final board = boards.where((b) => b.id == widget.boardId).firstOrNull;
-      if (board != null) {
+      if (board == null) {
+        if (mounted) setState(() { _boardMissing = true; _loading = false; });
+        return;
+      }
+      {
         final circuitIds = await widget.boardsRepository.getCircuitIds(board.id);
         final circuits = await widget.circuitsRepository.getByProject(widget.projectId);
         final loads = await widget.loadsRepository.getByProject(widget.projectId);
@@ -125,7 +130,12 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(widget.boardId==null?'Memorial':'Memorial do quadro')),
-    body: _loading ? const Center(child: CircularProgressIndicator()) : ListView(
+    body: _loading ? const Center(child: CircularProgressIndicator()) : _boardMissing
+      ? const Center(child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('Quadro não encontrado. O memorial técnico não pode ser exibido.'),
+        ))
+      : ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Text(widget.boardId==null?'Memorial técnico do projeto':'Memorial técnico do quadro', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
