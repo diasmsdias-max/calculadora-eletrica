@@ -106,10 +106,7 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
           FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('Reabrir quadro'))]));
       if(confirmed!=true||!mounted)return;
       final now=DateTime.now().toUtc();
-      await widget.repository.save(ProfessionalBoard(id:board.id,projectId:board.projectId,
-        revision:board.revision+1,name:board.name,description:board.description,location:board.location,
-        notes:board.notes,status:ProfessionalBoardStatus.open,closedAt:null,
-        createdAt:board.createdAt,updatedAt:now));
+      await widget.boardClosure.reopenBoard(board:board,reopenedAt:now);
     }
     await _reload();
   }
