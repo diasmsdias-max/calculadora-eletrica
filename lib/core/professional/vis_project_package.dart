@@ -96,6 +96,7 @@ class VisProjectPackage {
 
   void validate() {
     final projectId = project.id;
+    if (projectId.isEmpty) throw const FormatException('Invalid project id.');
     final loadIds = _unique(loads.map((e) => e.id), 'load');
     final circuitIds = _unique(circuits.map((e) => e.id), 'circuit');
     final boardIds = _unique(boards.map((e) => e.id), 'board');
