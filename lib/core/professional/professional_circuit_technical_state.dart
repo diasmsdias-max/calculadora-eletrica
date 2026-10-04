@@ -40,9 +40,10 @@ class ProfessionalCircuitTechnicalStateEvaluator {
     ).toList(growable: false);
     if (overcurrent.isEmpty) {
       issues.add('Proteção de sobrecorrente ainda não definida.');
-    } else if (!overcurrent.any((p) => (p.ratedCurrentA ?? 0) > 0)) {
-      issues.add('Proteção de sobrecorrente sem corrente nominal (In) válida.');
     } else {
+      if (overcurrent.any((p) => (p.ratedCurrentA ?? 0) <= 0)) {
+        issues.add('Proteção de sobrecorrente sem corrente nominal (In) válida.');
+      }
       final ib = sizing?.designCurrentA;
       final iz = sizing?.conductorAmpacityA;
       final numericNonCompliant = ib != null && iz != null && overcurrent.any((p) {

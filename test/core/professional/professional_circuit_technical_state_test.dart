@@ -51,6 +51,18 @@ void main(){
     expect(r.issues,contains('Proteção de sobrecorrente sem corrente nominal (In) válida.'));
   });
 
+  test('pending when any overcurrent protection has no valid In',(){
+    final incomplete=ProfessionalProtection(
+      id:'pr-incomplete',projectId:'p1',circuitId:'c1',revision:1,name:'QF sem In',
+      role:ProfessionalProtectionRole.overcurrent,ratedCurrentA:null,
+      createdAt:t,updatedAt:t.add(const Duration(minutes:2)));
+    final r=evaluator.evaluate(circuit:circuit(),linkedLoads:[load()],
+      sizing:sizing(updated:t.add(const Duration(minutes:1))),
+      protections:[protection(updated:t.add(const Duration(minutes:2))),incomplete]);
+    expect(r.status,ProfessionalCircuitTechnicalStatus.pending);
+    expect(r.issues,contains('Proteção de sobrecorrente sem corrente nominal (In) válida.'));
+  });
+
 
   test('review required when adopted protection violates Ib In Iz criterion',(){
     final invalid=ProfessionalProtection(
