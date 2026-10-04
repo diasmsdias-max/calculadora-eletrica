@@ -150,12 +150,54 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
   }
 
   Future<void> _confirmDeleteProject(ProfessionalProject project) async {
-    // A exclusão definitiva será conectada após a dupla confirmação
-    // e seu comportamento transacional estarem cobertos por teste.
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Exclusão protegida em preparação. Nenhum dado foi apagado.')),
+    if (_persistence == null || !mounted) return;
+    final first = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ Deletar projeto completo?'),
+        content: Text(
+          'Todas as informações de “${project.name}” serão apagadas: cargas, '
+          'circuitos, quadros, proteções, dimensionamentos, materiais e memorial.\n\n'
+          'Esta ação não pode ser desfeita dentro do app. A recuperação só será '
+          'possível importando um arquivo .visproject exportado anteriormente.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Continuar')),
+        ],
+      ),
     );
+    if (first != true || !mounted) return;
+
+    final second = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ Confirmação final'),
+        content: Text(
+          'Confirma a exclusão definitiva de “${project.name}” e de todos os '
+          'dados vinculados a este projeto?\n\nNão há como desfazer esta operação.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não, manter projeto')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sim, deletar tudo')),
+        ],
+      ),
+    );
+    if (second != true || !mounted) return;
+
+    try {
+      final deleted = await _persistence!.projectDeletion.deleteProject(project.id);
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(deleted ? 'Projeto deletado definitivamente.' : 'Projeto não encontrado.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível deletar o projeto. Nenhuma exclusão parcial foi mantida.')),
+      );
+    }
   }
 
   Future<void> _open(ProfessionalProject project) async {
