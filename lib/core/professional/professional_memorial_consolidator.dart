@@ -28,9 +28,27 @@ class ProfessionalMemorialConsolidator {
     ];
     for(final c in cs){
       ProfessionalSizing? sz; for(final x in ss){if(x.circuitId==c.id){sz=x;break;}}
-      final cp=ps.where((p)=>p.circuitId==c.id).length;
-      lines.add('${c.name}: ${sz==null?'sem dimensionamento':'dimensionado'}; $cp proteção(ões).');
+      final circuitProtections=ps.where((p)=>p.circuitId==c.id).toList();
+      final cp=circuitProtections.length;
+      ProfessionalProtection? overcurrent;
+      for(final p in circuitProtections){
+        if(p.role==ProfessionalProtectionRole.overcurrent&&p.ratedCurrentA!=null){
+          overcurrent=p;break;
+        }
+      }
+      final details=<String>[
+        sz==null?'sem dimensionamento':'dimensionado',
+        '$cp proteção(ões)',
+        if(sz?.designCurrentA!=null)'Ib=${_n(sz!.designCurrentA!)} A',
+        if(overcurrent?.ratedCurrentA!=null)'In=${_n(overcurrent!.ratedCurrentA!)} A',
+        if(sz?.conductorAmpacityA!=null)'Iz=${_n(sz!.conductorAmpacityA!)} A',
+        if(sz?.conductorSectionMm2!=null)'condutor=${_n(sz!.conductorSectionMm2!)} mm²',
+      ];
+      lines.add('${c.name}: ${details.join('; ')}.');
     }
     return ProfessionalMemorialSnapshot(scope:scope,criteria:lines.join('\n'));
   }
+
+  static String _n(double value) => value == value.roundToDouble()
+    ? value.toStringAsFixed(0) : value.toStringAsFixed(2).replaceFirst(RegExp(r'0+),'').replaceFirst(RegExp(r'\\.),'');
 }
