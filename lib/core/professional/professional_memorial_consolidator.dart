@@ -49,6 +49,9 @@ class ProfessionalMemorialConsolidator {
     return ProfessionalMemorialSnapshot(scope:scope,criteria:lines.join('\n'));
   }
 
-  static String _n(double value) => value == value.roundToDouble()
-    ? value.toStringAsFixed(0) : value.toStringAsFixed(2).replaceFirst(RegExp(r'0+),'').replaceFirst(RegExp(r'\\.),'');
+  static String _n(double value) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    final fixed = value.toStringAsFixed(2);
+    return fixed.endsWith('0') ? fixed.substring(0, fixed.length - 1) : fixed;
+  }
 }
