@@ -110,9 +110,13 @@ class VisProjectPackage {
       _sameProject(e.projectId, projectId, 'protection');
       if (!circuitIds.contains(e.circuitId)) throw const FormatException('Protection references unknown circuit.');
     }
+    final sizedCircuits = <String>{};
     for (final e in sizing) {
       _sameProject(e.projectId, projectId, 'sizing');
       if (!circuitIds.contains(e.circuitId)) throw const FormatException('Sizing references unknown circuit.');
+      if (!sizedCircuits.add(e.circuitId)) {
+        throw const FormatException('Circuit has more than one sizing record.');
+      }
     }
     for (final e in materials) { _sameProject(e.projectId, projectId, 'material'); }
     if (memorial != null) _sameProject(memorial!.projectId, projectId, 'memorial');
