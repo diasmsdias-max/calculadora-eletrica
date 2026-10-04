@@ -182,6 +182,7 @@ class _ProfessionalProjectDashboardPageState
                     protectionsRepository: persistence.professionalProtections,
                     materialsRepository: persistence.professionalMaterials,
                     memorialRepository: persistence.professionalMemorials,
+                    boardClosure: persistence.boardClosure,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
