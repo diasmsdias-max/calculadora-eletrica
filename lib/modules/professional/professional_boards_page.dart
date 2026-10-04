@@ -160,12 +160,18 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
                 trailing:PopupMenuButton<String>(onSelected:(value)async{
                   if(value=='edit')await _edit(b);
                   if(value=='toggle'&&readiness!=null)await _setClosed(b,readiness);
-                  if(value=='materials')await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMaterialsPage(
-                    repository:widget.materialsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
-                  if(value=='memorial')await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMemorialPage(
-                    repository:widget.memorialRepository,boardsRepository:widget.repository,circuitsRepository:widget.circuitsRepository,
-                    loadsRepository:widget.loadsRepository,sizingRepository:widget.sizingRepository,
-                    protectionsRepository:widget.protectionsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                  if(value=='materials'){
+                    if(!mounted)return;
+                    await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMaterialsPage(
+                      repository:widget.materialsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                  }
+                  if(value=='memorial'){
+                    if(!mounted)return;
+                    await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMemorialPage(
+                      repository:widget.memorialRepository,boardsRepository:widget.repository,circuitsRepository:widget.circuitsRepository,
+                      loadsRepository:widget.loadsRepository,sizingRepository:widget.sizingRepository,
+                      protectionsRepository:widget.protectionsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                  }
                 },itemBuilder:(_)=>[
                   PopupMenuItem(value:'edit',child:Text(b.isClosed?'Visualizar quadro':'Editar quadro')),
                   if(!widget.readOnly&&readiness!=null)PopupMenuItem(value:'toggle',
