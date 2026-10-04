@@ -26,6 +26,7 @@ class ProfessionalCircuitTechnicalStateEvaluator {
     final loads = linkedLoads.toList(growable: false);
     final devices = protections.toList(growable: false);
     final issues = <String>[];
+    var reviewRequired = false;
 
     if (loads.isEmpty) issues.add('Circuito sem cargas vinculadas.');
     if (circuit.voltageV == null || circuit.phases == null) {
@@ -39,6 +40,8 @@ class ProfessionalCircuitTechnicalStateEvaluator {
     ).toList(growable: false);
     if (overcurrent.isEmpty) {
       issues.add('Proteção de sobrecorrente ainda não definida.');
+    } else if (!overcurrent.any((p) => (p.ratedCurrentA ?? 0) > 0)) {
+      issues.add('Proteção de sobrecorrente sem corrente nominal (In) válida.');
     }
 
     if (sizing != null &&
@@ -48,6 +51,7 @@ class ProfessionalCircuitTechnicalStateEvaluator {
           linkedLoads: loads,
         )) {
       issues.add('Dimensionamento precisa ser revisado.');
+      reviewRequired = true;
     }
 
     for (final protection in devices) {
@@ -58,12 +62,12 @@ class ProfessionalCircuitTechnicalStateEvaluator {
         sizing: sizing,
       )) {
         issues.add('Proteção ${protection.name} precisa ser revisada.');
+        reviewRequired = true;
       }
     }
 
-    final review = issues.any((x) => x.contains('precisa ser revisad'));
     return ProfessionalCircuitTechnicalState(
-      review
+      reviewRequired
           ? ProfessionalCircuitTechnicalStatus.reviewRequired
           : issues.isEmpty
               ? ProfessionalCircuitTechnicalStatus.complete
