@@ -18,8 +18,10 @@ class ProfessionalBoardMaterialConsolidator {
         p.poles?.toString() ?? '', p.tripCurve].join('|');
       (grouped[key] ??= <ProfessionalProtection>[]).add(p);
     }
+    final keys = grouped.keys.toList()..sort();
     var index = 0;
-    return grouped.values.map((group) {
+    return keys.map((key) {
+      final group = grouped[key]!;
       final p = group.first; index++;
       final details = <String>[
         if (p.deviceType.isNotEmpty) p.deviceType,
