@@ -108,6 +108,56 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Projeto exportado com sucesso.')));
   }
 
+  Future<void> _showProjectActions(ProfessionalProject project) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.folder_open_outlined),
+              title: const Text('Abrir projeto'),
+              onTap: () => Navigator.of(context).pop('open'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_upload_outlined),
+              title: const Text('Exportar projeto'),
+              onTap: () => Navigator.of(context).pop('export'),
+            ),
+            if (widget.license.canEditProfessionalProjects)
+              ListTile(
+                leading: const Icon(Icons.delete_forever_outlined),
+                title: const Text('Deletar projeto'),
+                subtitle: const Text('Apaga todos os dados deste projeto'),
+                onTap: () => Navigator.of(context).pop('delete'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'open':
+        await _open(project);
+        break;
+      case 'export':
+        await _exportProject(project);
+        break;
+      case 'delete':
+        await _confirmDeleteProject(project);
+        break;
+    }
+  }
+
+  Future<void> _confirmDeleteProject(ProfessionalProject project) async {
+    // A exclusão definitiva será conectada após a dupla confirmação
+    // e seu comportamento transacional estarem cobertos por teste.
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Exclusão protegida em preparação. Nenhum dado foi apagado.')),
+    );
+  }
+
   Future<void> _open(ProfessionalProject project) async {
     if (_repository == null) return;
     await Navigator.of(context).push(
@@ -231,7 +281,7 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
                           subtitle: Text(subtitle),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _open(project),
-                          onLongPress: () => _exportProject(project),
+                          onLongPress: () => _showProjectActions(project),
                         ),
                       );
                     },
