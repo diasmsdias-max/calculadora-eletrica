@@ -12,6 +12,7 @@ import '../../core/professional/professional_protection_repository.dart';
 import '../../core/professional/professional_circuit_technical_state.dart';
 import '../../core/professional/professional_board_readiness.dart';
 import '../../core/professional/professional_board_material_consolidator.dart';
+import '../../core/professional/professional_board_closure_service.dart';
 import '../../core/professional/professional_material_repository.dart';
 import '../../core/professional/professional_memorial_repository.dart';
 import 'professional_materials_page.dart';
@@ -25,11 +26,12 @@ class ProfessionalBoardsPage extends StatefulWidget {
   final ProfessionalProtectionRepository protectionsRepository;
   final ProfessionalMaterialRepository materialsRepository;
   final ProfessionalMemorialRepository memorialRepository;
+  final ProfessionalBoardClosureService boardClosure;
   final String projectId;
   final bool readOnly;
   const ProfessionalBoardsPage({super.key, required this.repository, required this.circuitsRepository,
     required this.loadsRepository,required this.sizingRepository,required this.protectionsRepository,
-    required this.materialsRepository,required this.memorialRepository,required this.projectId, required this.readOnly});
+    required this.materialsRepository,required this.memorialRepository,required this.boardClosure,required this.projectId, required this.readOnly});
   @override State<ProfessionalBoardsPage> createState()=>_ProfessionalBoardsPageState();
 }
 
@@ -94,11 +96,8 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
       final generated=const ProfessionalBoardMaterialConsolidator().build(
         projectId:board.projectId,boardId:board.id,circuitIds:circuitIds,
         protections:_protections,generatedAt:now);
-      await widget.materialsRepository.replaceGeneratedForBoard(board.projectId,board.id,generated);
-      await widget.repository.save(ProfessionalBoard(id:board.id,projectId:board.projectId,
-        revision:board.revision+1,name:board.name,description:board.description,location:board.location,
-        notes:board.notes,status:ProfessionalBoardStatus.closed,closedAt:now,
-        createdAt:board.createdAt,updatedAt:now));
+      await widget.boardClosure.closeBoard(
+        board:board,generatedMaterials:generated,closedAt:now);
     }else{
       final confirmed=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
         title:const Text('Reabrir quadro?'),
