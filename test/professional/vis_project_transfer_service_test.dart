@@ -142,6 +142,28 @@ void main(){
     expect(await db.query('professional_projects'),isEmpty);
   });
 
+  test('import rejects duplicate circuit-load relation',() async{
+    final t=DateTime.utc(2026,10,4).toIso8601String();
+    await db.insert('professional_projects',{'id':'dup-cl','contract_version':1,'revision':1,'name':'Projeto','client':'','address':'','responsible':'','notes':'','created_at':t,'updated_at':t});
+    await db.insert('professional_loads',{'id':'l','project_id':'dup-cl','contract_version':1,'revision':1,'name':'Carga','quantity':1,'power_w':100.0,'voltage_v':220.0,'created_at':t,'updated_at':t});
+    await db.insert('professional_circuits',{'id':'c','project_id':'dup-cl','contract_version':1,'revision':1,'name':'C1','created_at':t,'updated_at':t});
+    final service=VisProjectTransferService(db);
+    final json=jsonDecode(await service.exportProject('dup-cl')) as Map<String,dynamic>;
+    (json['relations'] as Map<String,dynamic>)['circuitLoads']={'c':['l','l']};
+    await expectLater(service.importProject(jsonEncode(json)),throwsA(isA<FormatException>()));
+  });
+
+  test('import rejects duplicate board-circuit relation',() async{
+    final t=DateTime.utc(2026,10,4).toIso8601String();
+    await db.insert('professional_projects',{'id':'dup-bc','contract_version':1,'revision':1,'name':'Projeto','client':'','address':'','responsible':'','notes':'','created_at':t,'updated_at':t});
+    await db.insert('professional_circuits',{'id':'c','project_id':'dup-bc','contract_version':1,'revision':1,'name':'C1','created_at':t,'updated_at':t});
+    await db.insert('professional_boards',{'id':'b','project_id':'dup-bc','contract_version':1,'revision':1,'name':'QD1','created_at':t,'updated_at':t});
+    final service=VisProjectTransferService(db);
+    final json=jsonDecode(await service.exportProject('dup-bc')) as Map<String,dynamic>;
+    (json['relations'] as Map<String,dynamic>)['boardCircuits']={'b':['c','c']};
+    await expectLater(service.importProject(jsonEncode(json)),throwsA(isA<FormatException>()));
+  });
+
   test('export rejects unknown professional project',() async{
     await expectLater(VisProjectTransferService(db).exportProject('missing'),throwsArgumentError);
   });
