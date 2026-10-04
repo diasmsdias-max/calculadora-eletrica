@@ -154,6 +154,7 @@ class _ProfessionalProjectDashboardPageState
                     builder: (_) => ProfessionalCircuitsPage(
                       repository: persistence.professionalCircuits,
                       loadsRepository: persistence.professionalLoads,
+                      boardsRepository: persistence.professionalBoards,
                       projectId: _project.id,
                       readOnly: !widget.license.canEditProfessionalProjects,
                     ),
@@ -200,6 +201,7 @@ class _ProfessionalProjectDashboardPageState
                     circuitsRepository: persistence.professionalCircuits,
                     sizingRepository: persistence.professionalSizing,
                     loadsRepository: persistence.professionalLoads,
+                    boardsRepository: persistence.professionalBoards,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
