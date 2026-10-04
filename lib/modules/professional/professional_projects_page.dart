@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../core/database/v2_persistence_factory.dart';
 import '../../core/licensing/license_state.dart';
@@ -16,6 +18,7 @@ class ProfessionalProjectsPage extends StatefulWidget {
 
 class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
   ProfessionalProjectRepository? _repository;
+  V2Persistence? _persistence;
   List<ProfessionalProject> _projects = const [];
   bool _loading = true;
   final _searchController = TextEditingController();
@@ -33,6 +36,7 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
     if (!mounted) return;
     setState(() {
       _repository = persistence.professionalProjects;
+      _persistence = persistence;
       _projects = projects;
       _loading = false;
     });
@@ -58,6 +62,48 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
       ),
     );
     await _load();
+  }
+
+  Future<void> _importProject() async {
+    if (!widget.license.canEditProfessionalProjects || _persistence == null) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['visproject'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.single;
+    final bytes = file.bytes ?? (file.path == null ? null : await File(file.path!).readAsBytes());
+    if (bytes == null) return;
+    try {
+      await _persistence!.projectTransfer.importProject(String.fromCharCodes(bytes));
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Projeto importado com sucesso.')));
+    } on FormatException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Arquivo de projeto inválido: ${e.message}')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível importar este projeto.')));
+    }
+  }
+
+  Future<void> _exportProject(ProfessionalProject project) async {
+    if (_persistence == null) return;
+    final source = await _persistence!.projectTransfer.exportProject(project.id);
+    final safeName = project.name.trim().isEmpty
+        ? 'projeto-vis'
+        : project.name.trim().replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_');
+    final path = await FilePicker.platform.saveFile(
+      dialogTitle: 'Exportar projeto VIS',
+      fileName: '$safeName.visproject',
+      type: FileType.custom,
+      allowedExtensions: const ['visproject'],
+      bytes: source.codeUnits,
+    );
+    if (!mounted || path == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Projeto exportado com sucesso.')));
   }
 
   Future<void> _open(ProfessionalProject project) async {
@@ -98,7 +144,17 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
   Widget build(BuildContext context) {
     final projects = _filteredProjects;
     return Scaffold(
-        appBar: AppBar(title: const Text('Projetos Elétricos')),
+        appBar: AppBar(
+          title: const Text('Projetos Elétricos'),
+          actions: [
+            if (widget.license.canEditProfessionalProjects)
+              IconButton(
+                tooltip: 'Importar projeto',
+                onPressed: _loading ? null : _importProject,
+                icon: const Icon(Icons.file_download_outlined),
+              ),
+          ],
+        ),
         floatingActionButton: widget.license.canEditProfessionalProjects
             ? FloatingActionButton.extended(
                 onPressed: _loading ? null : _create,
@@ -173,6 +229,7 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
                           subtitle: Text(subtitle),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _open(project),
+                          onLongPress: () => _exportProject(project),
                         ),
                       );
                     },
