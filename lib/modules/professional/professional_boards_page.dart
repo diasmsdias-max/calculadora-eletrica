@@ -166,7 +166,7 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
                     await Navigator.of(this.context).push(MaterialPageRoute(builder:(_)=>ProfessionalMemorialPage(
                       repository:widget.memorialRepository,boardsRepository:widget.repository,circuitsRepository:widget.circuitsRepository,
                       loadsRepository:widget.loadsRepository,sizingRepository:widget.sizingRepository,
-                      protectionsRepository:widget.protectionsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                      protectionsRepository:widget.protectionsRepository,projectId:widget.projectId,readOnly:true,boardId:b.id)));
                   }
                 },itemBuilder:(_)=>[
                   PopupMenuItem(value:'edit',child:Text(b.isClosed?'Visualizar quadro':'Editar quadro')),
