@@ -42,6 +42,39 @@ void main(){
     }
   });
 
+  test('VIS Project round trip preserves board and protection V2 contracts',() async{
+    final t=DateTime.utc(2026,10,4).toIso8601String();
+    await db.insert('professional_projects',{'id':'p2','contract_version':1,'revision':1,'name':'Projeto V2','client':'','address':'','responsible':'','notes':'','created_at':t,'updated_at':t});
+    await db.insert('professional_circuits',{'id':'c2','project_id':'p2','contract_version':1,'revision':1,'name':'C2','description':'','voltage_v':220.0,'phases':1,'notes':'','created_at':t,'updated_at':t});
+    await db.insert('professional_boards',{'id':'b2','project_id':'p2','contract_version':2,'revision':3,'name':'QD2','description':'','location':'Casa de máquinas','notes':'','status':'closed','closed_at':t,'created_at':t,'updated_at':t});
+    await db.insert('professional_board_circuits',{'board_id':'b2','circuit_id':'c2'});
+    await db.insert('professional_protections',{'id':'pr2','project_id':'p2','circuit_id':'c2','contract_version':2,'revision':4,'name':'DJ C2','device_type':'Disjuntor','protection_role':'overcurrent','rated_current_a':32.0,'recommended_current_a':25.0,'validation_status':'warning','validation_criterion':'Ib <= In <= Iz','poles':2,'trip_curve':'C','breaking_capacity_ka':6.0,'notes':'Adotado pelo técnico','created_at':t,'updated_at':t});
+
+    final service=VisProjectTransferService(db);
+    final source=await service.exportProject('p2');
+    await db.delete('professional_projects',where:'id = ?',whereArgs:['p2']);
+    await service.importProject(source);
+
+    final board=(await db.query('professional_boards',where:'id = ?',whereArgs:['b2'])).single;
+    expect(board['contract_version'],2);
+    expect(board['status'],'closed');
+    expect(board['closed_at'],t);
+    expect(board['location'],'Casa de máquinas');
+
+    final protection=(await db.query('professional_protections',where:'id = ?',whereArgs:['pr2'])).single;
+    expect(protection['contract_version'],2);
+    expect(protection['protection_role'],'overcurrent');
+    expect(protection['rated_current_a'],32.0);
+    expect(protection['recommended_current_a'],25.0);
+    expect(protection['validation_status'],'warning');
+    expect(protection['validation_criterion'],'Ib <= In <= Iz');
+    expect(protection['poles'],2);
+    expect(protection['trip_curve'],'C');
+    expect(protection['breaking_capacity_ka'],6.0);
+    expect(protection['notes'],'Adotado pelo técnico');
+    expect((await db.query('professional_board_circuits')).single,containsPair('circuit_id','c2'));
+  });
+
   test('export rejects unknown professional project',() async{
     await expectLater(VisProjectTransferService(db).exportProject('missing'),throwsArgumentError);
   });
