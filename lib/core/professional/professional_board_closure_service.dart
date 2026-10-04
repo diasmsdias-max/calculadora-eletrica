@@ -14,6 +14,7 @@ class ProfessionalBoardClosureService {
     required DateTime reopenedAt,
   }) async {
     final b = board.normalized();
+    _validateBoardIdentity(b);
     final source = 'VIS:${b.id}';
 
     await database.transaction((txn) async {
@@ -51,6 +52,7 @@ class ProfessionalBoardClosureService {
     required DateTime closedAt,
   }) async {
     final b = board.normalized();
+    _validateBoardIdentity(b);
     final source = 'VIS:${b.id}';
     final items = generatedMaterials.map((item) => item.normalized()).toList();
 
@@ -106,4 +108,10 @@ class ProfessionalBoardClosureService {
       }
     });
   }
+  static void _validateBoardIdentity(ProfessionalBoard board) {
+    if (board.id.isEmpty || board.projectId.isEmpty) {
+      throw ArgumentError('Board id and project id are required.');
+    }
+  }
+
 }
