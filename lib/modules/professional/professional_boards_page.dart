@@ -159,7 +159,7 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
                   if(value=='materials'){
                     if(!mounted)return;
                     await Navigator.of(this.context).push(MaterialPageRoute(builder:(_)=>ProfessionalMaterialsPage(
-                      repository:widget.materialsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                      repository:widget.materialsRepository,projectId:widget.projectId,readOnly:true,boardId:b.id)));
                   }
                   if(value=='memorial'){
                     if(!mounted)return;
