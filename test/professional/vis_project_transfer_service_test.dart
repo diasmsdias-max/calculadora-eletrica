@@ -29,12 +29,16 @@ void main(){
     await db.delete('professional_projects',where:'id = ?',whereArgs:['p']);
     await db.insert('professional_projects',{'id':'p','contract_version':1,'revision':99,'name':'Obsoleto','client':'','address':'','responsible':'','notes':'','created_at':t,'updated_at':t});
     await db.insert('professional_loads',{'id':'old','project_id':'p','contract_version':1,'revision':1,'name':'Antiga','category':'','quantity':1,'power_w':1.0,'voltage_v':1.0,'power_factor':null,'notes':'','created_at':t,'updated_at':t});
+    await db.insert('professional_materials',{'id':'old-m','project_id':'p','contract_version':1,'revision':1,'description':'Material antigo','created_at':t,'updated_at':t});
+    await db.insert('professional_memorials',{'id':'old-mem','project_id':'p','contract_version':1,'revision':1,'title':'Memorial antigo','created_at':t,'updated_at':t});
 
     await service.importProject(source);
 
     expect((await db.query('professional_projects')).single['revision'],2);
     expect((await db.query('professional_loads')).single['id'],'l');
     expect(await db.query('professional_loads',where:'id = ?',whereArgs:['old']),isEmpty);
+    expect(await db.query('professional_materials',where:'id = ?',whereArgs:['old-m']),isEmpty);
+    expect(await db.query('professional_memorials',where:'id = ?',whereArgs:['old-mem']),isEmpty);
     expect((await db.query('professional_circuit_loads')).single,containsPair('load_id','l'));
     expect((await db.query('professional_board_circuits')).single,containsPair('circuit_id','c'));
     for(final table in ['professional_circuits','professional_boards','professional_protections','professional_sizing','professional_materials','professional_memorials']){
