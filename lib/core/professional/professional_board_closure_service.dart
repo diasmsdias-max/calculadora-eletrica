@@ -8,6 +8,43 @@ class ProfessionalBoardClosureService {
 
   const ProfessionalBoardClosureService(this.database);
 
+
+  Future<void> reopenBoard({
+    required ProfessionalBoard board,
+    required DateTime reopenedAt,
+  }) async {
+    final b = board.normalized();
+    final source = 'VIS:${b.id}';
+
+    await database.transaction((txn) async {
+      await txn.delete(
+        'professional_materials',
+        where: 'project_id = ? AND source = ?',
+        whereArgs: [b.projectId, source],
+      );
+      final updated = await txn.update(
+        'professional_boards',
+        {
+          'contract_version': ProfessionalBoard.contractVersion,
+          'revision': b.revision + 1,
+          'name': b.name,
+          'description': b.description,
+          'location': b.location,
+          'notes': b.notes,
+          'status': ProfessionalBoardStatus.open.name,
+          'closed_at': null,
+          'created_at': b.createdAt.toIso8601String(),
+          'updated_at': reopenedAt.toUtc().toIso8601String(),
+        },
+        where: 'id = ? AND project_id = ?',
+        whereArgs: [b.id, b.projectId],
+      );
+      if (updated != 1) {
+        throw StateError('Board reopening could not update the target board.');
+      }
+    });
+  }
+
   Future<void> closeBoard({
     required ProfessionalBoard board,
     required Iterable<ProfessionalMaterial> generatedMaterials,
