@@ -83,16 +83,13 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
   }
 
   Future<void> _consolidate() async {
-    final v=await Future.wait([
-      widget.boardsRepository.getByProject(widget.projectId),
-      widget.circuitsRepository.getByProject(widget.projectId),
-      widget.loadsRepository.getByProject(widget.projectId),
-      widget.sizingRepository.getByProject(widget.projectId),
-      widget.protectionsRepository.getByProject(widget.projectId),
-    ]);
+    final boards=await widget.boardsRepository.getByProject(widget.projectId);
+    final circuits=await widget.circuitsRepository.getByProject(widget.projectId);
+    final loads=await widget.loadsRepository.getByProject(widget.projectId);
+    final sizing=await widget.sizingRepository.getByProject(widget.projectId);
+    final protections=await widget.protectionsRepository.getByProject(widget.projectId);
     final snapshot=const ProfessionalMemorialConsolidator().build(
-      boards:v[0] as dynamic,circuits:v[1] as dynamic,loads:v[2] as dynamic,
-      sizing:v[3] as dynamic,protections:v[4] as dynamic);
+      boards:boards,circuits:circuits,loads:loads,sizing:sizing,protections:protections);
     if(!mounted)return;
     setState((){_scope.text=snapshot.scope;_criteria.text=snapshot.criteria;});
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
