@@ -164,6 +164,18 @@ void main(){
     await expectLater(service.importProject(jsonEncode(json)),throwsA(isA<FormatException>()));
   });
 
+  test('import rejects memorial with empty id',() async{
+    final t=DateTime.utc(2026,10,4).toIso8601String();
+    await db.insert('professional_projects',{'id':'mem-id','contract_version':1,'revision':1,'name':'Projeto','client':'','address':'','responsible':'','notes':'','created_at':t,'updated_at':t});
+    final service=VisProjectTransferService(db);
+    final json=jsonDecode(await service.exportProject('mem-id')) as Map<String,dynamic>;
+    json['memorial']={'contractVersion':1,'id':'','projectId':'mem-id','revision':1,'title':'Memorial','scope':'','criteria':'','conclusions':'','notes':'','createdAt':t,'updatedAt':t};
+
+    await expectLater(service.importProject(jsonEncode(json)),throwsA(isA<FormatException>()));
+    final projects=await db.query('professional_projects',where:'id = ?',whereArgs:['mem-id']);
+    expect(projects,hasLength(1));
+  });
+
   test('export rejects unknown professional project',() async{
     await expectLater(VisProjectTransferService(db).exportProject('missing'),throwsArgumentError);
   });
