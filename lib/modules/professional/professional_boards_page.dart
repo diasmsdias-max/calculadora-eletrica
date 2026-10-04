@@ -41,6 +41,7 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
   List<ProfessionalProtection> _protections=const[];
   Map<String,String> _boardByCircuitId=const{};
   Map<String,int> _circuitCountByBoardId=const{};
+  Map<String,Set<String>> _circuitIdsByBoardId=const{};
   final _search=TextEditingController(); String _query=''; bool _loading=true;
   @override void initState(){super.initState();_reload();}
   @override void dispose(){_search.dispose();super.dispose();}
@@ -51,9 +52,11 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
     final boards=v[0] as List<ProfessionalBoard>;
     final ownership=<String,String>{};
     final counts=<String,int>{};
+    final circuitIdsByBoard=<String,Set<String>>{};
     for(final board in boards){
       final circuitIds=await widget.repository.getCircuitIds(board.id);
       counts[board.id]=circuitIds.length;
+      circuitIdsByBoard[board.id]=circuitIds.toSet();
       for(final circuitId in circuitIds){
         ownership[circuitId]=board.id;
       }
@@ -61,10 +64,10 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
     if(!mounted)return; setState((){_boards=boards;
       _circuits=v[1] as List<ProfessionalCircuit>;_loads=v[2] as List<ProfessionalLoad>;
       _sizing=v[3] as List<ProfessionalSizing>;_protections=v[4] as List<ProfessionalProtection>;_boardByCircuitId=ownership;
-      _circuitCountByBoardId=counts;_loading=false;});
+      _circuitCountByBoardId=counts;_circuitIdsByBoardId=circuitIdsByBoard;_loading=false;});
   }
   Future<ProfessionalBoardReadiness> _readiness(ProfessionalBoard board)async{
-    final circuitIds=(await widget.repository.getCircuitIds(board.id)).toSet();
+    final circuitIds=_circuitIdsByBoardId[board.id]??const <String>{};
     final states=<ProfessionalCircuitTechnicalState>[];
     for(final circuit in _circuits.where((c)=>circuitIds.contains(c.id))){
       final loadIds=(await widget.circuitsRepository.getLoadIds(circuit.id)).toSet();
