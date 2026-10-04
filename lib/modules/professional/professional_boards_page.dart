@@ -162,12 +162,12 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
                   if(value=='toggle'&&readiness!=null)await _setClosed(b,readiness);
                   if(value=='materials'){
                     if(!mounted)return;
-                    await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMaterialsPage(
+                    await Navigator.of(this.context).push(MaterialPageRoute(builder:(_)=>ProfessionalMaterialsPage(
                       repository:widget.materialsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
                   }
                   if(value=='memorial'){
                     if(!mounted)return;
-                    await Navigator.of(context).push(MaterialPageRoute(builder:(_)=>ProfessionalMemorialPage(
+                    await Navigator.of(this.context).push(MaterialPageRoute(builder:(_)=>ProfessionalMemorialPage(
                       repository:widget.memorialRepository,boardsRepository:widget.repository,circuitsRepository:widget.circuitsRepository,
                       loadsRepository:widget.loadsRepository,sizingRepository:widget.sizingRepository,
                       protectionsRepository:widget.protectionsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
