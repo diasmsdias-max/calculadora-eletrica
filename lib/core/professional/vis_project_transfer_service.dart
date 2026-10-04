@@ -101,7 +101,8 @@ class VisProjectTransferService {
   }
 
   static Map<String,Object?> _db(Map<String,Object?> portable) {
-    final r=Map<String,Object?>.from(portable)..remove('contractVersion');
+    final r=Map<String,Object?>.from(portable);
+    final contractVersion=r.remove('contractVersion');
     final map=<String,String>{
       'projectId':'project_id','circuitId':'circuit_id','powerW':'power_w','voltageV':'voltage_v',
       'powerFactor':'power_factor','simultaneityFactor':'simultaneity_factor',
@@ -114,7 +115,7 @@ class VisProjectTransferService {
       'protectionCurrentA':'protection_current_a','closedAt':'closed_at','createdAt':'created_at','updatedAt':'updated_at'
     };
     for(final e in map.entries){if(r.containsKey(e.key)){r[e.value]=r.remove(e.key);}}
-    r['contract_version']=1;
+    r['contract_version']=contractVersion ?? 1;
     return r;
   }
 }
