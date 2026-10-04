@@ -102,6 +102,27 @@ void main(){
     expect(loads.single['id'],'rollback-l');
   });
 
+  test('database failure during same-id import rolls back replacement',() async{
+    final t=DateTime.utc(2026,10,4).toIso8601String();
+    await db.insert('professional_projects',{'id':'atomic','contract_version':1,'revision':9,'name':'Original atomic','client':'','address':'','responsible':'','notes':'','created_at':t,'updated_at':t});
+    await db.insert('professional_circuits',{'id':'atomic-c','project_id':'atomic','contract_version':1,'revision':1,'name':'C1','created_at':t,'updated_at':t});
+    final service=VisProjectTransferService(db);
+    final exported=await service.exportProject('atomic');
+    final json=jsonDecode(exported) as Map<String,dynamic>;
+    json['sizing']=[
+      {'contractVersion':1,'id':'s1','projectId':'atomic','circuitId':'atomic-c','revision':1,'method':'','criteria':'','notes':'','createdAt':t,'updatedAt':t},
+      {'contractVersion':1,'id':'s2','projectId':'atomic','circuitId':'atomic-c','revision':1,'method':'','criteria':'','notes':'','createdAt':t,'updatedAt':t},
+    ];
+
+    await expectLater(service.importProject(jsonEncode(json)),throwsA(anything));
+
+    final project=(await db.query('professional_projects',where:'id = ?',whereArgs:['atomic'])).single;
+    expect(project['revision'],9);
+    expect(project['name'],'Original atomic');
+    expect(await db.query('professional_circuits',where:'project_id = ?',whereArgs:['atomic']),hasLength(1));
+    expect(await db.query('professional_sizing',where:'project_id = ?',whereArgs:['atomic']),isEmpty);
+  });
+
   test('export rejects unknown professional project',() async{
     await expectLater(VisProjectTransferService(db).exportProject('missing'),throwsArgumentError);
   });
