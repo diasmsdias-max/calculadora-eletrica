@@ -134,6 +134,8 @@ class _ProfessionalProjectDashboardPageState
                     builder: (_) => ProfessionalLoadsPage(
                       repository: persistence.professionalLoads,
                       projectId: _project.id,
+                      circuitsRepository: persistence.professionalCircuits,
+                      boardsRepository: persistence.professionalBoards,
                       readOnly: !widget.license.canEditProfessionalProjects,
                     ),
                   ),
@@ -154,6 +156,7 @@ class _ProfessionalProjectDashboardPageState
                     builder: (_) => ProfessionalCircuitsPage(
                       repository: persistence.professionalCircuits,
                       loadsRepository: persistence.professionalLoads,
+                      boardsRepository: persistence.professionalBoards,
                       projectId: _project.id,
                       readOnly: !widget.license.canEditProfessionalProjects,
                     ),
@@ -174,6 +177,12 @@ class _ProfessionalProjectDashboardPageState
                   builder: (_) => ProfessionalBoardsPage(
                     repository: persistence.professionalBoards,
                     circuitsRepository: persistence.professionalCircuits,
+                    loadsRepository: persistence.professionalLoads,
+                    sizingRepository: persistence.professionalSizing,
+                    protectionsRepository: persistence.professionalProtections,
+                    materialsRepository: persistence.professionalMaterials,
+                    memorialRepository: persistence.professionalMemorials,
+                    boardClosure: persistence.boardClosure,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
@@ -195,6 +204,7 @@ class _ProfessionalProjectDashboardPageState
                     circuitsRepository: persistence.professionalCircuits,
                     sizingRepository: persistence.professionalSizing,
                     loadsRepository: persistence.professionalLoads,
+                    boardsRepository: persistence.professionalBoards,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
@@ -215,6 +225,7 @@ class _ProfessionalProjectDashboardPageState
                     repository: persistence.professionalSizing,
                     circuitsRepository: persistence.professionalCircuits,
                     loadsRepository: persistence.professionalLoads,
+                    boardsRepository: persistence.professionalBoards,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),
@@ -251,6 +262,11 @@ class _ProfessionalProjectDashboardPageState
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfessionalMemorialPage(
                     repository: persistence.professionalMemorials,
+                    boardsRepository: persistence.professionalBoards,
+                    circuitsRepository: persistence.professionalCircuits,
+                    loadsRepository: persistence.professionalLoads,
+                    sizingRepository: persistence.professionalSizing,
+                    protectionsRepository: persistence.professionalProtections,
                     projectId: _project.id,
                     readOnly: !widget.license.canEditProfessionalProjects,
                   ),

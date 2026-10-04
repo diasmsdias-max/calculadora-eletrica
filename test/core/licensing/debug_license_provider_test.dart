@@ -1,30 +1,21 @@
+import 'package:calculadora_eletrica/core/licensing/license_provider.dart';
 import 'package:calculadora_eletrica/core/licensing/license_provider_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
+  test('factory falls back to free provider when licensing is not configured', () async {
+    final provider = LicenseProviderFactory.create();
 
-  test('debug provider starts free and can activate professional entitlement',
-      () async {
-    const provider = DebugLicenseProvider();
-
+    expect(provider, isA<FreeLicenseProvider>());
     expect((await provider.currentState()).hasProfessional, isFalse);
-
-    final activated = await provider.activate();
-    expect(activated.hasProfessional, isTrue);
-    expect((await provider.currentState()).hasProfessional, isTrue);
   });
 
-  test('debug provider can deactivate test entitlement', () async {
-    const provider = DebugLicenseProvider();
-    await provider.activate();
+  test('free provider never grants professional entitlement from an activation key', () async {
+    const provider = FreeLicenseProvider();
 
-    final deactivated = await provider.deactivate();
+    final activated = await provider.activate('VIS-PRO-TEST-KEY');
 
-    expect(deactivated.hasProfessional, isFalse);
+    expect(activated.hasProfessional, isFalse);
     expect((await provider.currentState()).hasProfessional, isFalse);
   });
 }

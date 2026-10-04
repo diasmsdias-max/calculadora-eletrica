@@ -96,6 +96,7 @@ class VisProjectPackage {
 
   void validate() {
     final projectId = project.id;
+    if (projectId.isEmpty) throw const FormatException('Invalid project id.');
     final loadIds = _unique(loads.map((e) => e.id), 'load');
     final circuitIds = _unique(circuits.map((e) => e.id), 'circuit');
     final boardIds = _unique(boards.map((e) => e.id), 'board');
@@ -110,15 +111,25 @@ class VisProjectPackage {
       _sameProject(e.projectId, projectId, 'protection');
       if (!circuitIds.contains(e.circuitId)) throw const FormatException('Protection references unknown circuit.');
     }
+    final sizedCircuits = <String>{};
     for (final e in sizing) {
       _sameProject(e.projectId, projectId, 'sizing');
       if (!circuitIds.contains(e.circuitId)) throw const FormatException('Sizing references unknown circuit.');
+      if (!sizedCircuits.add(e.circuitId)) {
+        throw const FormatException('Circuit has more than one sizing record.');
+      }
     }
     for (final e in materials) { _sameProject(e.projectId, projectId, 'material'); }
-    if (memorial != null) _sameProject(memorial!.projectId, projectId, 'memorial');
+    if (memorial != null) {
+      if (memorial!.id.isEmpty) throw const FormatException('Invalid memorial id.');
+      _sameProject(memorial!.projectId, projectId, 'memorial');
+    }
 
     for (final entry in circuitLoadIds.entries) {
       if (!circuitIds.contains(entry.key)) throw const FormatException('Relation references unknown circuit.');
+      if (entry.value.toSet().length != entry.value.length) {
+        throw const FormatException('Duplicate circuit-load relation.');
+      }
       for (final id in entry.value) {
         if (!loadIds.contains(id)) throw const FormatException('Relation references unknown load.');
       }
@@ -126,6 +137,9 @@ class VisProjectPackage {
     final assignedCircuits = <String>{};
     for (final entry in boardCircuitIds.entries) {
       if (!boardIds.contains(entry.key)) throw const FormatException('Relation references unknown board.');
+      if (entry.value.toSet().length != entry.value.length) {
+        throw const FormatException('Duplicate board-circuit relation.');
+      }
       for (final id in entry.value) {
         if (!circuitIds.contains(id)) throw const FormatException('Relation references unknown circuit.');
         if (!assignedCircuits.add(id)) throw const FormatException('Circuit assigned to more than one board.');

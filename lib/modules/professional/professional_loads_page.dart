@@ -2,17 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../../core/professional/professional_load.dart';
 import '../../core/professional/professional_load_repository.dart';
+import '../../core/professional/professional_circuit_repository.dart';
+import '../../core/professional/professional_board_repository.dart';
+import '../../core/professional/professional_closed_board_guard.dart';
 import '../../core/professional/professional_simultaneity_estimator.dart';
 
 class ProfessionalLoadsPage extends StatefulWidget {
   final ProfessionalLoadRepository repository;
   final String projectId;
+  final ProfessionalCircuitRepository circuitsRepository;
+  final ProfessionalBoardRepository boardsRepository;
   final bool readOnly;
 
   const ProfessionalLoadsPage({
     super.key,
     required this.repository,
     required this.projectId,
+    required this.circuitsRepository,
+    required this.boardsRepository,
     required this.readOnly,
   });
 
@@ -25,6 +32,7 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
   bool _loading = true;
   final _searchController = TextEditingController();
   String _query = '';
+  Set<String> _lockedLoadIds = const {};
 
   @override
   void initState() {
@@ -34,9 +42,18 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
 
   Future<void> _reload() async {
     final loads = await widget.repository.getByProject(widget.projectId);
+    final lockedCircuitIds = await const ProfessionalClosedBoardGuard().lockedCircuitIds(
+      boardsRepository: widget.boardsRepository,
+      projectId: widget.projectId,
+    );
+    final lockedLoadIds = <String>{};
+    for (final circuitId in lockedCircuitIds) {
+      lockedLoadIds.addAll(await widget.circuitsRepository.getLoadIds(circuitId));
+    }
     if (!mounted) return;
     setState(() {
       _loads = loads;
+      _lockedLoadIds = lockedLoadIds;
       _loading = false;
     });
   }
@@ -59,13 +76,17 @@ class _ProfessionalLoadsPageState extends State<ProfessionalLoadsPage> {
 
   Future<void> _edit([ProfessionalLoad? load]) async {
     if (widget.readOnly && load == null) return;
+    final lockedByClosedBoard = load != null && _lockedLoadIds.contains(load.id);
     final saved = await showDialog<bool>(
       context: context,
       builder: (_) => _LoadDialog(
         repository: widget.repository,
         projectId: widget.projectId,
         load: load,
-        readOnly: widget.readOnly,
+        readOnly: widget.readOnly || lockedByClosedBoard,
+        readOnlyMessage: lockedByClosedBoard
+            ? 'Quadro fechado — reabra o quadro para alterar.'
+            : null,
       ),
     );
     if (saved == true) await _reload();
@@ -154,12 +175,14 @@ class _LoadDialog extends StatefulWidget {
   final String projectId;
   final ProfessionalLoad? load;
   final bool readOnly;
+  final String? readOnlyMessage;
 
   const _LoadDialog({
     required this.repository,
     required this.projectId,
     required this.load,
     required this.readOnly,
+    this.readOnlyMessage,
   });
 
   @override
@@ -288,6 +311,10 @@ class _LoadDialogState extends State<_LoadDialog> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  if (widget.readOnlyMessage != null) ...[
+                    Text(widget.readOnlyMessage!),
+                    const SizedBox(height: 12),
+                  ],
                   TextFormField(
                     controller: _name,
                     readOnly: widget.readOnly,
@@ -501,9 +528,11 @@ class _SimultaneityEstimateDialogState
       title: const Text('Estimar FS'),
       content: SizedBox(
         width: 500,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Text(
               'Carga instalada considerada: ${installed.toStringAsFixed(1)} W. '
               'Escolha como deseja estimar a simultaneidade.',
@@ -551,7 +580,8 @@ class _SimultaneityEstimateDialogState
               ),
             if (_method == _EstimateMethod.noDiversity && _error != null)
               Text(_error!),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [

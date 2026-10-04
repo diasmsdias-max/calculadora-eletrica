@@ -42,6 +42,14 @@ jobs:
       - name: Unit tests
         run: flutter test
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Licensing server tests
+        run: node --test server/vis-licensing/test/*.test.js
+
       - name: Setup Gradle 8.14.3
         uses: gradle/actions/setup-gradle@v4
         with:

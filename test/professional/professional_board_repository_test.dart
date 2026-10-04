@@ -13,6 +13,17 @@ void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
+  test('schema 15 to 16 adds board closure columns with open default',() async{
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('CREATE TABLE professional_boards (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, contract_version INTEGER NOT NULL, revision INTEGER NOT NULL, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT \'\', location TEXT NOT NULL DEFAULT \'\', notes TEXT NOT NULL DEFAULT \'\', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)');
+    final t=DateTime.utc(2026,10,1).toIso8601String();
+    await db.insert('professional_boards',{'id':'b','project_id':'p','contract_version':1,'revision':1,'name':'QD1','created_at':t,'updated_at':t});
+    await VisDatabase.upgradeSchemaForTesting(db,15,16);
+    final row=(await db.query('professional_boards')).single;
+    expect(row['status'],'open');expect(row['closed_at'],isNull);
+    await db.close();
+  });
+
   test('board accepts only circuits from its project and circuit has one board', () async {
     final db=await databaseFactory.openDatabase(inMemoryDatabasePath); await db.execute('PRAGMA foreign_keys = ON');
     await db.execute('PRAGMA foreign_keys = ON');
@@ -43,6 +54,24 @@ void main() {
       throwsA(anything));
     expect(await boards.getCircuitIds('q1'),['c1']);
     expect(await boards.getCircuitIds('q2'),isEmpty);
+    await db.close();
+  });
+
+  test('board persists closed and reopened state',() async{
+    final db=await databaseFactory.openDatabase(inMemoryDatabasePath);await db.execute('PRAGMA foreign_keys = ON');
+    await VisDatabase.createSchemaForTesting(db);
+    final projects=SqliteProfessionalProjectRepository(db);final boards=SqliteProfessionalBoardRepository(db);
+    final t=DateTime.utc(2026,10,1);final closed=DateTime.utc(2026,10,2);
+    await projects.save(ProfessionalProject(id:'p',revision:1,name:'P',createdAt:t,updatedAt:t));
+    await boards.save(ProfessionalBoard(id:'b',projectId:'p',revision:2,name:'QD1',
+      status:ProfessionalBoardStatus.closed,closedAt:closed,createdAt:t,updatedAt:closed));
+    var board=await boards.getById('b');
+    expect(board!.isClosed,isTrue);expect(board.closedAt,closed);
+    final reopened=DateTime.utc(2026,10,3);
+    await boards.save(ProfessionalBoard(id:'b',projectId:'p',revision:3,name:'QD1',
+      status:ProfessionalBoardStatus.open,createdAt:t,updatedAt:reopened));
+    board=await boards.getById('b');
+    expect(board!.isClosed,isFalse);expect(board.closedAt,isNull);expect(board.revision,3);
     await db.close();
   });
 

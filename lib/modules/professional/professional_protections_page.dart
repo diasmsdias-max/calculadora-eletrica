@@ -9,34 +9,50 @@ import '../../core/professional/professional_protection_repository.dart';
 import '../../core/professional/professional_sizing.dart';
 import '../../core/professional/professional_sizing_repository.dart';
 import '../../core/professional/overcurrent_protection_validator.dart';
+import '../../core/professional/overcurrent_protection_recommender.dart';
 import '../../core/professional/technical_validation.dart';
+import '../../core/professional/professional_calculation_freshness.dart';
+import '../../core/professional/professional_board_repository.dart';
+import '../../core/professional/professional_closed_board_guard.dart';
 
 class ProfessionalProtectionsPage extends StatefulWidget {
   final ProfessionalProtectionRepository repository;
   final ProfessionalCircuitRepository circuitsRepository;
   final ProfessionalSizingRepository sizingRepository;
   final ProfessionalLoadRepository loadsRepository;
+  final ProfessionalBoardRepository boardsRepository;
   final String projectId; final bool readOnly;
   const ProfessionalProtectionsPage({super.key,required this.repository,required this.circuitsRepository,
-    required this.sizingRepository,required this.loadsRepository,required this.projectId,required this.readOnly});
+    required this.sizingRepository,required this.loadsRepository,required this.boardsRepository,required this.projectId,required this.readOnly});
   @override State<ProfessionalProtectionsPage> createState()=>_State();
 }
 class _State extends State<ProfessionalProtectionsPage>{
   List<ProfessionalProtection> _items=const[]; List<ProfessionalCircuit> _circuits=const[]; List<ProfessionalSizing> _sizing=const[];
   List<ProfessionalLoad> _loads=const[];final Map<String,List<String>> _loadIdsByCircuit={};
-  final _search=TextEditingController();String _query='';bool _loading=true;
+  final _search=TextEditingController();String _query='';bool _loading=true;Set<String> _lockedCircuitIds=const{};
   @override void initState(){super.initState();_reload();}
   @override void dispose(){_search.dispose();super.dispose();}
   Future<void> _reload()async{final v=await Future.wait([widget.repository.getByProject(widget.projectId),
-    widget.circuitsRepository.getByProject(widget.projectId),widget.sizingRepository.getByProject(widget.projectId),widget.loadsRepository.getByProject(widget.projectId)]);
+    widget.circuitsRepository.getByProject(widget.projectId),widget.sizingRepository.getByProject(widget.projectId),widget.loadsRepository.getByProject(widget.projectId),
+    const ProfessionalClosedBoardGuard().lockedCircuitIds(boardsRepository:widget.boardsRepository,projectId:widget.projectId)]);
     final circuits=v[1] as List<ProfessionalCircuit>;final links=await Future.wait(circuits.map((c)=>widget.circuitsRepository.getLoadIds(c.id)));
     if(!mounted)return;setState((){_items=v[0] as List<ProfessionalProtection>;_circuits=circuits;_sizing=v[2] as List<ProfessionalSizing>;_loads=v[3] as List<ProfessionalLoad>;
-      _loadIdsByCircuit.clear();for(var i=0;i<circuits.length;i++){_loadIdsByCircuit[circuits[i].id]=links[i];}_loading=false;});}
+      _loadIdsByCircuit.clear();for(var i=0;i<circuits.length;i++){_loadIdsByCircuit[circuits[i].id]=links[i];}
+      _lockedCircuitIds=v[4] as Set<String>;_loading=false;});}
+  bool _needsReview(ProfessionalProtection p){
+    ProfessionalCircuit? circuit;for(final c in _circuits){if(c.id==p.circuitId)circuit=c;}
+    if(circuit==null)return true;
+    ProfessionalSizing? sizing;for(final x in _sizing){if(x.circuitId==p.circuitId)sizing=x;}
+    final ids=_loadIdsByCircuit[p.circuitId]?.toSet()??<String>{};
+    return ProfessionalCalculationFreshness.protectionNeedsReview(
+      protection:p,circuit:circuit,linkedLoads:_loads.where((l)=>ids.contains(l.id)),sizing:sizing);
+  }
   Future<void> _edit([ProfessionalProtection? p])async{
     if(widget.readOnly&&p==null)return;
     final ok=await showDialog<bool>(context:context,builder:(_)=>_ProtectionDialog(repository:widget.repository,
       projectId:widget.projectId,protection:p,circuits:_circuits,sizing:_sizing,loads:_loads,
-      loadIdsByCircuit:_loadIdsByCircuit,readOnly:widget.readOnly));
+      loadIdsByCircuit:_loadIdsByCircuit,lockedCircuitIds:_lockedCircuitIds,
+      readOnly:widget.readOnly||(p!=null&&_lockedCircuitIds.contains(p.circuitId))));
     if(ok==true)await _reload();
   }
   @override Widget build(BuildContext context){final q=_query.trim().toLowerCase();
@@ -59,11 +75,15 @@ class _State extends State<ProfessionalProtectionsPage>{
           ListView.separated(padding:const EdgeInsets.fromLTRB(16,8,16,96),itemCount:list.length,
             separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){final p=list[i];
               final circuit=_circuits.where((c)=>c.id==p.circuitId).firstOrNull;
+              final needsReview=_needsReview(p);
               return Card(child:ListTile(title:Text(p.name),subtitle:Text([
+                if(_lockedCircuitIds.contains(p.circuitId))'Quadro fechado — reabra o quadro para alterar',
+                if(needsReview)'Revisar proteção',
                 if(p.deviceType.isNotEmpty)p.deviceType,if(circuit!=null)circuit.name,
                 if(p.recommendedCurrentA!=null)'Recomendado: ${p.recommendedCurrentA} A',
                 if(p.ratedCurrentA!=null)'Adotado: ${p.ratedCurrentA} A',
                 if(p.validationStatus.isNotEmpty)p.validationStatus].join(' • ')),
+                leading:Icon(needsReview?Icons.warning_amber_outlined:Icons.shield_outlined),
                 trailing:const Icon(Icons.chevron_right),onTap:()=>_edit(p)));}))
       ]));
   }
@@ -71,9 +91,11 @@ class _State extends State<ProfessionalProtectionsPage>{
 class _ProtectionDialog extends StatefulWidget{
   final ProfessionalProtectionRepository repository;final String projectId;
   final ProfessionalProtection? protection;final List<ProfessionalCircuit> circuits;final List<ProfessionalSizing> sizing;
-  final List<ProfessionalLoad> loads;final Map<String,List<String>> loadIdsByCircuit;final bool readOnly;
+  final List<ProfessionalLoad> loads;final Map<String,List<String>> loadIdsByCircuit;
+  final Set<String> lockedCircuitIds;final bool readOnly;
   const _ProtectionDialog({required this.repository,required this.projectId,required this.protection,
-    required this.circuits,required this.sizing,required this.loads,required this.loadIdsByCircuit,required this.readOnly});
+    required this.circuits,required this.sizing,required this.loads,required this.loadIdsByCircuit,
+    required this.lockedCircuitIds,required this.readOnly});
   @override State<_ProtectionDialog> createState()=>_ProtectionDialogState();
 }
 class _ProtectionDialogState extends State<_ProtectionDialog>{
@@ -89,6 +111,10 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
   ProfessionalCircuitAggregation? _aggregation(){if(_circuitId==null)return null;ProfessionalCircuit? circuit;for(final c in widget.circuits){if(c.id==_circuitId)circuit=c;}if(circuit==null)return null;
     final ids=widget.loadIdsByCircuit[_circuitId]?.toSet()??<String>{};return const ProfessionalCircuitAggregator().calculate(circuit:circuit,loads:widget.loads.where((l)=>ids.contains(l.id)));}
   double? _calculatedIb()=>_aggregation()?.designCurrentA;
+  OvercurrentProtectionRecommendation _recommendation()=>const OvercurrentProtectionRecommender().recommend(
+    designCurrentA:_calculatedIb(),conductorAmpacityA:_sizingFor(_circuitId)?.conductorAmpacityA);
+  void _acceptRecommendation(){final value=_recommendation().recommendedCurrentA;if(value==null)return;
+    setState(()=>_current.text=value.toString());}
   TechnicalValidationResult _validation(){final s=_sizingFor(_circuitId);return OvercurrentProtectionValidator.validate(designCurrentA:_calculatedIb(),adoptedProtectionCurrentA:_current.text.trim().isEmpty?null:_n(_current.text),conductorAmpacityA:s?.conductorAmpacityA);}
   InputDecoration _d(String l,String h)=>InputDecoration(labelText:l,hintText:h,border:const OutlineInputBorder());
   Future<void> _save()async{if(!_key.currentState!.validate())return;final now=DateTime.now().toUtc();final old=widget.protection;
@@ -101,9 +127,12 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
       breakingCapacityKa:_breaking.text.trim().isEmpty?null:_n(_breaking.text),notes:_notes.text,
       createdAt:old?.createdAt??now,updatedAt:now));if(mounted)Navigator.of(context).pop(true);}
   @override Widget build(BuildContext context)=>AlertDialog(title:Text(widget.protection==null?'Nova proteção':widget.protection!.name),
-    content:SizedBox(width:560,child:Form(key:_key,child:SingleChildScrollView(child:Column(children:[
+    content:SizedBox(width:560,child:Form(key:_key,child:SingleChildScrollView(
+      keyboardDismissBehavior:ScrollViewKeyboardDismissBehavior.onDrag,
+      child:Column(children:[
       DropdownButtonFormField<String>(initialValue:_circuitId,decoration:_d('Circuito','Selecione o circuito protegido'),
-        items:widget.circuits.map((c)=>DropdownMenuItem(value:c.id,child:Text(c.name))).toList(),
+        items:widget.circuits.map((c)=>DropdownMenuItem(value:c.id,enabled:!widget.lockedCircuitIds.contains(c.id),
+          child:Text(widget.lockedCircuitIds.contains(c.id)?'${c.name} — quadro fechado':c.name))).toList(),
         onChanged:widget.readOnly?null:(v)=>setState(()=>_circuitId=v),
         validator:(v)=>v==null?'Selecione um circuito.':null),
       const SizedBox(height:12),TextFormField(controller:_name,readOnly:widget.readOnly,
@@ -126,9 +155,11 @@ class _ProtectionDialogState extends State<_ProtectionDialog>{
       if(widget.protection?.recommendedCurrentA!=null)
         _ValidationSummary(protection:widget.protection!),
       if(widget.protection?.recommendedCurrentA!=null)const SizedBox(height:12),
-      if(_role==ProfessionalProtectionRole.overcurrent)
+      if(_role==ProfessionalProtectionRole.overcurrent)...[
+        _LiveProtectionRecommendation(result:_recommendation(),readOnly:widget.readOnly,onAccept:_acceptRecommendation),
+        const SizedBox(height:12),
         _LiveProtectionValidation(result:_validation(),sizing:_sizingFor(_circuitId),aggregation:_aggregation())
-      else
+      ] else
         const Card(child:Padding(padding:EdgeInsets.all(12),child:Text('A validação Ib ≤ In ≤ Iz é aplicada somente à proteção de sobrecorrente.'))),
       const SizedBox(height:12),TextFormField(controller:_current,readOnly:widget.readOnly,
         onChanged:(_)=>setState((){}),
@@ -186,6 +217,21 @@ class _ValidationSummary extends StatelessWidget {
   }
 }
 
+
+
+
+class _LiveProtectionRecommendation extends StatelessWidget{
+  final OvercurrentProtectionRecommendation result;final bool readOnly;final VoidCallback onAccept;
+  const _LiveProtectionRecommendation({required this.result,required this.readOnly,required this.onAccept});
+  @override Widget build(BuildContext context)=>Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(
+    crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Text('Recomendação do VIS',style:Theme.of(context).textTheme.titleSmall),const SizedBox(height:6),
+      if(result.recommendedCurrentA!=null)Text('In recomendada: ${result.recommendedCurrentA} A'),
+      Text(result.message),const SizedBox(height:4),Text(result.criterion),
+      if(result.hasRecommendation&&!readOnly)...[const SizedBox(height:8),
+        FilledButton.tonal(onPressed:onAccept,child:const Text('Aceitar recomendação'))],
+    ])));
+}
 
 class _LiveProtectionValidation extends StatelessWidget{
   final TechnicalValidationResult result;final ProfessionalSizing? sizing;final ProfessionalCircuitAggregation? aggregation;

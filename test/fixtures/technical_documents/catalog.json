@@ -1,0 +1,23 @@
+[
+  {
+    "contractVersion": 1,
+    "id": "vis-manual-vis-electrica",
+    "title": "Manual do VIS ELECTRICA",
+    "category": "technicalReference",
+    "manufacturer": "VIS ELECTRICA",
+    "equipmentType": "Manual do Aplicativo",
+    "model": "",
+    "description": "Manual técnico preliminar do VIS ELECTRICA para validação do fluxo da Central Técnica.",
+    "remotePath": "technical-documents/files/manual-vis-electrica.pdf",
+    "fileName": "Manual_VIS_ELECTRICA.pdf",
+    "mimeType": "application/pdf",
+    "checksum": "7d54aa4e53bafcf840f3820cc22c87e3b7f39e5627e2e1b9fa0e1d74689abe80",
+    "sizeBytes": 36872,
+    "availability": "remoteOnly",
+    "localPath": null,
+    "keepOffline": false,
+    "publishedAt": "2026-10-02T00:00:00.000Z",
+    "downloadedAt": null,
+    "updatedAt": "2026-10-02T00:00:00.000Z"
+  }
+]

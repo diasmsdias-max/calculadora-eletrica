@@ -20,6 +20,19 @@ class SqliteProfessionalMaterialRepository implements ProfessionalMaterialReposi
   if(n==0)await database.insert('professional_materials',row);
  }
  @override Future<void> delete(String id)=>database.delete('professional_materials',where:'id = ?',whereArgs:[id]);
+ @override Future<void> replaceGeneratedForBoard(String projectId,String boardId,Iterable<ProfessionalMaterial> materials)async{
+  final source='VIS:$boardId';final items=materials.map((e)=>e.normalized()).toList();
+  if(items.any((e)=>e.projectId!=projectId||e.source!=source))throw ArgumentError('Generated board materials must match project and VIS source.');
+  await database.transaction((txn)async{
+   await txn.delete('professional_materials',where:'project_id = ? AND source = ?',whereArgs:[projectId,source]);
+   for(final m in items){
+    if(m.id.isEmpty||m.description.isEmpty||m.quantity!=null&&m.quantity!<=0)throw ArgumentError('Invalid generated material.');
+    await txn.insert('professional_materials',{'id':m.id,'project_id':m.projectId,'contract_version':ProfessionalMaterial.contractVersion,
+     'revision':m.revision,'description':m.description,'category':m.category,'unit':m.unit,'quantity':m.quantity,
+     'source':m.source,'notes':m.notes,'created_at':m.createdAt.toIso8601String(),'updated_at':m.updatedAt.toIso8601String()});
+   }
+  });
+ }
  ProfessionalMaterial _fromRow(Map<String,Object?> r)=>ProfessionalMaterial(id:r['id']! as String,
   projectId:r['project_id']! as String,revision:r['revision']! as int,description:r['description']! as String,
   category:r['category'] as String? ?? '',unit:r['unit'] as String? ?? '',
