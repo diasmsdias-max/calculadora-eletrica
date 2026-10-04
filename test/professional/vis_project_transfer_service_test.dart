@@ -123,6 +123,25 @@ void main(){
     expect(await db.query('professional_sizing',where:'project_id = ?',whereArgs:['atomic']),isEmpty);
   });
 
+  test('import rejects empty root project id before database write',() async{
+    final t=DateTime.utc(2026,10,4).toIso8601String();
+    final source=jsonEncode({
+      'format':'VISPROJECT',
+      'contractVersion':1,
+      'project':{'contractVersion':1,'id':'','revision':1,'name':'Inválido','client':'','address':'','responsible':'','notes':'','createdAt':t,'updatedAt':t},
+      'loads':[],
+      'circuits':[],
+      'boards':[],
+      'protections':[],
+      'sizing':[],
+      'materials':[],
+      'relations':{'circuitLoads':{},'boardCircuits':{}},
+    });
+
+    await expectLater(VisProjectTransferService(db).importProject(source),throwsA(isA<FormatException>()));
+    expect(await db.query('professional_projects'),isEmpty);
+  });
+
   test('export rejects unknown professional project',() async{
     await expectLater(VisProjectTransferService(db).exportProject('missing'),throwsArgumentError);
   });
