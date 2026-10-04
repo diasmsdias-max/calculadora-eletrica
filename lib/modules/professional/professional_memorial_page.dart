@@ -17,9 +17,10 @@ class ProfessionalMemorialPage extends StatefulWidget {
   final ProfessionalProtectionRepository protectionsRepository;
   final String projectId;
   final bool readOnly;
+  final String? boardId;
   const ProfessionalMemorialPage({super.key, required this.repository,required this.boardsRepository,
     required this.circuitsRepository,required this.loadsRepository,required this.sizingRepository,
-    required this.protectionsRepository,required this.projectId, required this.readOnly});
+    required this.protectionsRepository,required this.projectId, required this.readOnly,this.boardId});
   @override State<ProfessionalMemorialPage> createState() => _ProfessionalMemorialPageState();
 }
 
@@ -43,6 +44,33 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
   }
 
   Future<void> _load() async {
+    if (widget.boardId != null) {
+      final boards = await widget.boardsRepository.getByProject(widget.projectId);
+      final board = boards.where((b) => b.id == widget.boardId).firstOrNull;
+      if (board != null) {
+        final circuitIds = await widget.boardsRepository.getCircuitIds(board.id);
+        final circuits = await widget.circuitsRepository.getByProject(widget.projectId);
+        final loads = await widget.loadsRepository.getByProject(widget.projectId);
+        final sizing = await widget.sizingRepository.getByProject(widget.projectId);
+        final protections = await widget.protectionsRepository.getByProject(widget.projectId);
+        final selectedCircuits = circuits.where((c) => circuitIds.contains(c.id)).toList();
+        final selectedIds = selectedCircuits.map((c) => c.id).toSet();
+        final loadIds = <String>{};
+        for (final id in selectedIds) {
+          loadIds.addAll(await widget.circuitsRepository.getLoadIds(id));
+        }
+        final snapshot = const ProfessionalMemorialConsolidator().build(
+          boards:[board],circuits:selectedCircuits,
+          loads:loads.where((l) => loadIds.contains(l.id)),
+          sizing:sizing.where((s) => selectedIds.contains(s.circuitId)),
+          protections:protections.where((p) => selectedIds.contains(p.circuitId)));
+        _title.text = 'Memorial técnico — ${board.name}';
+        _scope.text = snapshot.scope;
+        _criteria.text = snapshot.criteria;
+      }
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
     final m = await widget.repository.getByProject(widget.projectId);
     if (!mounted) return;
     _current = m;
@@ -99,11 +127,11 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Memorial')),
+    appBar: AppBar(title: Text(widget.boardId==null?'Memorial':'Memorial do quadro')),
     body: _loading ? const Center(child: CircularProgressIndicator()) : ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('Memorial técnico do projeto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        Text(widget.boardId==null?'Memorial técnico do projeto':'Memorial técnico do quadro', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         const Text('Registre apenas informações confirmadas. Campos vazios permanecem indefinidos.'),
         const SizedBox(height: 16),
