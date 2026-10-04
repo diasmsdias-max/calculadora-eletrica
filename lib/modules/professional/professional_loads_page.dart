@@ -182,6 +182,7 @@ class _LoadDialog extends StatefulWidget {
     required this.projectId,
     required this.load,
     required this.readOnly,
+    this.readOnlyMessage,
   });
 
   @override
