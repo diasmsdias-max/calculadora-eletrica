@@ -26,7 +26,7 @@ void main(){
       protections:[p('a','Disjuntor B',20),p('b','Disjuntor A',10)],generatedAt:t);
     final b=consolidator.build(projectId:'p',boardId:'q1',circuitIds:['c1'],
       protections:[p('b','Disjuntor A',10),p('a','Disjuntor B',20)],generatedAt:t);
-    expect(a.map((item)=>item.id+':'+item.description).toList(),
+    expect(a.map((item)=>'${item.id}:${item.description}').toList(),
       b.map((item)=>item.id+':'+item.description).toList());
   });
 
