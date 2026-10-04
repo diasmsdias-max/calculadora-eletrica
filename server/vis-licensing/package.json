@@ -1,0 +1,15 @@
+{
+  "name": "vis-licensing-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Servidor local de licenciamento do VIS ELECTRICA",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:https": "node src/https-gateway.js",
+    "generate:dev-key": "node tools/generate-dev-signing-key.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

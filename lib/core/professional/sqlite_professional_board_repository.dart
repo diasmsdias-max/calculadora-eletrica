@@ -25,7 +25,8 @@ class SqliteProfessionalBoardRepository implements ProfessionalBoardRepository {
     }
     final row = {'id':b.id,'project_id':b.projectId,'contract_version':ProfessionalBoard.contractVersion,
       'revision':b.revision,'name':b.name,'description':b.description,'location':b.location,
-      'notes':b.notes,'created_at':b.createdAt.toIso8601String(),'updated_at':b.updatedAt.toIso8601String()};
+      'notes':b.notes,'status':b.status.name,'closed_at':b.closedAt?.toIso8601String(),
+      'created_at':b.createdAt.toIso8601String(),'updated_at':b.updatedAt.toIso8601String()};
     final updated = await database.update('professional_boards', row, where: 'id = ?', whereArgs: [b.id]);
     if (updated == 0) await database.insert('professional_boards', row);
   }
@@ -64,6 +65,8 @@ class SqliteProfessionalBoardRepository implements ProfessionalBoardRepository {
     id:r['id']! as String, projectId:r['project_id']! as String, revision:r['revision']! as int,
     name:r['name']! as String, description:r['description'] as String? ?? '',
     location:r['location'] as String? ?? '', notes:r['notes'] as String? ?? '',
+    status:r['status']=='closed'?ProfessionalBoardStatus.closed:ProfessionalBoardStatus.open,
+    closedAt:r['closed_at']==null?null:DateTime.parse(r['closed_at']! as String),
     createdAt:DateTime.parse(r['created_at']! as String),
     updatedAt:DateTime.parse(r['updated_at']! as String)).normalized();
 }

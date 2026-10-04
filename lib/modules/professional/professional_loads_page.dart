@@ -501,9 +501,11 @@ class _SimultaneityEstimateDialogState
       title: const Text('Estimar FS'),
       content: SizedBox(
         width: 500,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Text(
               'Carga instalada considerada: ${installed.toStringAsFixed(1)} W. '
               'Escolha como deseja estimar a simultaneidade.',
@@ -551,7 +553,8 @@ class _SimultaneityEstimateDialogState
               ),
             if (_method == _EstimateMethod.noDiversity && _error != null)
               Text(_error!),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [

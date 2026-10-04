@@ -5,10 +5,13 @@ import '../../core/professional/professional_circuit_aggregation.dart';
 import '../../core/professional/professional_circuit_repository.dart';
 import '../../core/professional/professional_load.dart';
 import '../../core/professional/professional_load_repository.dart';
+import '../../core/professional/professional_board_repository.dart';
+import '../../core/professional/professional_closed_board_guard.dart';
 
 class ProfessionalCircuitsPage extends StatefulWidget {
   final ProfessionalCircuitRepository repository;
   final ProfessionalLoadRepository loadsRepository;
+  final ProfessionalBoardRepository boardsRepository;
   final String projectId;
   final bool readOnly;
 
@@ -16,6 +19,7 @@ class ProfessionalCircuitsPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.loadsRepository,
+    required this.boardsRepository,
     required this.projectId,
     required this.readOnly,
   });
@@ -31,6 +35,7 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
   final _search = TextEditingController();
   String _query = '';
   Map<String, List<String>> _loadIdsByCircuit = const {};
+  Set<String> _lockedCircuitIds = const {};
   static const _aggregator = ProfessionalCircuitAggregator();
 
   @override
@@ -49,6 +54,10 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
     final values = await Future.wait([
       widget.repository.getByProject(widget.projectId),
       widget.loadsRepository.getByProject(widget.projectId),
+      const ProfessionalClosedBoardGuard().lockedCircuitIds(
+        boardsRepository: widget.boardsRepository,
+        projectId: widget.projectId,
+      ),
     ]);
     final circuits = values[0] as List<ProfessionalCircuit>;
     final relations = <String, List<String>>{};
@@ -60,6 +69,7 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
       _circuits = circuits;
       _loadIdsByCircuit = relations;
       _loads = values[1] as List<ProfessionalLoad>;
+      _lockedCircuitIds = values[2] as Set<String>;
       _loading = false;
     });
   }
@@ -78,7 +88,11 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
         circuit: circuit,
         availableLoads: _loads,
         selectedLoadIds: selected,
-        readOnly: widget.readOnly,
+        loadOwnerById: {
+          for (final entry in _loadIdsByCircuit.entries)
+            for (final loadId in entry.value) loadId: entry.key,
+        },
+        readOnly: widget.readOnly || (circuit != null && _lockedCircuitIds.contains(circuit.id)),
       ),
     );
     if (saved == true) await _reload();
@@ -149,6 +163,8 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
                                 if (current != null)
                                   'I calc.: ${current.toStringAsFixed(2)} A',
                                 if (current == null) aggregation.currentMessage,
+                                if (_lockedCircuitIds.contains(c.id))
+                                  'Quadro fechado — reabra o quadro para alterar',
                               ].join(' • ')),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => _edit(c),
@@ -169,6 +185,7 @@ class _CircuitDialog extends StatefulWidget {
   final ProfessionalCircuit? circuit;
   final List<ProfessionalLoad> availableLoads;
   final List<String> selectedLoadIds;
+  final Map<String, String> loadOwnerById;
   final bool readOnly;
 
   const _CircuitDialog({
@@ -177,6 +194,7 @@ class _CircuitDialog extends StatefulWidget {
     required this.circuit,
     required this.availableLoads,
     required this.selectedLoadIds,
+    required this.loadOwnerById,
     required this.readOnly,
   });
 
@@ -283,16 +301,23 @@ class _CircuitDialogState extends State<_CircuitDialog> {
                   child: Text('Cadastre cargas no projeto para vinculá-las ao circuito.'),
                 )
               else
-                ...widget.availableLoads.map((load) => CheckboxListTile(
-                  value: _selected.contains(load.id),
-                  onChanged: widget.readOnly ? null : (checked) => setState(() {
-                    if (checked == true) { _selected.add(load.id); } else { _selected.remove(load.id); }
-                  }),
-                  title: Text(load.name),
-                  subtitle: load.category.isEmpty ? null : Text(load.category),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                )),
+                ...widget.availableLoads.map((load) {
+                  final owner = widget.loadOwnerById[load.id];
+                  final linkedElsewhere = owner != null && owner != widget.circuit?.id;
+                  return CheckboxListTile(
+                    value: _selected.contains(load.id),
+                    onChanged: widget.readOnly || linkedElsewhere ? null : (checked) => setState(() {
+                      if (checked == true) { _selected.add(load.id); } else { _selected.remove(load.id); }
+                    }),
+                    title: Text(load.name),
+                    subtitle: Text([
+                      if (load.category.isNotEmpty) load.category,
+                      if (linkedElsewhere) 'Já vinculada a outro circuito',
+                    ].join(' • ')),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  );
+                }),
               const SizedBox(height: 12),
               TextFormField(controller: _notes, readOnly: widget.readOnly, maxLines: 3,
                 decoration: _d('Observações', 'Informações complementares do circuito')),

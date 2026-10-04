@@ -45,6 +45,35 @@ void main() {
     await db.close();
   });
 
+  test('a load can belong to only one circuit', () async {
+    final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
+    await db.execute('PRAGMA foreign_keys = ON');
+    await VisDatabase.createSchemaForTesting(db);
+    final projects = SqliteProfessionalProjectRepository(db);
+    final loads = SqliteProfessionalLoadRepository(db);
+    final circuits = SqliteProfessionalCircuitRepository(db);
+    final now = DateTime.utc(2026, 10, 3);
+
+    await projects.save(ProfessionalProject(
+      id: 'p', revision: 1, name: 'Projeto',
+      createdAt: now, updatedAt: now));
+    await loads.save(ProfessionalLoad(
+      id: 'l', projectId: 'p', revision: 1, name: 'Carga',
+      powerW: 100, voltageV: 127, createdAt: now, updatedAt: now));
+    for (final id in ['c1', 'c2']) {
+      await circuits.save(ProfessionalCircuit(
+        id: id, projectId: 'p', revision: 1, name: 'Circuito $id',
+        createdAt: now, updatedAt: now));
+    }
+
+    await circuits.replaceLoads('c1', ['l']);
+    expect(() => circuits.replaceLoads('c2', ['l']), throwsA(anything));
+    expect(await circuits.getLoadIds('c1'), ['l']);
+    expect(await circuits.getLoadIds('c2'), isEmpty);
+
+    await db.close();
+  });
+
   test('deleting load or circuit cleans relation table', () async {
     final db = await databaseFactory.openDatabase(inMemoryDatabasePath);
     await db.execute('PRAGMA foreign_keys = ON');

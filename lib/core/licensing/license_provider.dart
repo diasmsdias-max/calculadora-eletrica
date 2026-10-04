@@ -3,7 +3,7 @@ import 'license_state.dart';
 abstract interface class LicenseProvider {
   Future<LicenseState> currentState();
 
-  Future<LicenseState> activate();
+  Future<LicenseState> activate([String? activationKey]);
 
   Future<LicenseState> revalidate();
 }
@@ -15,7 +15,7 @@ class FreeLicenseProvider implements LicenseProvider {
   Future<LicenseState> currentState() async => const LicenseState();
 
   @override
-  Future<LicenseState> activate() async => const LicenseState();
+  Future<LicenseState> activate([String? activationKey]) async => const LicenseState();
 
   @override
   Future<LicenseState> revalidate() async => const LicenseState();

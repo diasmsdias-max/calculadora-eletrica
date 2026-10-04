@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 /// introduced incrementally. No caller should open the database directly.
 class VisDatabase {
   static const databaseName = 'vis_electrica_v2.db';
-  static const schemaVersion = 13;
+  static const schemaVersion = 16;
 
   Database? _database;
 
@@ -79,6 +79,15 @@ class VisDatabase {
     }
     if (oldVersion < 13) {
       await _addProfessionalProtectionRoleColumn(db);
+    }
+    if (oldVersion < 14) {
+      await _createTechnicalDocumentsTable(db);
+    }
+    if (oldVersion < 15) {
+      await _enforceSingleCircuitPerLoad(db);
+    }
+    if (oldVersion < 16) {
+      await _addProfessionalBoardClosureColumns(db);
     }
   }
 
@@ -155,12 +164,50 @@ class VisDatabase {
     await db.execute('''
       CREATE TABLE professional_circuit_loads (
         circuit_id TEXT NOT NULL,
-        load_id TEXT NOT NULL,
+        load_id TEXT NOT NULL UNIQUE,
         PRIMARY KEY (circuit_id, load_id),
         FOREIGN KEY (circuit_id) REFERENCES professional_circuits(id) ON DELETE CASCADE,
         FOREIGN KEY (load_id) REFERENCES professional_loads(id) ON DELETE CASCADE
       )
     ''');
+  }
+
+  static Future<void> _enforceSingleCircuitPerLoad(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'professional_circuit_loads'",
+    );
+    if (tables.isEmpty) return;
+
+    // Legacy builds allowed one load to be linked to more than one circuit.
+    // Keep the oldest deterministic relation and remove only duplicates before
+    // enforcing the domain rule at database level.
+    await db.execute('''
+      DELETE FROM professional_circuit_loads
+      WHERE rowid NOT IN (
+        SELECT MIN(rowid)
+        FROM professional_circuit_loads
+        GROUP BY load_id
+      )
+    ''');
+    await db.execute(
+      'CREATE UNIQUE INDEX IF NOT EXISTS '
+      'idx_professional_circuit_loads_load_id '
+      'ON professional_circuit_loads(load_id)',
+    );
+  }
+
+  static Future<void> _addProfessionalBoardClosureColumns(Database db) async {
+    final tables=await db.rawQuery("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'professional_boards'");
+    if(tables.isEmpty)return;
+    final columns=await db.rawQuery('PRAGMA table_info(professional_boards)');
+    final names=columns.map((row)=>row['name'] as String).toSet();
+    if(!names.contains('status')){
+      await db.execute("ALTER TABLE professional_boards ADD COLUMN status TEXT NOT NULL DEFAULT 'open'");
+    }
+    if(!names.contains('closed_at')){
+      await db.execute('ALTER TABLE professional_boards ADD COLUMN closed_at TEXT');
+    }
   }
 
   static Future<void> _createProfessionalBoardsTables(Database db) async {
@@ -174,6 +221,8 @@ class VisDatabase {
         description TEXT NOT NULL DEFAULT '',
         location TEXT NOT NULL DEFAULT '',
         notes TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        closed_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (project_id) REFERENCES professional_projects(id) ON DELETE CASCADE
@@ -396,6 +445,40 @@ class VisDatabase {
     ''');
   }
 
+  static Future<void> _createTechnicalDocumentsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS technical_documents (
+        id TEXT PRIMARY KEY,
+        contract_version INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        manufacturer TEXT NOT NULL DEFAULT '',
+        equipment_type TEXT NOT NULL DEFAULT '',
+        model TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        remote_path TEXT NOT NULL DEFAULT '',
+        file_name TEXT NOT NULL DEFAULT '',
+        mime_type TEXT NOT NULL DEFAULT 'application/pdf',
+        checksum TEXT NOT NULL DEFAULT '',
+        size_bytes INTEGER,
+        availability TEXT NOT NULL DEFAULT 'remoteOnly',
+        local_path TEXT,
+        keep_offline INTEGER NOT NULL DEFAULT 0,
+        published_at TEXT,
+        downloaded_at TEXT,
+        updated_at TEXT
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_technical_documents_category '
+      'ON technical_documents(category)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_technical_documents_manufacturer_model '
+      'ON technical_documents(manufacturer, model)',
+    );
+  }
+
   static Future<void> _createSchema(Database db, int version) async {
     await db.execute('''
       CREATE TABLE projects (
@@ -481,6 +564,7 @@ class VisDatabase {
     await _createProfessionalSizingTable(db);
     await _createProfessionalMaterialsTable(db);
     await _createProfessionalMemorialTable(db);
+    await _createTechnicalDocumentsTable(db);
 
     await db.execute('''
       CREATE TABLE app_metadata (

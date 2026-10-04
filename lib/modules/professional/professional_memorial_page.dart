@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../core/professional/professional_memorial.dart';
 import '../../core/professional/professional_memorial_repository.dart';
+import '../../core/professional/professional_memorial_consolidator.dart';
+import '../../core/professional/professional_board_repository.dart';
+import '../../core/professional/professional_circuit_repository.dart';
+import '../../core/professional/professional_load_repository.dart';
+import '../../core/professional/professional_sizing_repository.dart';
+import '../../core/professional/professional_protection_repository.dart';
 
 class ProfessionalMemorialPage extends StatefulWidget {
   final ProfessionalMemorialRepository repository;
+  final ProfessionalBoardRepository boardsRepository;
+  final ProfessionalCircuitRepository circuitsRepository;
+  final ProfessionalLoadRepository loadsRepository;
+  final ProfessionalSizingRepository sizingRepository;
+  final ProfessionalProtectionRepository protectionsRepository;
   final String projectId;
   final bool readOnly;
-  const ProfessionalMemorialPage({super.key, required this.repository, required this.projectId, required this.readOnly});
+  const ProfessionalMemorialPage({super.key, required this.repository,required this.boardsRepository,
+    required this.circuitsRepository,required this.loadsRepository,required this.sizingRepository,
+    required this.protectionsRepository,required this.projectId, required this.readOnly});
   @override State<ProfessionalMemorialPage> createState() => _ProfessionalMemorialPageState();
 }
 
@@ -39,6 +52,23 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
     _conclusions.text = m?.conclusions ?? '';
     _notes.text = m?.notes ?? '';
     setState(() => _loading = false);
+  }
+
+  Future<void> _consolidate() async {
+    final v=await Future.wait([
+      widget.boardsRepository.getByProject(widget.projectId),
+      widget.circuitsRepository.getByProject(widget.projectId),
+      widget.loadsRepository.getByProject(widget.projectId),
+      widget.sizingRepository.getByProject(widget.projectId),
+      widget.protectionsRepository.getByProject(widget.projectId),
+    ]);
+    final snapshot=const ProfessionalMemorialConsolidator().build(
+      boards:v[0] as dynamic,circuits:v[1] as dynamic,loads:v[2] as dynamic,
+      sizing:v[3] as dynamic,protections:v[4] as dynamic);
+    if(!mounted)return;
+    setState((){_scope.text=snapshot.scope;_criteria.text=snapshot.criteria;});
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content:Text('Dados técnicos consolidados. Revise e salve o memorial.')));
   }
 
   Future<void> _save() async {
@@ -93,6 +123,9 @@ class _ProfessionalMemorialPageState extends State<ProfessionalMemorialPage> {
           decoration: _decoration('Observações', 'Informações complementares')),
         if (!widget.readOnly) ...[
           const SizedBox(height: 20),
+          OutlinedButton.icon(onPressed:_consolidate,icon:const Icon(Icons.auto_awesome_outlined),
+            label:const Text('Atualizar dados pelo VIS')),
+          const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: _saving ? null : _save,
             icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))

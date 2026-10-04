@@ -94,14 +94,15 @@ class VisProjectTransferService {
       'device_type':'deviceType','protection_role':'role','trip_curve':'tripCurve',
       'breaking_capacity_ka':'breakingCapacityKa','design_current_a':'designCurrentA',
       'conductor_section_mm2':'conductorSectionMm2','conductor_ampacity_a':'conductorAmpacityA','voltage_drop_percent':'voltageDropPercent',
-      'protection_current_a':'protectionCurrentA','created_at':'createdAt','updated_at':'updatedAt'
+      'protection_current_a':'protectionCurrentA','closed_at':'closedAt','created_at':'createdAt','updated_at':'updatedAt'
     };
     for(final e in map.entries){if(r.containsKey(e.key)){r[e.value]=r.remove(e.key);}}
     return r;
   }
 
   static Map<String,Object?> _db(Map<String,Object?> portable) {
-    final r=Map<String,Object?>.from(portable)..remove('contractVersion');
+    final r=Map<String,Object?>.from(portable);
+    final contractVersion=r.remove('contractVersion');
     final map=<String,String>{
       'projectId':'project_id','circuitId':'circuit_id','powerW':'power_w','voltageV':'voltage_v',
       'powerFactor':'power_factor','simultaneityFactor':'simultaneity_factor',
@@ -111,10 +112,10 @@ class VisProjectTransferService {
       'validationCriterion':'validation_criterion','deviceType':'device_type','role':'protection_role',
       'tripCurve':'trip_curve','breakingCapacityKa':'breaking_capacity_ka','designCurrentA':'design_current_a',
       'conductorSectionMm2':'conductor_section_mm2','conductorAmpacityA':'conductor_ampacity_a','voltageDropPercent':'voltage_drop_percent',
-      'protectionCurrentA':'protection_current_a','createdAt':'created_at','updatedAt':'updated_at'
+      'protectionCurrentA':'protection_current_a','closedAt':'closed_at','createdAt':'created_at','updatedAt':'updated_at'
     };
     for(final e in map.entries){if(r.containsKey(e.key)){r[e.value]=r.remove(e.key);}}
-    r['contract_version']=1;
+    r['contract_version']=contractVersion ?? 1;
     return r;
   }
 }

@@ -3,27 +3,116 @@ import '../../core/professional/professional_board.dart';
 import '../../core/professional/professional_board_repository.dart';
 import '../../core/professional/professional_circuit.dart';
 import '../../core/professional/professional_circuit_repository.dart';
+import '../../core/professional/professional_load.dart';
+import '../../core/professional/professional_load_repository.dart';
+import '../../core/professional/professional_sizing.dart';
+import '../../core/professional/professional_sizing_repository.dart';
+import '../../core/professional/professional_protection.dart';
+import '../../core/professional/professional_protection_repository.dart';
+import '../../core/professional/professional_circuit_technical_state.dart';
+import '../../core/professional/professional_board_readiness.dart';
+import '../../core/professional/professional_board_material_consolidator.dart';
+import '../../core/professional/professional_material_repository.dart';
+import '../../core/professional/professional_memorial_repository.dart';
+import 'professional_materials_page.dart';
+import 'professional_memorial_page.dart';
 
 class ProfessionalBoardsPage extends StatefulWidget {
   final ProfessionalBoardRepository repository;
   final ProfessionalCircuitRepository circuitsRepository;
+  final ProfessionalLoadRepository loadsRepository;
+  final ProfessionalSizingRepository sizingRepository;
+  final ProfessionalProtectionRepository protectionsRepository;
+  final ProfessionalMaterialRepository materialsRepository;
+  final ProfessionalMemorialRepository memorialRepository;
   final String projectId;
   final bool readOnly;
   const ProfessionalBoardsPage({super.key, required this.repository, required this.circuitsRepository,
-    required this.projectId, required this.readOnly});
+    required this.loadsRepository,required this.sizingRepository,required this.protectionsRepository,
+    required this.materialsRepository,required this.memorialRepository,required this.projectId, required this.readOnly});
   @override State<ProfessionalBoardsPage> createState()=>_ProfessionalBoardsPageState();
 }
 
 class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
   List<ProfessionalBoard> _boards=const[]; List<ProfessionalCircuit> _circuits=const[];
+  List<ProfessionalLoad> _loads=const[];List<ProfessionalSizing> _sizing=const[];
+  List<ProfessionalProtection> _protections=const[];
+  Map<String,String> _boardByCircuitId=const{};
+  Map<String,int> _circuitCountByBoardId=const{};
   final _search=TextEditingController(); String _query=''; bool _loading=true;
   @override void initState(){super.initState();_reload();}
   @override void dispose(){_search.dispose();super.dispose();}
   Future<void> _reload() async {
     final v=await Future.wait([widget.repository.getByProject(widget.projectId),
-      widget.circuitsRepository.getByProject(widget.projectId)]);
-    if(!mounted)return; setState((){_boards=v[0] as List<ProfessionalBoard>;
-      _circuits=v[1] as List<ProfessionalCircuit>;_loading=false;});
+      widget.circuitsRepository.getByProject(widget.projectId),widget.loadsRepository.getByProject(widget.projectId),
+      widget.sizingRepository.getByProject(widget.projectId),widget.protectionsRepository.getByProject(widget.projectId)]);
+    final boards=v[0] as List<ProfessionalBoard>;
+    final ownership=<String,String>{};
+    final counts=<String,int>{};
+    for(final board in boards){
+      final circuitIds=await widget.repository.getCircuitIds(board.id);
+      counts[board.id]=circuitIds.length;
+      for(final circuitId in circuitIds){
+        ownership[circuitId]=board.id;
+      }
+    }
+    if(!mounted)return; setState((){_boards=boards;
+      _circuits=v[1] as List<ProfessionalCircuit>;_loads=v[2] as List<ProfessionalLoad>;
+      _sizing=v[3] as List<ProfessionalSizing>;_protections=v[4] as List<ProfessionalProtection>;_boardByCircuitId=ownership;
+      _circuitCountByBoardId=counts;_loading=false;});
+  }
+  Future<ProfessionalBoardReadiness> _readiness(ProfessionalBoard board)async{
+    final circuitIds=(await widget.repository.getCircuitIds(board.id)).toSet();
+    final states=<ProfessionalCircuitTechnicalState>[];
+    for(final circuit in _circuits.where((c)=>circuitIds.contains(c.id))){
+      final loadIds=(await widget.circuitsRepository.getLoadIds(circuit.id)).toSet();
+      ProfessionalSizing? sizing;for(final x in _sizing){if(x.circuitId==circuit.id)sizing=x;}
+      states.add(const ProfessionalCircuitTechnicalStateEvaluator().evaluate(
+        circuit:circuit,linkedLoads:_loads.where((l)=>loadIds.contains(l.id)),sizing:sizing,
+        protections:_protections.where((p)=>p.circuitId==circuit.id)));
+    }
+    return const ProfessionalBoardReadinessEvaluator().evaluate(states);
+  }
+  Future<void> _setClosed(ProfessionalBoard board,ProfessionalBoardReadiness readiness)async{
+    if(widget.readOnly)return;
+    if(!board.isClosed){
+      final confirmed=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
+        title:const Text('Fechar quadro?'),
+        content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text(readiness.isReady?'Todos os circuitos vinculados estão tecnicamente prontos.':
+            'Este quadro ainda possui pendências ou itens que precisam de revisão.'),
+          if(readiness.issues.isNotEmpty)...[const SizedBox(height:12),...readiness.issues.map((e)=>Padding(
+            padding:const EdgeInsets.only(bottom:4),child:Text('• $e')))],
+          const SizedBox(height:12),const Text('Após fechar, reabra o quadro antes de alterar seus dados ou vínculos.')
+        ])),
+        actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('Cancelar')),
+          FilledButton(onPressed:()=>Navigator.pop(context,true),
+            child:Text(readiness.isReady?'Fechar quadro':'Fechar mesmo assim'))]));
+      if(confirmed!=true||!mounted)return;
+      final now=DateTime.now().toUtc();
+      final circuitIds=await widget.repository.getCircuitIds(board.id);
+      final generated=const ProfessionalBoardMaterialConsolidator().build(
+        projectId:board.projectId,boardId:board.id,circuitIds:circuitIds,
+        protections:_protections,generatedAt:now);
+      await widget.materialsRepository.replaceGeneratedForBoard(board.projectId,board.id,generated);
+      await widget.repository.save(ProfessionalBoard(id:board.id,projectId:board.projectId,
+        revision:board.revision+1,name:board.name,description:board.description,location:board.location,
+        notes:board.notes,status:ProfessionalBoardStatus.closed,closedAt:now,
+        createdAt:board.createdAt,updatedAt:now));
+    }else{
+      final confirmed=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
+        title:const Text('Reabrir quadro?'),
+        content:const Text('O quadro voltará a aceitar alterações em seus dados e vínculos de circuitos.'),
+        actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('Cancelar')),
+          FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('Reabrir quadro'))]));
+      if(confirmed!=true||!mounted)return;
+      final now=DateTime.now().toUtc();
+      await widget.repository.save(ProfessionalBoard(id:board.id,projectId:board.projectId,
+        revision:board.revision+1,name:board.name,description:board.description,location:board.location,
+        notes:board.notes,status:ProfessionalBoardStatus.open,closedAt:null,
+        createdAt:board.createdAt,updatedAt:now));
+    }
+    await _reload();
   }
   Future<void> _edit([ProfessionalBoard? board]) async {
     if(widget.readOnly&&board==null)return;
@@ -31,7 +120,8 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
     if(!mounted)return;
     final saved=await showDialog<bool>(context:context,builder:(_)=>_BoardDialog(
       repository:widget.repository,projectId:widget.projectId,board:board,
-      circuits:_circuits,selectedCircuitIds:selected,readOnly:widget.readOnly));
+      circuits:_circuits,selectedCircuitIds:selected,boardByCircuitId:_boardByCircuitId,
+      readOnly:widget.readOnly||(board?.isClosed??false)));
     if(saved==true)await _reload();
   }
   @override Widget build(BuildContext context){
@@ -53,18 +143,53 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
           items.isEmpty?const Center(child:Text('Nenhum quadro encontrado para esta busca.')):
           ListView.separated(padding:const EdgeInsets.fromLTRB(16,8,16,96),itemCount:items.length,
             separatorBuilder:(_,__)=>const SizedBox(height:8),itemBuilder:(_,i){
-              final b=items[i]; return Card(child:ListTile(title:Text(b.name),
-                subtitle:b.location.isEmpty?null:Text(b.location),trailing:const Icon(Icons.chevron_right),
-                onTap:()=>_edit(b)));}))
+              final b=items[i]; final count=_circuitCountByBoardId[b.id]??0;
+              return FutureBuilder<ProfessionalBoardReadiness>(future:_readiness(b),builder:(context,snapshot){
+                final readiness=snapshot.data;
+                final readinessText=readiness==null?'Verificando...':switch(readiness.status){
+                  ProfessionalBoardReadinessStatus.ready=>'Pronto para fechar',
+                  ProfessionalBoardReadinessStatus.pending=>'Pendente',
+                  ProfessionalBoardReadinessStatus.reviewRequired=>'Revisão necessária'};
+              return Card(child:ListTile(title:Text(b.name),
+                subtitle:Text([
+                  if(b.location.isNotEmpty)b.location,
+                  b.isClosed?'Fechado':'Aberto',
+                  count==0?'Sem circuitos vinculados':'$count circuito(s)',readinessText,
+                ].join(' • ')),leading:Icon(readiness?.isReady==true?Icons.check_circle_outline:
+                  readiness?.status==ProfessionalBoardReadinessStatus.reviewRequired?Icons.warning_amber_outlined:Icons.pending_outlined),
+                trailing:PopupMenuButton<String>(onSelected:(value)async{
+                  if(value=='edit')await _edit(b);
+                  if(value=='toggle'&&readiness!=null)await _setClosed(b,readiness);
+                  if(value=='materials'){
+                    if(!mounted)return;
+                    await Navigator.of(this.context).push(MaterialPageRoute(builder:(_)=>ProfessionalMaterialsPage(
+                      repository:widget.materialsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                  }
+                  if(value=='memorial'){
+                    if(!mounted)return;
+                    await Navigator.of(this.context).push(MaterialPageRoute(builder:(_)=>ProfessionalMemorialPage(
+                      repository:widget.memorialRepository,boardsRepository:widget.repository,circuitsRepository:widget.circuitsRepository,
+                      loadsRepository:widget.loadsRepository,sizingRepository:widget.sizingRepository,
+                      protectionsRepository:widget.protectionsRepository,projectId:widget.projectId,readOnly:widget.readOnly)));
+                  }
+                },itemBuilder:(_)=>[
+                  PopupMenuItem(value:'edit',child:Text(b.isClosed?'Visualizar quadro':'Editar quadro')),
+                  if(!widget.readOnly&&readiness!=null)PopupMenuItem(value:'toggle',
+                    child:Text(b.isClosed?'Reabrir quadro':'Fechar quadro')),
+                  if(b.isClosed)const PopupMenuItem(value:'materials',child:Text('Materiais')),
+                  if(b.isClosed)const PopupMenuItem(value:'memorial',child:Text('Memorial')),
+                ]),
+                onTap:()=>_edit(b)));});}))
       ]));
   }
 }
 
 class _BoardDialog extends StatefulWidget {
   final ProfessionalBoardRepository repository; final String projectId; final ProfessionalBoard? board;
-  final List<ProfessionalCircuit> circuits; final List<String> selectedCircuitIds; final bool readOnly;
+  final List<ProfessionalCircuit> circuits; final List<String> selectedCircuitIds;
+  final Map<String,String> boardByCircuitId; final bool readOnly;
   const _BoardDialog({required this.repository,required this.projectId,required this.board,
-    required this.circuits,required this.selectedCircuitIds,required this.readOnly});
+    required this.circuits,required this.selectedCircuitIds,required this.boardByCircuitId,required this.readOnly});
   @override State<_BoardDialog> createState()=>_BoardDialogState();
 }
 class _BoardDialogState extends State<_BoardDialog>{
@@ -95,10 +220,17 @@ class _BoardDialogState extends State<_BoardDialog>{
         const SizedBox(height:16),Text('Circuitos do quadro',style:Theme.of(context).textTheme.titleMedium),
         if(widget.circuits.isEmpty)const Padding(padding:EdgeInsets.only(top:8),
           child:Text('Cadastre circuitos no projeto para vinculá-los ao quadro.'))
-        else ...widget.circuits.map((c)=>CheckboxListTile(value:_selected.contains(c.id),
-          onChanged:widget.readOnly?null:(v)=>setState((){if(v==true){_selected.add(c.id);}else{_selected.remove(c.id);}}),
-          title:Text(c.name),subtitle:c.description.isEmpty?null:Text(c.description),
-          controlAffinity:ListTileControlAffinity.leading,contentPadding:EdgeInsets.zero)),
+        else ...widget.circuits.map((c){
+          final owner=widget.boardByCircuitId[c.id];
+          final linkedElsewhere=owner!=null&&owner!=widget.board?.id;
+          return CheckboxListTile(value:_selected.contains(c.id),
+            onChanged:widget.readOnly||linkedElsewhere?null:(v)=>setState((){if(v==true){_selected.add(c.id);}else{_selected.remove(c.id);}}),
+            title:Text(c.name),subtitle:Text([
+              if(c.description.isNotEmpty)c.description,
+              if(linkedElsewhere)'Já vinculado a outro quadro',
+            ].join(' • ')),
+            controlAffinity:ListTileControlAffinity.leading,contentPadding:EdgeInsets.zero);
+        }),
         const SizedBox(height:12),TextFormField(controller:_notes,readOnly:widget.readOnly,maxLines:3,
           decoration:_d('Observações','Informações complementares do quadro'))
       ])))),

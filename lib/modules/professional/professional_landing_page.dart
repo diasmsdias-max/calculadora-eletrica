@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 import '../../core/licensing/license_provider.dart';
 import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
+import '../../core/licensing/vis_license_api.dart';
+import '../../core/licensing/vis_license_provider.dart';
+import '../../core/database/v2_persistence_factory.dart';
+import '../../core/technical_center/technical_center_config.dart';
+import '../../core/technical_center/technical_center_runtime.dart';
 import 'professional_profile_page.dart';
 import 'professional_projects_page.dart';
+import 'technical_center_page.dart';
 
 class ProfessionalLandingPage extends StatefulWidget {
   const ProfessionalLandingPage({super.key});
@@ -96,6 +102,32 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
                   label: const Text('Projetos Elétricos'),
                 ),
                 const SizedBox(height: 8),
+                if (license.hasProfessional)
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final persistence = await V2PersistenceFactory.defaults().initialize();
+                      if (!context.mounted) return;
+                      final baseUri = TechnicalCenterConfig.baseUri;
+                      final runtime = baseUri == null
+                          ? null
+                          : await TechnicalCenterRuntime.create(
+                              repository: persistence.technicalDocuments,
+                              baseUri: baseUri,
+                            );
+                      if (!context.mounted) return;
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TechnicalCenterPage(
+                            repository: persistence.technicalDocuments,
+                            actions: runtime,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.menu_book_outlined),
+                    label: const Text('Central Técnica VIS'),
+                  ),
+                const SizedBox(height: 8),
                 if (!license.hasProfessional)
                   const Text(
                     'Projetos existentes permanecem acessíveis em modo de leitura.',
@@ -116,11 +148,7 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
                   FilledButton.icon(
                     onPressed: _activate,
                     icon: const Icon(Icons.lock_open_outlined),
-                    label: Text(
-                      _licenseProvider is DebugLicenseProvider
-                          ? 'Ativar licença de teste'
-                          : 'Ativar módulo Profissional',
-                    ),
+                    label: const Text('Ativar VIS ELECTRICA Profissional'),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -134,18 +162,64 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
   }
 
   Future<void> _activate() async {
-    if (_licenseProvider is DebugLicenseProvider) {
-      final license = await _licenseProvider.activate();
-      if (!mounted) return;
-      setState(() => _license = license);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Licença Profissional de teste ativada neste build.'),
-        ),
-      );
+    if (_licenseProvider is! VisLicenseProvider) {
+      _showActivationInfo(context);
       return;
     }
-    _showActivationInfo(context);
+    final controller = TextEditingController();
+    final key = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ativar VIS ELECTRICA Profissional'),
+        content: TextField(
+          controller: controller,
+          autocorrect: false,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            labelText: 'Chave de ativação',
+            hintText: 'VIS-PRO-XXXX-XXXX-XXXX-XXXX-XXXX',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('ATIVAR'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (key == null || key.isEmpty) return;
+    try {
+      final license = await _licenseProvider.activate(key);
+      if (!mounted) return;
+      setState(() => _license = license);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(license.hasProfessional
+            ? 'VIS ELECTRICA Profissional ativado.'
+            : 'A licença não liberou o módulo Profissional.'),
+      ));
+    } on VisLicenseApiException catch (e) {
+      if (!mounted) return;
+      final message = switch (e.code) {
+        'INVALID_ACTIVATION_KEY' => 'Chave de ativação inválida.',
+        'LICENSE_INACTIVE' => 'Esta licença está inativa.',
+        'LICENSE_EXPIRED' => 'Esta licença está expirada.',
+        'DEVICE_LIMIT_REACHED' => 'Limite de dispositivos atingido.',
+        'NETWORK_ERROR' => 'Servidor de licenciamento indisponível. Verifique a conexão e tente novamente.',
+        'TLS_ERROR' => 'Não foi possível validar a conexão segura com o servidor.',
+        'CREDENTIAL_INVALID' => 'A autorização recebida não pôde ser validada.',
+        'INVALID_RESPONSE' || 'SERVER_ERROR' => 'O servidor de licenciamento retornou uma resposta inválida.',
+        _ => 'Não foi possível concluir a ativação. Verifique a conexão e tente novamente.',
+      };
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Não foi possível concluir a ativação. Verifique a conexão e tente novamente.'),
+      ));
+    }
   }
 
   void _showActivationInfo(BuildContext context) {
@@ -154,9 +228,8 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
       builder: (context) => AlertDialog(
         title: const Text('Ativação Profissional'),
         content: const Text(
-          'A infraestrutura de licença está preparada. O canal definitivo '
-          'de contratação e ativação será conectado em uma etapa posterior, '
-          'sem alterar os módulos gratuitos.',
+          'O licenciamento deste build ainda não está configurado. '
+          'Os módulos gratuitos continuam disponíveis normalmente.',
         ),
         actions: [
           TextButton(

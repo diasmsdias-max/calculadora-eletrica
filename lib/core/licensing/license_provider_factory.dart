@@ -1,44 +1,39 @@
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'dart:convert';
 
 import 'license_provider.dart';
-import 'license_state.dart';
+import 'vis_credential_verifier.dart';
+import 'vis_license_api.dart';
+import 'vis_license_config.dart';
+import 'vis_license_provider.dart';
 
 abstract final class LicenseProviderFactory {
-  static LicenseProvider create() =>
-      kDebugMode ? const DebugLicenseProvider() : const FreeLicenseProvider();
-}
-
-class DebugLicenseProvider implements LicenseProvider {
-  static const _activeKey = 'debug_professional_license_active';
-
-  const DebugLicenseProvider();
-
-  @override
-  Future<LicenseState> currentState() async {
-    final prefs = await SharedPreferences.getInstance();
-    return _state(prefs.getBool(_activeKey) ?? false);
-  }
-
-  @override
-  Future<LicenseState> activate() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_activeKey, true);
-    return _state(true);
-  }
-
-  Future<LicenseState> deactivate() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_activeKey, false);
-    return _state(false);
-  }
-
-  @override
-  Future<LicenseState> revalidate() => currentState();
-
-  LicenseState _state(bool active) => LicenseState(
-        status: active ? LicenseStatus.active : LicenseStatus.free,
-        entitlements:
-            active ? const {Entitlement.professional} : const <Entitlement>{},
+  static LicenseProvider create() {
+    if (!VisLicenseConfig.isConfigured) return const FreeLicenseProvider();
+    try {
+      final publicKey = base64Decode(VisLicenseConfig.publicKeyBase64);
+      if (publicKey.length != 32) return const FreeLicenseProvider();
+      HttpClient Function()? clientFactory;
+      if (VisLicenseConfig.usesDevelopmentCa) {
+        final certificate = base64Decode(
+          VisLicenseConfig.localCaCertificateBase64,
+        );
+        final context = SecurityContext(withTrustedRoots: true)
+          ..setTrustedCertificatesBytes(certificate);
+        clientFactory = () => HttpClient(context: context);
+      }
+      return VisLicenseProvider(
+        api: VisLicenseApi(
+          Uri.parse(VisLicenseConfig.apiBaseUrl),
+          clientFactory: clientFactory,
+        ),
+        verifier: VisCredentialVerifier(
+          expectedKeyId: VisLicenseConfig.keyId,
+          publicKeyBytes: publicKey,
+        ),
       );
+    } catch (_) {
+      return const FreeLicenseProvider();
+    }
+  }
 }
