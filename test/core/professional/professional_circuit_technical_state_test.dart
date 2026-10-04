@@ -65,6 +65,45 @@ void main(){
     expect(r.issues,contains('Proteção de sobrecorrente fora do critério Ib ≤ In ≤ Iz.'));
   });
 
+  test('review required when compliant protection has In below Ib',(){
+    final invalid=ProfessionalProtection(
+      id:'pr4',projectId:'p1',circuitId:'c1',revision:1,name:'QF abaixo de Ib',
+      role:ProfessionalProtectionRole.overcurrent,ratedCurrentA:4,
+      validationStatus:'compliant',validationCriterion:'Critério aplicado: Ib ≤ In ≤ Iz.',
+      createdAt:t,updatedAt:t.add(const Duration(minutes:2)));
+    final r=evaluator.evaluate(circuit:circuit(),linkedLoads:[load()],
+      sizing:sizing(updated:t.add(const Duration(minutes:1))),
+      protections:[invalid]);
+    expect(r.status,ProfessionalCircuitTechnicalStatus.reviewRequired);
+    expect(r.issues,contains('Proteção de sobrecorrente fora do critério Ib ≤ In ≤ Iz.'));
+  });
+
+  test('review required when compliant protection has In above Iz',(){
+    final invalid=ProfessionalProtection(
+      id:'pr5',projectId:'p1',circuitId:'c1',revision:1,name:'QF acima de Iz',
+      role:ProfessionalProtectionRole.overcurrent,ratedCurrentA:25,
+      validationStatus:'compliant',validationCriterion:'Critério aplicado: Ib ≤ In ≤ Iz.',
+      createdAt:t,updatedAt:t.add(const Duration(minutes:2)));
+    final r=evaluator.evaluate(circuit:circuit(),linkedLoads:[load()],
+      sizing:sizing(updated:t.add(const Duration(minutes:1))),
+      protections:[invalid]);
+    expect(r.status,ProfessionalCircuitTechnicalStatus.reviewRequired);
+    expect(r.issues,contains('Proteção de sobrecorrente fora do critério Ib ≤ In ≤ Iz.'));
+  });
+
+  test('complete when compliant protection satisfies Ib In Iz criterion',(){
+    final valid=ProfessionalProtection(
+      id:'pr6',projectId:'p1',circuitId:'c1',revision:1,name:'QF dentro do critério',
+      role:ProfessionalProtectionRole.overcurrent,ratedCurrentA:10,
+      validationStatus:'compliant',validationCriterion:'Critério aplicado: Ib ≤ In ≤ Iz.',
+      createdAt:t,updatedAt:t.add(const Duration(minutes:2)));
+    final r=evaluator.evaluate(circuit:circuit(),linkedLoads:[load()],
+      sizing:sizing(updated:t.add(const Duration(minutes:1))),
+      protections:[valid]);
+    expect(r.status,ProfessionalCircuitTechnicalStatus.complete);
+    expect(r.issues,isEmpty);
+  });
+
   test('review required when upstream data is newer',(){
     final r=evaluator.evaluate(
       circuit:circuit(updated:t.add(const Duration(minutes:3))),
