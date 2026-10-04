@@ -8,26 +8,31 @@ import '../../core/professional/professional_sizing.dart';
 import '../../core/professional/professional_sizing_repository.dart';
 import '../../core/professional/professional_conductor_recommender.dart';
 import '../../core/professional/professional_calculation_freshness.dart';
+import '../../core/professional/professional_board_repository.dart';
+import '../../core/professional/professional_closed_board_guard.dart';
 import '../../core/calculations/quick_ampacity_reference.dart';
 
 class ProfessionalSizingPage extends StatefulWidget {
   final ProfessionalSizingRepository repository;
   final ProfessionalCircuitRepository circuitsRepository;
   final ProfessionalLoadRepository loadsRepository;
+  final ProfessionalBoardRepository boardsRepository;
   final String projectId; final bool readOnly;
   const ProfessionalSizingPage({super.key,required this.repository,required this.circuitsRepository,
-    required this.loadsRepository,required this.projectId,required this.readOnly});
+    required this.loadsRepository,required this.boardsRepository,required this.projectId,required this.readOnly});
   @override State<ProfessionalSizingPage> createState()=>_State();
 }
 class _State extends State<ProfessionalSizingPage>{
   List<ProfessionalSizing> _items=const[];List<ProfessionalCircuit> _circuits=const[];
-  List<ProfessionalLoad> _loads=const[];final Map<String,List<String>> _loadIdsByCircuit={};bool _loading=true;
+  List<ProfessionalLoad> _loads=const[];final Map<String,List<String>> _loadIdsByCircuit={};bool _loading=true;Set<String> _lockedCircuitIds=const{};
   @override void initState(){super.initState();_reload();}
   Future<void> _reload()async{final v=await Future.wait([widget.repository.getByProject(widget.projectId),
-    widget.circuitsRepository.getByProject(widget.projectId),widget.loadsRepository.getByProject(widget.projectId)]);
+    widget.circuitsRepository.getByProject(widget.projectId),widget.loadsRepository.getByProject(widget.projectId),
+    const ProfessionalClosedBoardGuard().lockedCircuitIds(boardsRepository:widget.boardsRepository,projectId:widget.projectId)]);
     final circuits=v[1] as List<ProfessionalCircuit>;final links=await Future.wait(circuits.map((c)=>widget.circuitsRepository.getLoadIds(c.id)));
     if(!mounted)return;setState((){_items=v[0] as List<ProfessionalSizing>;_circuits=circuits;_loads=v[2] as List<ProfessionalLoad>;
-      _loadIdsByCircuit.clear();for(var i=0;i<circuits.length;i++){_loadIdsByCircuit[circuits[i].id]=links[i];}_loading=false;});}
+      _loadIdsByCircuit.clear();for(var i=0;i<circuits.length;i++){_loadIdsByCircuit[circuits[i].id]=links[i];}
+      _lockedCircuitIds=v[3] as Set<String>;_loading=false;});}
   ProfessionalCircuitAggregation _aggregation(ProfessionalCircuit c){final ids=_loadIdsByCircuit[c.id]?.toSet()??<String>{};
     return const ProfessionalCircuitAggregator().calculate(circuit:c,loads:_loads.where((l)=>ids.contains(l.id)));}
   ProfessionalSizing? _for(String id){for(final x in _items){if(x.circuitId==id)return x;}return null;}
@@ -36,7 +41,7 @@ class _State extends State<ProfessionalSizingPage>{
       sizing:s,circuit:c,linkedLoads:_loads.where((l)=>ids.contains(l.id)));}
   Future<void> _edit(ProfessionalCircuit c)async{final ok=await showDialog<bool>(context:context,
     builder:(_)=>_SizingDialog(repository:widget.repository,projectId:widget.projectId,circuit:c,
-      sizing:_for(c.id),aggregation:_aggregation(c),readOnly:widget.readOnly));if(ok==true)await _reload();}
+      sizing:_for(c.id),aggregation:_aggregation(c),readOnly:widget.readOnly||_lockedCircuitIds.contains(c.id)));if(ok==true)await _reload();}
   @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Dimensionamento')),
     body:_loading?const Center(child:CircularProgressIndicator()):_circuits.isEmpty?
       const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('Cadastre circuitos antes de registrar dimensionamentos.'))):
@@ -45,6 +50,7 @@ class _State extends State<ProfessionalSizingPage>{
           final aggregation=_aggregation(c);
           final needsReview=s!=null&&_needsReview(c,s);
           final details=<String>[
+            if(_lockedCircuitIds.contains(c.id))'Quadro fechado — reabra o quadro para alterar',
             if(needsReview)'Revisar cálculo',
             if(aggregation.designCurrentA!=null)'Ib ${aggregation.designCurrentA!.toStringAsFixed(2)} A',
             if(s?.conductorSectionMm2!=null)'${s!.conductorSectionMm2} mm²',
