@@ -42,6 +42,7 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
   Map<String,String> _boardByCircuitId=const{};
   Map<String,int> _circuitCountByBoardId=const{};
   Map<String,Set<String>> _circuitIdsByBoardId=const{};
+  Map<String,Set<String>> _loadIdsByCircuitId=const{};
   final _search=TextEditingController(); String _query=''; bool _loading=true;
   @override void initState(){super.initState();_reload();}
   @override void dispose(){_search.dispose();super.dispose();}
@@ -61,16 +62,20 @@ class _ProfessionalBoardsPageState extends State<ProfessionalBoardsPage> {
         ownership[circuitId]=board.id;
       }
     }
+    final loadIdsByCircuit=<String,Set<String>>{};
+    for(final circuit in v[1] as List<ProfessionalCircuit>){
+      loadIdsByCircuit[circuit.id]=(await widget.circuitsRepository.getLoadIds(circuit.id)).toSet();
+    }
     if(!mounted)return; setState((){_boards=boards;
       _circuits=v[1] as List<ProfessionalCircuit>;_loads=v[2] as List<ProfessionalLoad>;
       _sizing=v[3] as List<ProfessionalSizing>;_protections=v[4] as List<ProfessionalProtection>;_boardByCircuitId=ownership;
-      _circuitCountByBoardId=counts;_circuitIdsByBoardId=circuitIdsByBoard;_loading=false;});
+      _circuitCountByBoardId=counts;_circuitIdsByBoardId=circuitIdsByBoard;_loadIdsByCircuitId=loadIdsByCircuit;_loading=false;});
   }
   Future<ProfessionalBoardReadiness> _readiness(ProfessionalBoard board)async{
     final circuitIds=_circuitIdsByBoardId[board.id]??const <String>{};
     final states=<ProfessionalCircuitTechnicalState>[];
     for(final circuit in _circuits.where((c)=>circuitIds.contains(c.id))){
-      final loadIds=(await widget.circuitsRepository.getLoadIds(circuit.id)).toSet();
+      final loadIds=_loadIdsByCircuitId[circuit.id]??const <String>{};
       ProfessionalSizing? sizing;for(final x in _sizing){if(x.circuitId==circuit.id)sizing=x;}
       states.add(const ProfessionalCircuitTechnicalStateEvaluator().evaluate(
         circuit:circuit,linkedLoads:_loads.where((l)=>loadIds.contains(l.id)),sizing:sizing,
