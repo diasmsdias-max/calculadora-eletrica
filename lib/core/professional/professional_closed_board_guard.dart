@@ -1,4 +1,3 @@
-import 'professional_board.dart';
 import 'professional_board_repository.dart';
 
 class ProfessionalClosedBoardGuard {
