@@ -5,10 +5,13 @@ import '../../core/professional/professional_circuit_aggregation.dart';
 import '../../core/professional/professional_circuit_repository.dart';
 import '../../core/professional/professional_load.dart';
 import '../../core/professional/professional_load_repository.dart';
+import '../../core/professional/professional_board_repository.dart';
+import '../../core/professional/professional_closed_board_guard.dart';
 
 class ProfessionalCircuitsPage extends StatefulWidget {
   final ProfessionalCircuitRepository repository;
   final ProfessionalLoadRepository loadsRepository;
+  final ProfessionalBoardRepository boardsRepository;
   final String projectId;
   final bool readOnly;
 
@@ -16,6 +19,7 @@ class ProfessionalCircuitsPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.loadsRepository,
+    required this.boardsRepository,
     required this.projectId,
     required this.readOnly,
   });
@@ -31,6 +35,7 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
   final _search = TextEditingController();
   String _query = '';
   Map<String, List<String>> _loadIdsByCircuit = const {};
+  Set<String> _lockedCircuitIds = const {};
   static const _aggregator = ProfessionalCircuitAggregator();
 
   @override
@@ -49,6 +54,10 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
     final values = await Future.wait([
       widget.repository.getByProject(widget.projectId),
       widget.loadsRepository.getByProject(widget.projectId),
+      const ProfessionalClosedBoardGuard().lockedCircuitIds(
+        boardsRepository: widget.boardsRepository,
+        projectId: widget.projectId,
+      ),
     ]);
     final circuits = values[0] as List<ProfessionalCircuit>;
     final relations = <String, List<String>>{};
@@ -60,6 +69,7 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
       _circuits = circuits;
       _loadIdsByCircuit = relations;
       _loads = values[1] as List<ProfessionalLoad>;
+      _lockedCircuitIds = values[2] as Set<String>;
       _loading = false;
     });
   }
@@ -82,7 +92,7 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
           for (final entry in _loadIdsByCircuit.entries)
             for (final loadId in entry.value) loadId: entry.key,
         },
-        readOnly: widget.readOnly,
+        readOnly: widget.readOnly || (circuit != null && _lockedCircuitIds.contains(circuit.id)),
       ),
     );
     if (saved == true) await _reload();
@@ -153,6 +163,8 @@ class _ProfessionalCircuitsPageState extends State<ProfessionalCircuitsPage> {
                                 if (current != null)
                                   'I calc.: ${current.toStringAsFixed(2)} A',
                                 if (current == null) aggregation.currentMessage,
+                                if (_lockedCircuitIds.contains(c.id))
+                                  'Quadro fechado — reabra o quadro para alterar',
                               ].join(' • ')),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => _edit(c),
