@@ -23,6 +23,7 @@ import '../technical_center/technical_document_repository.dart';
 import '../technical_center/sqlite_technical_document_repository.dart';
 import '../professional/vis_project_transfer_service.dart';
 import '../professional/professional_project_deletion_service.dart';
+import '../professional/professional_board_closure_service.dart';
 
 class V2Persistence {
   final ProjectRepository projects;
@@ -38,6 +39,7 @@ class V2Persistence {
   final TechnicalDocumentRepository technicalDocuments;
   final VisProjectTransferService projectTransfer;
   final ProfessionalProjectDeletionService projectDeletion;
+  final ProfessionalBoardClosureService boardClosure;
 
   const V2Persistence({
     required this.projects,
@@ -53,6 +55,7 @@ class V2Persistence {
     required this.technicalDocuments,
     required this.projectTransfer,
     required this.projectDeletion,
+    required this.boardClosure,
   });
 }
 
@@ -99,6 +102,7 @@ class V2PersistenceFactory {
       technicalDocuments: SqliteTechnicalDocumentRepository(db),
       projectTransfer: VisProjectTransferService(db),
       projectDeletion: ProfessionalProjectDeletionService(db),
+      boardClosure: ProfessionalBoardClosureService(db),
     );
   }
 }
