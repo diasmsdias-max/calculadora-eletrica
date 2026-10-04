@@ -3,21 +3,21 @@ import '../../core/professional/professional_material.dart';
 import '../../core/professional/professional_material_repository.dart';
 
 class ProfessionalMaterialsPage extends StatefulWidget{
- final ProfessionalMaterialRepository repository;final String projectId;final bool readOnly;
- const ProfessionalMaterialsPage({super.key,required this.repository,required this.projectId,required this.readOnly});
+ final ProfessionalMaterialRepository repository;final String projectId;final bool readOnly;final String? boardId;
+ const ProfessionalMaterialsPage({super.key,required this.repository,required this.projectId,required this.readOnly,this.boardId});
  @override State<ProfessionalMaterialsPage> createState()=>_State();
 }
 class _State extends State<ProfessionalMaterialsPage>{
  List<ProfessionalMaterial> _items=const[];final _search=TextEditingController();String _query='';bool _loading=true;
  @override void initState(){super.initState();_reload();} @override void dispose(){_search.dispose();super.dispose();}
- Future<void> _reload()async{final v=await widget.repository.getByProject(widget.projectId);if(mounted)setState((){_items=v;_loading=false;});}
+ Future<void> _reload()async{final v=await widget.repository.getByProject(widget.projectId);final source=widget.boardId==null?null:'VIS:${widget.boardId}';if(mounted)setState((){_items=source==null?v:v.where((m)=>m.source==source).toList();_loading=false;});}
  Future<void> _edit([ProfessionalMaterial? m])async{if(widget.readOnly&&m==null)return;
   final ok=await showDialog<bool>(context:context,builder:(_)=>_MaterialDialog(repository:widget.repository,
    projectId:widget.projectId,material:m,readOnly:widget.readOnly));if(ok==true)await _reload();}
  @override Widget build(BuildContext context){final q=_query.trim().toLowerCase();final list=q.isEmpty?_items:_items.where((m)=>
   m.description.toLowerCase().contains(q)||m.category.toLowerCase().contains(q)||m.unit.toLowerCase().contains(q)||
   m.source.toLowerCase().contains(q)||m.notes.toLowerCase().contains(q)).toList();
-  return Scaffold(appBar:AppBar(title:const Text('Materiais')),
+  return Scaffold(appBar:AppBar(title:Text(widget.boardId==null?'Materiais':'Materiais do quadro')),
    floatingActionButton:widget.readOnly?null:FloatingActionButton.extended(onPressed:()=>_edit(),
     icon:const Icon(Icons.add),label:const Text('Novo material')),
    body:_loading?const Center(child:CircularProgressIndicator()):Column(children:[
