@@ -20,7 +20,8 @@ class ProfessionalMemorialConsolidator {
   }) {
     final bs=boards.toList(), cs=circuits.toList(), ls=loads.toList(), ss=sizing.toList(), ps=protections.toList();
     final closed=bs.where((b)=>b.isClosed).length;
-    final scope='Projeto elétrico consolidado no VIS ELECTRICA: ${ls.length} carga(s), ${cs.length} circuito(s) e ${bs.length} quadro(s), sendo $closed fechado(s).';
+    final subject=bs.length==1?'Quadro ${bs.single.name} consolidado':'Projeto elétrico consolidado';
+    final scope='$subject no VIS ELECTRICA: ${ls.length} carga(s), ${cs.length} circuito(s) e ${bs.length} quadro(s), sendo $closed fechado(s).';
     final lines=<String>[
       'Dimensionamentos registrados: ${ss.length}/${cs.length} circuito(s).',
       'Proteções registradas: ${ps.length}.',
