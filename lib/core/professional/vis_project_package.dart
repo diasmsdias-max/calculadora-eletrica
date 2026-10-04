@@ -120,7 +120,10 @@ class VisProjectPackage {
       }
     }
     for (final e in materials) { _sameProject(e.projectId, projectId, 'material'); }
-    if (memorial != null) _sameProject(memorial!.projectId, projectId, 'memorial');
+    if (memorial != null) {
+      if (memorial!.id.isEmpty) throw const FormatException('Invalid memorial id.');
+      _sameProject(memorial!.projectId, projectId, 'memorial');
+    }
 
     for (final entry in circuitLoadIds.entries) {
       if (!circuitIds.contains(entry.key)) throw const FormatException('Relation references unknown circuit.');
