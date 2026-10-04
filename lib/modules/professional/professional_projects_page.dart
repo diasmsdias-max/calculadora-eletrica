@@ -22,6 +22,7 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
   ProfessionalProjectRepository? _repository;
   V2Persistence? _persistence;
   List<ProfessionalProject> _projects = const [];
+  Map<String, ({int loads, int circuits, int boards})> _projectCounts = const {};
   bool _loading = true;
   final _searchController = TextEditingController();
   String _query = '';
@@ -35,11 +36,25 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
   Future<void> _load() async {
     final persistence = await V2PersistenceFactory.defaults().initialize();
     final projects = await persistence.professionalProjects.getAll();
+    final counts = <String, ({int loads, int circuits, int boards})>{};
+    for (final project in projects) {
+      final results = await Future.wait([
+        persistence.professionalLoads.getByProject(project.id),
+        persistence.professionalCircuits.getByProject(project.id),
+        persistence.professionalBoards.getByProject(project.id),
+      ]);
+      counts[project.id] = (
+        loads: results[0].length,
+        circuits: results[1].length,
+        boards: results[2].length,
+      );
+    }
     if (!mounted) return;
     setState(() {
       _repository = persistence.professionalProjects;
       _persistence = persistence;
       _projects = projects;
+      _projectCounts = counts;
       _loading = false;
     });
   }
@@ -312,10 +327,10 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final project = projects[index];
-                      final subtitle = <String>[
-                        if (project.client.isNotEmpty) project.client,
-                        'Revisão ${project.revision}',
-                      ].join(' • ');
+                      final counts = _projectCounts[project.id];
+                      final subtitle = counts == null
+                          ? '0 cargas • 0 circuitos • 0 quadros'
+                          : '${counts.loads} cargas • ${counts.circuits} circuitos • ${counts.boards} quadros';
                       return Card(
                         child: ListTile(
                           leading: const Icon(Icons.electrical_services_outlined),
