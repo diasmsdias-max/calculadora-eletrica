@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/licensing/license_provider.dart';
+import '../../core/licensing/license_provider_diagnostics.dart';
 import '../../core/licensing/license_provider_factory.dart';
 import '../../core/licensing/license_state.dart';
 import '../../core/licensing/vis_license_api.dart';
@@ -8,6 +10,7 @@ import '../../core/licensing/vis_license_provider.dart';
 import '../../core/database/v2_persistence_factory.dart';
 import '../../core/technical_center/technical_center_config.dart';
 import '../../core/technical_center/technical_center_runtime.dart';
+import 'activation_key_dialog.dart';
 import 'professional_profile_page.dart';
 import 'professional_projects_page.dart';
 import 'technical_center_page.dart';
@@ -163,33 +166,10 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
 
   Future<void> _activate() async {
     if (_licenseProvider is! VisLicenseProvider) {
-      _showActivationInfo(context);
+      _showActivationInfo(context, LicenseProviderFactory.lastDiagnostics);
       return;
     }
-    final controller = TextEditingController();
-    final key = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ativar VIS ELECTRICA Profissional'),
-        content: TextField(
-          controller: controller,
-          autocorrect: false,
-          textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(
-            labelText: 'Chave de ativação',
-            hintText: 'VIS-PRO-XXXX-XXXX-XXXX-XXXX-XXXX',
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('ATIVAR'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
+    final key = await showActivationKeyDialog(context);
     if (key == null || key.isEmpty) return;
     try {
       final license = await _licenseProvider.activate(key);
@@ -222,14 +202,18 @@ class _ProfessionalLandingPageState extends State<ProfessionalLandingPage> {
     }
   }
 
-  void _showActivationInfo(BuildContext context) {
+  void _showActivationInfo(
+    BuildContext context,
+    LicenseProviderDiagnostics diagnostics,
+  ) {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Ativação Profissional'),
-        content: const Text(
+        content: Text(
           'O licenciamento deste build ainda não está configurado. '
-          'Os módulos gratuitos continuam disponíveis normalmente.',
+          'Os módulos gratuitos continuam disponíveis normalmente.'
+          '${kDebugMode ? '\n\nDiagnóstico seguro:\n${diagnostics.safeSummary}' : ''}',
         ),
         actions: [
           TextButton(

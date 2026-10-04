@@ -97,7 +97,7 @@ subst V: /D
 
 ## 7. Gerar o APK de teste
 
-O script sempre gera `--debug`, valida URL, chave pública Ed25519 e certificado, e recusa um arquivo contendo chave privada:
+O script sempre gera `--debug`, valida URL, chave pública Ed25519 e certificado, recusa um arquivo contendo chave privada e normaliza a CA pública para PEM antes de entregá-la ao runtime Flutter:
 
 ```powershell
 .\tools\build_ep25_test_apk.ps1 `
@@ -112,6 +112,8 @@ O script sempre gera `--debug`, valida URL, chave pública Ed25519 e certificado
 Saída esperada:
 
 `build\app\outputs\flutter-apk\app-debug.apk`
+
+Antes do build, o script executa uma validação com os mesmos `dart-define`. Ela deve informar `etapa=ready` e `fallback=nenhum`; caso URL, identificador, chave pública ou CA não cheguem ao runtime, o script falha e não declara o APK configurado. Ao final, ele também verifica a estrutura, o horário de geração e imprime o SHA-256 do APK.
 
 Depois do build, devolva a escolha do JDK ao modo automático:
 
