@@ -73,4 +73,33 @@ void main() {
     final materials=await db.query('professional_materials',where:'project_id = ? AND source = ?',whereArgs:['p','VIS:b']);
     expect(materials.map((row)=>row['id']).toList(),['old']);
   });
+  test('reopening removes only generated board materials',() async {
+    await db.update('professional_boards', {
+      'status':'closed','closed_at':t.toIso8601String(),
+    },where:'id = ?',whereArgs:['b']);
+    for (final row in [
+      {'id':'generated','source':'VIS:b'},
+      {'id':'manual','source':'manual'},
+    ]) {
+      await db.insert('professional_materials', {
+        'id':row['id'],'project_id':'p','contract_version':ProfessionalMaterial.contractVersion,
+        'revision':1,'description':'Item','category':'','unit':'un','quantity':1.0,
+        'source':row['source'],'notes':'','created_at':t.toIso8601String(),
+        'updated_at':t.toIso8601String(),
+      });
+    }
+
+    final closed=ProfessionalBoard(
+      id:'b',projectId:'p',revision:1,name:'Q',status:ProfessionalBoardStatus.closed,
+      closedAt:t,createdAt:t,updatedAt:t);
+    await ProfessionalBoardClosureService(db).reopenBoard(
+      board:closed,reopenedAt:t.add(const Duration(hours:1)));
+
+    final b=(await db.query('professional_boards',where:'id = ?',whereArgs:['b'])).single;
+    expect(b['status'],'open');
+    expect(b['closed_at'],isNull);
+    final materials=await db.query('professional_materials',where:'project_id = ?',whereArgs:['p']);
+    expect(materials.map((row)=>row['id']).toList(),['manual']);
+  });
+
 }
