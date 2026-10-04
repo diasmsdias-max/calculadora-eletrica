@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../core/database/v2_persistence_factory.dart';
@@ -76,7 +78,7 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
     final bytes = file.bytes ?? (file.path == null ? null : await File(file.path!).readAsBytes());
     if (bytes == null) return;
     try {
-      await _persistence!.projectTransfer.importProject(String.fromCharCodes(bytes));
+      await _persistence!.projectTransfer.importProject(utf8.decode(bytes));
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Projeto importado com sucesso.')));
@@ -100,7 +102,7 @@ class _ProfessionalProjectsPageState extends State<ProfessionalProjectsPage> {
       fileName: '$safeName.visproject',
       type: FileType.custom,
       allowedExtensions: const ['visproject'],
-      bytes: source.codeUnits,
+      bytes: Uint8List.fromList(utf8.encode(source)),
     );
     if (!mounted || path == null) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Projeto exportado com sucesso.')));
