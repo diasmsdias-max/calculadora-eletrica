@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
+
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:calculadora_eletrica/core/database/vis_database.dart';
@@ -77,6 +79,27 @@ void main(){
     expect(protection['breaking_capacity_ka'],6.0);
     expect(protection['notes'],'Adotado pelo técnico');
     expect((await db.query('professional_board_circuits')).single,containsPair('circuit_id','c2'));
+  });
+
+  test('failed same-id import rolls back existing project',() async{
+    final t=DateTime.utc(2026,10,4).toIso8601String();
+    await db.insert('professional_projects',{'id':'rollback','contract_version':1,'revision':7,'name':'Original','client':'','address':'','responsible':'','notes':'','created_at':t,'updated_at':t});
+    await db.insert('professional_loads',{'id':'rollback-l','project_id':'rollback','contract_version':1,'revision':1,'name':'Carga original','quantity':1,'power_w':100.0,'voltage_v':220.0,'created_at':t,'updated_at':t});
+    final service=VisProjectTransferService(db);
+    final exported=await service.exportProject('rollback');
+    final json=jsonDecode(exported) as Map<String,dynamic>;
+    final relations=json['relations'] as Map<String,dynamic>;
+    relations['circuitLoads']={'missing-circuit':['rollback-l']};
+    final invalid=jsonEncode(json);
+
+    await expectLater(service.importProject(invalid),throwsA(anything));
+
+    final project=(await db.query('professional_projects',where:'id = ?',whereArgs:['rollback'])).single;
+    expect(project['revision'],7);
+    expect(project['name'],'Original');
+    final loads=await db.query('professional_loads',where:'project_id = ?',whereArgs:['rollback']);
+    expect(loads,hasLength(1));
+    expect(loads.single['id'],'rollback-l');
   });
 
   test('export rejects unknown professional project',() async{
