@@ -51,6 +51,20 @@ void main(){
     expect(r.issues,contains('Proteção de sobrecorrente sem corrente nominal (In) válida.'));
   });
 
+
+  test('review required when adopted protection violates Ib In Iz criterion',(){
+    final invalid=ProfessionalProtection(
+      id:'pr3',projectId:'p1',circuitId:'c1',revision:1,name:'QF fora do critério',
+      role:ProfessionalProtectionRole.overcurrent,ratedCurrentA:32,
+      validationStatus:'nonCompliant',validationCriterion:'Critério aplicado: Ib ≤ In ≤ Iz.',
+      createdAt:t,updatedAt:t.add(const Duration(minutes:2)));
+    final r=evaluator.evaluate(circuit:circuit(),linkedLoads:[load()],
+      sizing:sizing(updated:t.add(const Duration(minutes:1))),
+      protections:[invalid]);
+    expect(r.status,ProfessionalCircuitTechnicalStatus.reviewRequired);
+    expect(r.issues,contains('Proteção de sobrecorrente fora do critério Ib ≤ In ≤ Iz.'));
+  });
+
   test('review required when upstream data is newer',(){
     final r=evaluator.evaluate(
       circuit:circuit(updated:t.add(const Duration(minutes:3))),
